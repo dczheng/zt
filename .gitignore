@@ -1,0 +1,4 @@
+*.o
+zt
+*.core
+test
