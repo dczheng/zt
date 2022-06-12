@@ -49,7 +49,11 @@ xcolor_alloc(XftColor *c,
     rc.green = g << 8;
     rc.blue = b << 8;
     rc.alpha = 0xffff;
-    return !XftColorAllocValue(display, visual, colormap, &rc, c);
+    if (!XftColorAllocValue(display, visual, colormap, &rc, c)) {
+        printf("failed to allocate color for (%u %u %u)\n", r, b, g);
+        return 1;
+    }
+    return 0;
 }
 
 static inline void
@@ -70,7 +74,7 @@ xfont_idx(uint32_t c) {
 void
 xdraw_specs(struct MyAttr a) {
     XftColor bg, fg;
-    int x, y, w;
+    int x, y, w, rf, rb;
 
     if (!nspec)
         return;
@@ -80,15 +84,22 @@ xdraw_specs(struct MyAttr a) {
     y = specs[0].y - fb; 
     x = specs[0].x;
     w = specs[nspec-1].x + fw - x;
+    rf = rb = 1;
 
     if ((!ATTR_HAS(a, ATTR_DEFAULT_FG))) {
-        if (a.fg.type == COLOR8) 
-            fg = color8[a.fg.c8];
+        switch (a.fg.type) {
+            CASE(COLOR8, fg = color8[a.fg.c8])
+            CASE(COLOR24,
+                rf = xcolor_alloc(&fg, a.fg.rgb[0], a.fg.rgb[1], a.fg.rgb[2]))
+        }
     }
 
     if ((!ATTR_HAS(a, ATTR_DEFAULT_BG))) {
-        if (a.bg.type == COLOR8) 
-            bg = color8[a.bg.c8];
+        switch (a.bg.type) {
+            CASE(COLOR8, bg = color8[a.bg.c8])
+            CASE(COLOR24,
+                rb = xcolor_alloc(&bg, a.bg.rgb[0], a.bg.rgb[1], a.bg.rgb[2]))
+        }
     }
 
     if (ATTR_HAS(a, ATTR_COLOR_REVERSE))
@@ -100,6 +111,10 @@ xdraw_specs(struct MyAttr a) {
 
     XftDrawGlyphFontSpec(drawable, &fg, specs, nspec);
     nspec = 0;
+    if (!rf)
+        xcolor_free(&fg);
+    if (!rb)
+        xcolor_free(&bg);
 }
 
 void

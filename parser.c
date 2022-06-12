@@ -39,7 +39,7 @@ void tdump(void);
 
 void 
 sgr_handle(void) {
-    int n, m, v;
+    int n, m, v, r, g, b;
 
 #define SGR_PAR(idx, v, v0) \
         if (csi_int_par(&esc, idx, &v, v0)) { \
@@ -85,25 +85,50 @@ sgr_handle(void) {
         case 38:
         case 48:
             SGR_PAR(1, m, 0);
-            if (m != 5) {
+            if (m != 5 && m != 2) {
                 ctrl_error = ERR_UNSUPP;
                 return;
             }
 
-            SGR_PAR(2, v, 0);
-            if (v < 0 || v > 255) {
-                ctrl_error = ERR_PAR;
-                return;
-            }
-
-            if (n == 38) {
-                SET_COLOR8(zt.attr.fg, v);
-                ATTR_UNSET(zt.attr, ATTR_DEFAULT_FG);
+            if (m == 5) {
+                SGR_PAR(2, v, 0);
+                if (v < 0 || v > 255) {
+                    ctrl_error = ERR_PAR;
+                    return;
+                }
+                if (n == 38) 
+                    SET_COLOR8(zt.attr.fg, v);
+                else
+                    SET_COLOR8(zt.attr.bg, v);
             } else {
-                SET_COLOR8(zt.attr.bg, v);
-                ATTR_UNSET(zt.attr, ATTR_DEFAULT_BG);
+                SGR_PAR(2, r, 0);
+                if (r < 0 || r > 255) {
+                    ctrl_error = ERR_PAR;
+                    return;
+                }
+
+                SGR_PAR(3, g, 0);
+                if (g < 0 || g > 255) {
+                    ctrl_error = ERR_PAR;
+                    return;
+                }
+
+                SGR_PAR(4, b, 0);
+                if (b < 0 || b > 255) {
+                    ctrl_error = ERR_PAR;
+                    return;
+                }
+                
+                if (n == 38)
+                    SET_COLOR24(zt.attr.fg, r, g, b);
+                else
+                    SET_COLOR24(zt.attr.bg, r, b, b);
             }
 
+            if (n == 38)
+                ATTR_UNSET(zt.attr, ATTR_DEFAULT_FG);
+            else
+                ATTR_UNSET(zt.attr, ATTR_DEFAULT_BG);
             break;
 
         case 1:    // Bold
