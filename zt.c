@@ -171,9 +171,21 @@ sigchld(int a __attribute__((unused))) {
 }
 
 void
-tinit() {
-    char *sh, *args[2];
+tresize(void) {
     struct winsize ws;
+    int ret;
+
+    ws.ws_row = zt.row;
+    ws.ws_col = zt.col;
+    ws.ws_xpixel = zt.width;
+    ws.ws_ypixel = zt.height;
+    ret = ioctl(zt.tty, TIOCSWINSZ, &ws);
+    ASSERT(ret >= 0, "failed to set tty size: %s", strerror(errno));
+}
+
+void
+tinit(void) {
+    char *sh, *args[2];
     struct passwd *pw;
     int ret, slave;
 
@@ -192,12 +204,6 @@ tinit() {
     if (pid) {
         close(slave);
         signal(SIGCHLD, sigchld);
-        ws.ws_row = zt.row;
-        ws.ws_col = zt.col;
-        ws.ws_xpixel = zt.width;
-        ws.ws_ypixel = zt.height;
-        ret = ioctl(zt.tty, TIOCSWINSZ, &ws);
-        ASSERT(ret >= 0, "failed to set tty size: %s", strerror(errno));
         return;
     } 
 
@@ -209,7 +215,6 @@ tinit() {
     ASSERT(ret >= 0, "ioctl TIOCSCTTY failed: %s", strerror(errno));
     close(slave);
     close(zt.tty);
-    close(zt.xfd);
 
     args[0] = sh;
     args[1] = NULL;
@@ -233,8 +238,12 @@ main(void) {
     int fd[2], ret;
     long now, last, latency, timeout;
 
-    xinit();
+    zt.row = MAX(ROW, 8);
+    zt.col = MAX(COL, 8);
+
     tinit();
+    xinit();
+    tresize();
     linit();
     MODE_RESET();
 

@@ -1,6 +1,6 @@
 SRC      = $(wildcard *.c)
 INC      = $(wildcard *.h)
-CC       = gcc  #-O3 #-E
+CC       = gcc  #-E
 CFLAGS   = -I/usr/local/include \
            -I/usr/local/include/freetype2 \
            -Wall -Wextra \

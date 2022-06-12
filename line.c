@@ -2,17 +2,12 @@
 
 #include "zt.h"
 
-#define RASSERT(r) \
-    ASSERT(r >= 0 && r < zt.row, "r: %d, row: %d", r, zt.row)
-#define CASSERT(c) \
-    ASSERT(c >= 0 && c < zt.col, "c: %d, col: %d", c, zt.col)
-
 char *line_buffer;
 
 void
 ldirty(int a, int b) {
-    CASSERT(a);
-    CASSERT(b);
+    LIMIT(a, 0, zt.col);
+    LIMIT(b, 0, zt.col);
     for (; a <= b; a++)
         zt.dirty[a] = 1;
 }
@@ -27,9 +22,9 @@ lsettb(int t, int b) {
 
 void
 lerase(int y, int a, int b) {
-    RASSERT(y);
-    CASSERT(a);
-    CASSERT(b);
+    LIMIT(y, 0, zt.row-1);
+    LIMIT(a, 0, zt.col-1);
+    LIMIT(b, 0, zt.col-1);
     for (; a<=b; a++) {
         zt.line[y][a].c = ' ';
         zt.line[y][a].attr = zt.attr;
@@ -136,7 +131,7 @@ lmove(int y, int x) {
 }
 
 void
-linit(void) {
+lalloc(void) {
     char *p;
     int i, n;
 
@@ -144,11 +139,11 @@ linit(void) {
         sizeof(struct MyChar) * zt.col) * zt.row;
     line_buffer = malloc(n);
     ASSERT(line_buffer != NULL, "");
-    printf("allocate %s for line buffer\n", to_bytes(n));
+    //printf("allocate %s for line buffer\n", to_bytes(n));
 
     zt.dirty = malloc(zt.row);
     ASSERT(zt.dirty != NULL, "");
-    printf("allocate %s for dirty\n", to_bytes(zt.row));
+    //printf("allocate %s for dirty\n", to_bytes(zt.row));
 
     zt.line = (struct MyChar **)line_buffer;
     p = line_buffer + sizeof(struct MyChar*) * zt.row;
@@ -156,10 +151,44 @@ linit(void) {
         zt.line[i] = (struct MyChar*)p;
         p += sizeof(struct MyChar) * zt.col;
     }
+
     lclear(0, 0, zt.row-1, zt.col-1);
+    ldirty(0, zt.row-1);
+}
+
+void
+linit(void) {
+    lalloc();
     zt.top = 0;
     zt.bot = zt.row-1;
     zt.x = zt.y = 0;
-    ldirty(0, zt.row-1);
     ATTR_RESET(zt.attr);
 }
+
+void 
+lresize(void) {
+    int i, j;
+    char *line_buffer_old = line_buffer;
+    struct MyChar **line_old = zt.line;
+
+    free(zt.dirty);
+    lalloc();
+
+    for (i=0; i<zt.row; i++) {
+        if (i >= zt.row_old)
+            continue;
+        for (j=0; j<zt.col; j++) {
+            if (j >= zt.col_old)
+                continue;
+            zt.line[i][j] = line_old[i][j];
+        }
+    }
+    free(line_buffer_old);
+
+    LIMIT(zt.x, 0, zt.col-1);
+    LIMIT(zt.y, 0, zt.row-1);
+    zt.bot = zt.row_old - zt.bot + zt.row;
+    LIMIT(zt.top, 0, zt.row-1);
+    LIMIT(zt.bot, 0, zt.row-1);
+}
+

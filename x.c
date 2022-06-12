@@ -6,13 +6,14 @@
 #include <X11/cursorfont.h>
 #include <X11/Xft/Xft.h>
 #include <X11/Xatom.h>
-#include <X11/extensions/Xinerama.h>
 
 #include "zt.h"
 #include "ctrl.h"
 
 struct MyColor c8_to_rgb(unsigned char);
 void twrite(char*, int);
+void tresize(void);
+void lresize(void);
 
 Display *display;
 Window root, window;
@@ -141,7 +142,8 @@ xdraw_cursor(void) {
     static int last_y = -1;
 
     if (last_y != -1) {
-        xdraw_line(zt.line[last_y], last_y*fh);
+        if (last_y < zt.row)
+            xdraw_line(zt.line[last_y], last_y*fh);
         last_y = zt.y;
     } else {
         last_y = zt.y;
@@ -201,6 +203,17 @@ xpointer(int *x, int *y) {
 }
 
 void
+xresize() {
+    XResizeWindow(display, window, zt.width, zt.height);
+    XFreePixmap(display, pixmap);
+    pixmap = XCreatePixmap(display, window, zt.width, zt.height, depth);
+    XftDrawChange(drawable, pixmap);
+    XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
+    specs = realloc(specs, zt.col * sizeof(XftGlyphFontSpec));
+    ASSERT(specs != NULL, "");
+}
+
+void
 _Button(XEvent *ev) {
     int r, c, n, b;
     char buf[64];
@@ -257,6 +270,36 @@ _KeyPress(XEvent *ev) {
     twrite(buf, n);
 }
 
+void
+_ConfigureNotify(XEvent *ev) {
+    int w, h, r, c;
+
+    w = ev->xconfigure.width;
+    h = ev->xconfigure.height;
+
+    if (w == zt.width && h == zt.height)
+        return;
+
+    r = h / fh;
+    c = w / fw;
+    r = MAX(r, 8);
+    c = MAX(c, 8);
+        
+    zt.row_old = zt.row;
+    zt.col_old = zt.col;
+    zt.width = w;
+    zt.height = h;
+    zt.row = r;
+    zt.col = c;
+
+    //printf("resize: %dx%d -> %dx%d\n",
+    //    zt.row_old, zt.col_old, zt.row, zt.col);
+
+    xresize();
+    tresize();
+    lresize();
+}
+
 #define H(type) \
     case type: \
         _##type(&e); \
@@ -265,7 +308,6 @@ _KeyPress(XEvent *ev) {
     case type: \
         _##f(&e); \
         break; 
-
 void
 xevent(void) {
     XEvent e;
@@ -275,6 +317,7 @@ xevent(void) {
         switch(e.type) {
             H(Expose)
             H(KeyPress)
+            H(ConfigureNotify)
             H2(ButtonPress, Button)
             H2(ButtonRelease, Button)
             H2(FocusIn, Focus)
@@ -282,7 +325,6 @@ xevent(void) {
             case MapNotify:
             case KeyRelease:
             case UnmapNotify:
-            case ConfigureNotify:
                 break;
             case DestroyNotify:
                 endrun();
@@ -318,13 +360,52 @@ xclean(void) {
 }
 
 void
+xfont_init(void){
+    font = XftFontOpenName(display, screen, FONT);
+    ASSERT(font != NULL, "can't open font `%s`", FONT);
+
+#define F(_s) printf("font "#_s": %d\n", font->_s)
+    F(height);
+    F(ascent);
+    F(descent);
+    F(max_advance_width);
+#undef F
+    fw = font->max_advance_width;
+    fh = font->height;
+    fb = font->height - font->descent;
+
+    zt.width = zt.col * fw;
+    zt.height = zt.row * fh;
+
+    printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
+    printf("use font size: %dx%d\n", fw, fh);
+    space_idx = XftCharIndex(display, font, ' ');
+
+}
+
+void
+xcolor_init(void) {
+    int n;
+    struct MyColor mc;
+
+    n = sizeof(XftGlyphFontSpec) * zt.col;
+    specs = malloc(n);
+    ASSERT(specs != NULL, "");
+    printf("allocate %s for specs\n", to_bytes(n));
+
+    for (n=0; n<256; n++) {
+        mc = c8_to_rgb(n);
+        ASSERT(!xcolor_alloc(&color8[n],
+            mc.rgb[0], mc.rgb[1], mc.rgb[2]), "n: %d", n);
+    }
+}
+
+void
 xinit(void) {
     XSetWindowAttributes wa;
     XGCValues gcvalues;
-    XineramaScreenInfo *si;
-    int ns, i, px, py, ret;
+    int ret;
     XEvent e;
-    struct MyColor mc;
 
     display = XOpenDisplay(NULL);
     ASSERT(display, "can't open display");
@@ -343,6 +424,9 @@ xinit(void) {
     ret = XftColorAllocName(display, visual, colormap, FOREGROUND, &foreground);
     ASSERT(ret, "can't allocate color for `%s`", FOREGROUND);
 
+    xfont_init();
+    xcolor_init();
+
     wa.cursor = cursor;
     wa.background_pixel = background.pixel;
     wa.bit_gravity = NorthWestGravity;
@@ -355,24 +439,6 @@ xinit(void) {
                   | ButtonReleaseMask
                   | FocusChangeMask
                   ;
-    if (!XineramaIsActive(display)) {
-        printf("Xinerama is not Active\n");
-        zt.width = DisplayWidth(display, screen);
-        zt.height = DisplayHeight(display, screen);
-    } else {
-        si = XineramaQueryScreens(display, &ns);
-        xpointer(&px, &py);
-        for (i=0; i<ns; i++) {
-            if (px >= si[i].x_org &&
-                px <= si[i].x_org+si[i].width &&
-                py >= si[i].y_org &&
-                py <= si[i].y_org+si[i].height)
-                 break;
-        }
-        zt.width = si[i].width;
-        zt.height = si[i].height;
-        XFree(si);
-    }
 
     window = XCreateWindow(display, root, 0, 0, zt.width,
              zt.height, 0, depth, InputOutput, visual,
@@ -395,35 +461,6 @@ xinit(void) {
         XNextEvent(display, &e);
         if (e.type == MapNotify)
             break;
-    }
-
-    font = XftFontOpenName(display, screen, FONT);
-    ASSERT(font != NULL, "can't open font `%s`", FONT);
-
-#define F(_s) printf("font "#_s": %d\n", font->_s)
-    F(height);
-    F(ascent);
-    F(descent);
-    F(max_advance_width);
-#undef F
-    fw = font->max_advance_width;
-    fh = font->height;
-    fb = font->height - font->descent;
-    zt.col = zt.width / fw;
-    zt.row = zt.height / fh;
-    printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-    printf("use font size: %dx%d\n", fw, fh);
-    space_idx = XftCharIndex(display, font, ' ');
-
-    i = sizeof(XftGlyphFontSpec) * zt.col;
-    specs = malloc(i);
-    ASSERT(specs != NULL, "");
-    printf("allocate %s for specs\n", to_bytes(i));
-
-    for (i=0; i<256; i++) {
-        mc = c8_to_rgb(i);
-        ASSERT(!xcolor_alloc(&color8[i],
-            mc.rgb[0], mc.rgb[1], mc.rgb[2]), "i: %d", i);
     }
 }
 
