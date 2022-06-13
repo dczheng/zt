@@ -30,6 +30,7 @@ void xinit(void);
 void xclean(void);
 void xevent(void);
 void xdraw(void);
+void ldirty_reset(void);
 
 int
 io_wait(int *r, int nr, int *w, int nw, int nano) {
@@ -99,7 +100,7 @@ endrun(void) {
 
 void
 tdrawed(void) {
-    memset(zt.dirty, 0, zt.row);
+    ldirty_reset();
 }
 
 int

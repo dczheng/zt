@@ -9,6 +9,7 @@
 #define LATENCY 30
 #define ROW 24
 #define COL 80 
+#define TABSPACE 4
 
 #include <string.h>
 #include <stdint.h>
@@ -35,7 +36,7 @@ struct MyChar {
 
 // global namespace
 struct ZT {
-    char *dirty;
+    int *dirty, *tabs;
     int top, bot, x, y, row, col, width ,height;
     int row_old, col_old; // for resize
     int tty, xfd;

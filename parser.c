@@ -19,8 +19,10 @@ void linsert(int);
 void ldelete(int);
 void lmove(int, int);
 void lsettb(int, int);
-void ltab(void);
+void ltab(int);
+void ltab_clear(void);
 void twrite(char*, int);
+void lmemmove(int, int, int, int);
 int utf8_decode(unsigned char*, int,
     uint32_t*, int*);
 
@@ -208,9 +210,12 @@ csi_handle(void) {
         CASE(SU,         CSI_PAR(0, n, 1))
         CASE(SD,         CSI_PAR(0, n, 1))
         CASE(ECH,        CSI_PAR(0, n, 1))
+        CASE(CHT,        CSI_PAR(0, n, 1))
+        CASE(CBT,        CSI_PAR(0, n, 1))
 
         CASE(ED,         CSI_PAR(0, n, 0))
         CASE(EL,         CSI_PAR(0, n, 0))
+        CASE(TBC,        CSI_PAR(0, n, 0))
 
         CASE(DECSTBM,    CSI_PAR(0, n, 1);
                          CSI_PAR(1, m, zt.row))
@@ -257,12 +262,15 @@ csi_handle(void) {
         CASE(SM,        mode_handle())
         CASE(RM,        mode_handle())
         CASE(DECSTBM,   lsettb(n-1, m-1))
+        CASE(CHT,       ltab(n))
+        CASE(CBT,       ltab(-n))
 
         case EL:
             switch (n) {
                 CASE(0, lerase(zt.y, zt.x, zt.col-1))
                 CASE(1, lerase(zt.y, 0, zt.x))
                 CASE(2, lerase(zt.y, 0, zt.col-1))
+                default: ctrl_error = ERR_UNSUPP;
             }
             break;
 
@@ -271,6 +279,15 @@ csi_handle(void) {
                 CASE(0, lclear(zt.y, zt.x, zt.row-1, zt.col-1))
                 CASE(1, lclear(   0, 0   , zt.y , zt.x ))
                 CASE(2, lclear(   0, 0   , zt.row-1, zt.col-1); lmove(0,0))
+                default: ctrl_error = ERR_UNSUPP;
+            }
+            break;
+
+        case TBC:
+            switch (n) {
+                CASE(0, zt.tabs[zt.x] = 0)
+                CASE(3, ltab_clear())
+                default: ctrl_error = ERR_UNSUPP;
             }
             break;
 
@@ -279,8 +296,7 @@ csi_handle(void) {
                 lerase(zt.y, zt.x, zt.col-1);
                 break;
             }
-            memmove(&zt.line[zt.y][zt.x], &zt.line[zt.y][zt.x+n],
-                (zt.col-zt.x-n) * sizeof(struct MyChar));
+            lmemmove(zt.y, zt.x, zt.x+n, zt.col-zt.x-n);
             lerase(zt.y, zt.col-n, zt.col-1);
             break;
 
@@ -315,6 +331,7 @@ esc_handle(unsigned char *buf, int len) {
 escfe:
     switch (esc.fe) {
         CASE(CSI, csi_handle())
+        CASE(HTS, zt.tabs[zt.x] = 1)
         case RI:
             if (zt.y == zt.top) {
                 lscroll_down(zt.top, 1);
@@ -352,7 +369,8 @@ ctrl_handle(unsigned char *buf, int len) {
         CASE(ESC, esc_handle(buf+1, len-1))
         CASE(LF,  lnew())
         CASE(CR,  lmove(zt.y, 0))
-        CASE(HT,  ltab())
+        CASE(HT,  ltab(1))
+        CASE(HTS, zt.tabs[zt.x] = 1)
 
         case CCH:     // Cancel character,
                            // intended to eliminate ambiguity about meaning of BS.
