@@ -17,12 +17,13 @@ void lnew(void);
 void lwrite(uint32_t);
 void linsert(int);
 void ldelete(int);
-void lmove(int, int);
+void lmoveto(int, int);
 void lsettb(int, int);
 void ltab(int);
 void ltab_clear(void);
 void twrite(char*, int);
-void lmemmove(int, int, int, int);
+void linsert_blank(int);
+void ldelete_char(int);
 int utf8_decode(unsigned char*, int,
     uint32_t*, int*);
 
@@ -212,6 +213,7 @@ csi_handle(void) {
         CASE(ECH,        CSI_PAR(0, n, 1))
         CASE(CHT,        CSI_PAR(0, n, 1))
         CASE(CBT,        CSI_PAR(0, n, 1))
+        CASE(ICH,        CSI_PAR(0, n, 1))
 
         CASE(ED,         CSI_PAR(0, n, 0))
         CASE(EL,         CSI_PAR(0, n, 0))
@@ -241,16 +243,16 @@ csi_handle(void) {
 
     switch (esc.csi) {
 
-        CASE(CUF,       lmove(zt.y  , zt.x+n ))
-        CASE(CUB,       lmove(zt.y  , zt.x-n ))
-        CASE(CUU,       lmove(zt.y-n, zt.x   ))
-        CASE(CUD,       lmove(zt.y+n, zt.x   ))
-        CASE(CPL,       lmove(zt.y-n, 0      ))
-        CASE(CNL,       lmove(zt.y+n, 0      ))
-        CASE(CUP,       lmove(n-1   , m-1    ))
-        CASE(CHA,       lmove(zt.y  , n-1    ))
-        CASE(HPA,       lmove(zt.y  , n-1    ))
-        CASE(VPA,       lmove(n-1   , zt.x   ))
+        CASE(CUF,       lmoveto(zt.y  , zt.x+n ))
+        CASE(CUB,       lmoveto(zt.y  , zt.x-n ))
+        CASE(CUU,       lmoveto(zt.y-n, zt.x   ))
+        CASE(CUD,       lmoveto(zt.y+n, zt.x   ))
+        CASE(CPL,       lmoveto(zt.y-n, 0      ))
+        CASE(CNL,       lmoveto(zt.y+n, 0      ))
+        CASE(CUP,       lmoveto(n-1   , m-1    ))
+        CASE(CHA,       lmoveto(zt.y  , n-1    ))
+        CASE(HPA,       lmoveto(zt.y  , n-1    ))
+        CASE(VPA,       lmoveto(n-1   , zt.x   ))
         CASE(DA,        twrite(VTIDEN, strlen(VTIDEN)))
         CASE(DSR,       twrite(wbuf, nw))
         CASE(IL,        linsert(n))
@@ -264,6 +266,8 @@ csi_handle(void) {
         CASE(DECSTBM,   lsettb(n-1, m-1))
         CASE(CHT,       ltab(n))
         CASE(CBT,       ltab(-n))
+        CASE(ICH,       linsert_blank(n))
+        CASE(DCH,       ldelete_char(n))
 
         case EL:
             switch (n) {
@@ -278,7 +282,7 @@ csi_handle(void) {
             switch (n) {
                 CASE(0, lclear(zt.y, zt.x, zt.row-1, zt.col-1))
                 CASE(1, lclear(   0, 0   , zt.y , zt.x ))
-                CASE(2, lclear(   0, 0   , zt.row-1, zt.col-1); lmove(0,0))
+                CASE(2, lclear(   0, 0   , zt.row-1, zt.col-1); lmoveto(0,0))
                 default: ctrl_error = ERR_UNSUPP;
             }
             break;
@@ -289,15 +293,6 @@ csi_handle(void) {
                 CASE(3, ltab_clear())
                 default: ctrl_error = ERR_UNSUPP;
             }
-            break;
-
-        case DCH:
-            if (zt.x + n >= zt.col) {
-                lerase(zt.y, zt.x, zt.col-1);
-                break;
-            }
-            lmemmove(zt.y, zt.x, zt.x+n, zt.col-zt.x-n);
-            lerase(zt.y, zt.col-n, zt.col-1);
             break;
 
         case DECLL:  // load LEDs
@@ -338,7 +333,7 @@ escfe:
                 zt.y = zt.top;
             }
             else
-                lmove(zt.y-1, zt.x);
+                lmoveto(zt.y-1, zt.x);
             break;
         case OSC:
             //dump(esc.seq, esc.len);
@@ -368,15 +363,13 @@ ctrl_handle(unsigned char *buf, int len) {
     switch (c) {
         CASE(ESC, esc_handle(buf+1, len-1))
         CASE(LF,  lnew())
-        CASE(CR,  lmove(zt.y, 0))
+        CASE(CR,  lmoveto(zt.y, 0))
         CASE(HT,  ltab(1))
         CASE(HTS, zt.tabs[zt.x] = 1)
-
-        case CCH:     // Cancel character,
-                           // intended to eliminate ambiguity about meaning of BS.
-        case BS:
-            lmove(zt.y, zt.x-1);
-            break;
+        CASE(BS,  lmoveto(zt.y, zt.x-1))
+        CASE(CCH, lmoveto(zt.y, zt.x-1))
+        // CCH: Cancel character,
+        // intended to eliminate ambiguity about meaning of BS.
 
         case BEL:     // bell, allert
         case SS2:

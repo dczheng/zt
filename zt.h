@@ -83,10 +83,12 @@ int color_equal(struct MyColor, struct MyColor);
     | MODE_REPORT_MOTION \
     ; \
 } while(0)
-#define MODE_SET(m, v) ( \
-    (m) == SM ? BIT_SET(zt.mode, v) : \
-    ((m) == RM ? BIT_UNSET(zt.mode, v) : zt.mode ) \
-)
+#define MODE_SET(m, v) do { \
+    if (m == SM) \
+        BIT_SET(zt.mode, v); \
+    if (m == RM) \
+        BIT_UNSET(zt.mode, v); \
+} while (0)
 
 // attr
 #define ATTR_DEFAULT_FG                (1<<0)

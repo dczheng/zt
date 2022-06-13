@@ -4,47 +4,65 @@
 
 char *line_buffer;
 
+#define PASSERT(x) \
+    ASSERT(x >= 0, #x": %d", x)
+#define YASSERT(y) \
+    ASSERT(y >= 0 && y < zt.row, #y": %d, row: %d", y, zt.row)
+
 void
 ldirty(int a, int b) {
-    LIMIT(a, 0, zt.col);
-    LIMIT(b, 0, zt.col);
+    PASSERT(a);
+    PASSERT(b);
+    if (a >= zt.col)
+        return;
+    LIMIT(b, 0, zt.col-1);
     for (; a <= b; a++)
         zt.dirty[a] = 1;
 }
 
 void
-lmemmove(int y, int dst, int src, int n) {
-    ASSERT(y >= 0 && y < zt.row, "");
-    ASSERT(dst >= 0 && dst < zt.col, "");
-    ASSERT(src >= 0 && src < zt.col, "");
-    ASSERT(n >= 0, "");
-    for (; dst + n >= zt.col; n--)
-    for (; src + n >= zt.col; n--)
-    if (!n)
+lmove(int y, int dst, int src, int n) {
+    YASSERT(y);
+    PASSERT(dst);
+    PASSERT(src);
+    PASSERT(n);
+    if (dst >= zt.col || src >= zt.col)
+        return;
+    LIMIT(n, 0, zt.col-dst);
+    LIMIT(n, 0, zt.col-src);
+    if (n == 0)
         return;
     memmove(&zt.line[y][dst], &zt.line[y][src],
         n * sizeof(struct MyChar));
 }
 
 void
-lsettb(int t, int b) {
-    zt.top = t;
-    zt.bot = b;
-    LIMIT(zt.top, 0, zt.row-1);
-    LIMIT(zt.bot, 0, zt.row-1);
-    ASSERT(zt.top < zt.bot, "top: %d, bot: %d", zt.top, zt.bot);
-}
-
-void
 lerase(int y, int a, int b) {
-    LIMIT(y, 0, zt.row-1);
-    LIMIT(a, 0, zt.col-1);
+    YASSERT(y);
+    PASSERT(a);
+    PASSERT(b);
+    if (a >= zt.col)
+        return;
     LIMIT(b, 0, zt.col-1);
     for (; a<=b; a++) {
         zt.line[y][a].c = ' ';
         zt.line[y][a].attr = zt.attr;
     }
     ldirty(y, y);
+}
+
+void
+ldelete_char(int n) {
+    LIMIT(n, 0, zt.col - zt.x);
+    lmove(zt.y, zt.x, zt.x+n, zt.col-zt.x-n);
+    lerase(zt.y, zt.col-n, zt.col-1);
+}
+
+void
+linsert_blank(int n) {
+    LIMIT(n, 0, zt.col - zt.x);
+    lmove(zt.y, zt.x+n, zt.x, zt.col-zt.x-n);
+    lerase(zt.y, zt.x, zt.x+n-1);
 }
 
 void
@@ -58,6 +76,15 @@ lclear(int y1, int x1, int y2, int x2) {
 }
 
 void
+lsettb(int t, int b) {
+    zt.top = t;
+    zt.bot = b;
+    LIMIT(zt.top, 0, zt.row-1);
+    LIMIT(zt.bot, 0, zt.row-1);
+    ASSERT(zt.top < zt.bot, "top: %d, bot: %d", zt.top, zt.bot);
+}
+
+void
 lclean(void) {
     printf("free line buffer\n");
     free(line_buffer);
@@ -67,12 +94,10 @@ lclean(void) {
 
 void
 lscroll_up(int y, int n) {
-    int i;
-
     if (n <= 0)
         return;
     n = MIN(n, zt.bot-y+1);
-    for (i = y; i <= zt.bot-n; i++)
+    for (int i = y; i <= zt.bot-n; i++)
         SWAP(zt.line[i], zt.line[i+n]);
     ldirty(y, zt.bot);
     lclear(zt.bot-n+1, 0, zt.bot, zt.col-1);
@@ -82,12 +107,10 @@ lscroll_up(int y, int n) {
 
 void
 lscroll_down(int y, int n) {
-    int i;
-
     if (n <= 0)
         return;
     n = MIN(n, zt.bot-y+1);
-    for (i = zt.bot; i >= y+n; i--)
+    for (int i = zt.bot; i >= y+n; i--)
         SWAP(zt.line[i], zt.line[i-n]);
     ldirty(y, zt.bot);
     lclear(y, 0, y+n-1, zt.col-1);
@@ -141,7 +164,7 @@ ldelete(int n) {
 }
 
 void
-lmove(int y, int x) {
+lmoveto(int y, int x) {
     zt.y = y;
     zt.x = x;
     LIMIT(zt.y, 0, zt.row-1);
