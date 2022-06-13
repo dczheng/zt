@@ -110,11 +110,13 @@
 #define DECRC    'u'
 #define HPA      '`'
 
+// esc type
 #define ESCNF 0
 #define ESCFP 1
 #define ESCFE 2
 #define ESCFS 3
 
+// mode
 #define DECCKM         1
 #define DECANM         2
 #define DECCOLM        3
@@ -162,6 +164,16 @@
 #define M_SS        1049
 #define M_ER        1006 
 
+// nf esc
+#define GZD4        '('
+#define G1D4        ')'
+#define G2D4        '*'
+#define G3D4        '+'
+
+// fp esc
+#define DECPAM      '='
+#define DECPNM      '>'
+
 #define ISCTRLC0(c)     ((c) <= 0x1F || (c) == 0x7F)
 #define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9F)
 #define ISCTRL(c)       (ISCTRLC0(c) || ISCTRLC1(c))
@@ -172,7 +184,7 @@ struct CtrlInfo {
 
 struct Esc {
     int len;
-    unsigned char *seq, type, fe, csi;
+    unsigned char *seq, type, esc, csi;
 };
 
 int esc_parse(unsigned char*, int, struct Esc*);
@@ -182,6 +194,42 @@ char* get_esc_str(struct Esc*, int);
 int csi_par_num(struct Esc*);
 int csi_int_par(struct Esc*, int, int*, int);
 int csi_str_par(struct Esc*, int, char**);
+
+static inline int
+get_fp_esc_info(int type, struct CtrlInfo **info) {
+    static struct {
+        int type;
+        struct CtrlInfo info;
+    } infos[] = {
+        {DECPAM   ,  {"DECPAM"     , "Application Keypad"     }},
+        {DECPNM   ,  {"DECPNM"     , "Normal Keypad"          }},
+    };
+    for (int i=0; i<LEN(infos); i++)
+        if (infos[i].type == type) {
+            *info = &infos[i].info;
+            return 0;
+        }
+    return 1;
+}
+
+static inline int
+get_nf_esc_info(int type, struct CtrlInfo **info) {
+    static struct {
+        int type;
+        struct CtrlInfo info;
+    } infos[] = {
+        {GZD4   ,  {"GZD4"     , "Set Charset G0"     }},
+        {G1D4   ,  {"G1D4"     , "Set Charset G1"     }},
+        {G2D4   ,  {"G2D4"     , "Set Charset G2"     }},
+        {G3D4   ,  {"G3D4"     , "Set Charset G3"     }},
+    };
+    for (int i=0; i<LEN(infos); i++)
+        if (infos[i].type == type) {
+            *info = &infos[i].info;
+            return 0;
+        }
+    return 1;
+}
 
 static inline int 
 get_mode_info(int type, struct CtrlInfo **info) {

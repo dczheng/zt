@@ -164,6 +164,7 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
 
     if (c >= 0x20 && c <= 0x2F) {
         esc->type = ESCNF;
+        esc->esc = c;
         n = esc_find(seq+1, len-1, 0x30, 0x7E, 0);
         if (n<0)
             goto retry;
@@ -172,8 +173,8 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
 
     if (c >= 0x40 && c <= 0x5F) {
         esc->type = ESCFE;
-        esc->fe = c - 0x40 + 0x80;
-        switch (esc->fe) {
+        esc->esc = c - 0x40 + 0x80;
+        switch (esc->esc) {
             case CSI:
                 n = esc_find(seq+1, len-1, 0x40, 0x7E, 0);
                 if (n<0)
@@ -194,11 +195,15 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
         }
     }
 
-    if (c >= 0x60 && c <= 0x7E)
+    if (c >= 0x60 && c <= 0x7E) {
         esc->type = ESCFS;
+        esc->esc = c;
+    }
 
-    if (c >= 0x30 && c <= 0x3F)
+    if (c >= 0x30 && c <= 0x3F) {
         esc->type = ESCFP;
+        esc->esc = c;
+    }
 
     return 0;
 
@@ -243,13 +248,13 @@ get_esc_str(struct Esc *esc, int desc) {
     }
 
 escfe:
-    if (get_ctrl_info(esc->fe, &info)) {
+    if (get_ctrl_info(esc->esc, &info)) {
         MYPRINT("error fe esc type");
         return buf;
     }
     MYPRINT("%s ", info->name);
 
-    switch (esc->fe) {
+    switch (esc->esc) {
         case CSI:
             if (get_csi_info(esc->csi, &info)) {
                 MYPRINT("%c ", esc->csi);
@@ -281,11 +286,29 @@ escfe:
         MYPRINT("`%s`", info->desc);
     return buf;
 
-// TODO
 escnf:
-escfs:
-escfp:
-
+    if (get_nf_esc_info(esc->esc, &info))
+        MYPRINT("0x%X (%c)", esc->esc, esc->esc);
+    else {
+        MYPRINT("%s ", info->name);
+        if (desc)
+            MYPRINT("`%s`", info->desc);
+    }
     return buf;
+
+escfp:
+    if (get_fp_esc_info(esc->esc, &info))
+        MYPRINT("0x%X (%c)", esc->esc, esc->esc);
+    else {
+        MYPRINT("%s ", info->name);
+        if (desc)
+            MYPRINT("`%s`", info->desc);
+    }
+    return buf;
+
+escfs:
+    MYPRINT("0x%X (%c)", esc->esc, esc->esc);
+    return buf;
+
 #undef MYPRINT
 }

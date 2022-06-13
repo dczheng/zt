@@ -324,7 +324,7 @@ esc_handle(unsigned char *buf, int len) {
     }
 
 escfe:
-    switch (esc.fe) {
+    switch (esc.esc) {
         CASE(CSI, csi_handle())
         CASE(HTS, zt.tabs[zt.x] = 1)
         case RI:
@@ -344,11 +344,34 @@ escfe:
     }
     return;
 
+//TODO
+escnf:
+    switch (esc.esc) {
+        case GZD4:
+        case G1D4:
+        case G2D4:
+        case G3D4:
+            break;
+        default:
+            ctrl_error = ERR_UNSUPP;
+    }
+    return;
+
+//TODO
 escfp:
+    switch (esc.esc) {
+        case DECPAM:
+        case DECPNM:
+            break;
+        default:
+            ctrl_error = ERR_UNSUPP;
+    }
+    return;
+
+//TODO
 escfs:
     ctrl_error = ERR_UNSUPP;
-escnf:
-    return;
+
 }
 
 void
@@ -399,7 +422,7 @@ ctrl_handle(unsigned char *buf, int len) {
             } 
             printf("%s", get_esc_str(&esc, 1));
             if (esc.type != ESCFE
-             || esc.fe != CSI
+             || esc.esc != CSI
              || !(esc.csi == RM || esc.csi == SM)) {
                 printf("\n");
                 break;
