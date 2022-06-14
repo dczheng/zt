@@ -45,7 +45,7 @@ sgr_handle(void) {
     int n, m, v, r, g, b;
 
 #define SGR_PAR(idx, v, v0) \
-        if (csi_int_par(&esc, idx, &v, v0)) { \
+        if (get_int_par(&esc, idx, &v, v0)) { \
             ctrl_error = ERR_PAR; \
             return;\
         }
@@ -156,8 +156,8 @@ mode_handle() {
         return;
     }
 
-    for (i=0; i<csi_par_num(&esc); i++) {
-        if (csi_str_par(&esc, i, &p) || p == NULL)
+    for (i=0; i<get_par_num(&esc); i++) {
+        if (get_str_par(&esc, i, &p) || p == NULL)
             continue;
         if (i==0)
             ret = str_to_dec(p+1, &n);
@@ -168,11 +168,12 @@ mode_handle() {
         switch (n) {
             CASE(M_SF,      MODE_SET(esc.csi, MODE_SEND_FOCUS))
             CASE(DECTCEM,   MODE_SET(esc.csi, MODE_TEXT_CURSOR))
-            CASE(M_RBP,     MODE_SET(esc.csi, MODE_REPORT_BUTTON))
-            CASE(M_RMBP,    MODE_SET(esc.csi, MODE_REPORT_BUTTON|MODE_REPORT_MOTION))
-            CASE(M_EAMM,    MODE_SET(esc.csi, MODE_REPORT_MOTION))
-            CASE(M_ER,      MODE_SET(esc.csi, MODE_REPORT_BUTTON|MODE_REPORT_MOTION))
             CASE(M_BP,      MODE_SET(esc.csi, MODE_BRACKETED_PASTE))
+            CASE(M_MP,      MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_PRESS))
+            CASE(M_MMP,     
+                MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS))
+            CASE(M_MMA,     MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_MOTION_ANY))
+            CASE(M_ME,      MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_EXT))
             case DECAWM:
             case DECCKM:
             case M_SS:
@@ -191,7 +192,7 @@ csi_handle(void) {
     char wbuf[32];
 
 #define CSI_PAR(idx, v, v0) \
-        if (csi_int_par(&esc, idx, &v, v0)) { \
+        if (get_int_par(&esc, idx, &v, v0)) { \
             ctrl_error = ERR_PAR; \
             return;\
         }
@@ -223,7 +224,7 @@ csi_handle(void) {
                          CSI_PAR(1, m, zt.row))
 
         case CUP:
-            if (csi_par_num(&esc) == 1) {
+            if (get_par_num(&esc) == 1) {
                 m = 1;
                 CSI_PAR(0, n, 1);
                 break;
@@ -336,6 +337,7 @@ escfe:
                 lmoveto(zt.y-1, zt.x);
             break;
         case OSC:
+            //printf("%d\n", get_par_num(&esc));
             //dump(esc.seq, esc.len);
             //printf("OSC: %s\n", esc.fe.osc);
             break;
@@ -378,8 +380,6 @@ void
 ctrl_handle(unsigned char *buf, int len) {
     unsigned char c = buf[0];
     struct CtrlInfo *info = NULL;
-    int i, n, ret;
-    char *p;
 
     ctrl_error = 0;
     esc_reset(&esc);
@@ -418,39 +418,9 @@ ctrl_handle(unsigned char *buf, int len) {
             if (c != ESC) {
                 ASSERT(get_ctrl_info(c, &info) == 0, "");
                 printf("%s %s\n", info->name, info->desc);
-                break;
-            } 
-            printf("%s", get_esc_str(&esc, 1));
-            if (esc.type != ESCFE
-             || esc.esc != CSI
-             || !(esc.csi == RM || esc.csi == SM)) {
-                printf("\n");
-                break;
-            }
-
-            printf(": ");
-
-            if (esc.seq[1] != '?') {
-                printf("unknown\n");
-                break;
-            }
-
-            for (i=0; i<csi_par_num(&esc); i++) {
-                if (csi_str_par(&esc, i, &p) || p == NULL)
-                    continue;
-
-                if (i == 0)
-                    ret = str_to_dec(p+1, &n);
-                else
-                    ret = str_to_dec(p, &n);
-
-                if (ret || (ret = get_mode_info(n, &info))) {
-                    printf("unknown,");
-                    continue;
-                }
-                printf("%s: %s,", info->name, info->desc);
-            }
-            printf("\n");
+            } else
+                printf("%s\n", get_esc_str(&esc, 1));
+            break;
     }
 }
 
@@ -555,10 +525,12 @@ parse(unsigned char *buf, int len, int force) {
 
 #ifdef CTRL_DEBUG
     unsigned char last_c = 0;
+    static int count = 0;
     printf("\n-------CTRL--------\n");
-    printf("TTY: %d\n", len);
+    printf("TTY[%d]: %d\n", count, len);
     printf("DISPLAY: %dx%d\n", zt.row, zt.col);
     printf("CURSOR: %dx%d\n", zt.y, zt.x);
+    count++;
 #endif
 
     char_bytes = ctrl_bytes =

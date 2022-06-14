@@ -41,7 +41,7 @@ esc_find(unsigned char *seq, int len,
 }
 
 int
-csi_par_num(struct Esc *esc) {
+get_par_num(struct Esc *esc) {
     int i, n;
 
     for (i=1, n=0; i<esc->len-1; i++) {
@@ -53,7 +53,7 @@ csi_par_num(struct Esc *esc) {
 }
 
 int
-csi_par(struct Esc *esc, int idx, int *a, int *b) {
+get_par(struct Esc *esc, int idx, int *a, int *b) {
     int i, n;
 
     *a = *b = 1;
@@ -84,12 +84,12 @@ csi_par(struct Esc *esc, int idx, int *a, int *b) {
 }
 
 int
-csi_str_par(struct Esc *esc, int idx, char **p) {
+get_str_par(struct Esc *esc, int idx, char **p) {
     static char buf[BUFSIZ];
     int a, b;
     size_t n;
 
-    if (csi_par(esc, idx, &a, &b))
+    if (get_par(esc, idx, &a, &b))
         return EDOM;
 
     if (a<0) {
@@ -109,11 +109,11 @@ csi_str_par(struct Esc *esc, int idx, char **p) {
 }
 
 int
-csi_int_par(struct Esc *esc, int idx, int *v, int v0) {
+get_int_par(struct Esc *esc, int idx, int *v, int v0) {
     int ret;
     char *p;
 
-    ret = csi_str_par(esc, idx, &p);
+    ret = get_str_par(esc, idx, &p);
     if (ret)
         return ret;
 
@@ -131,12 +131,12 @@ csi_dump(struct Esc *esc) {
      if (esc->csi != SGR)
         return;
      dump(esc->seq, esc->len);
-     for (i=0; i<csi_par_num(esc); i++) {
-         if ((rr = csi_int_par(esc, i, &r, 1)))
+     for (i=0; i<get_par_num(esc); i++) {
+         if ((rr = get_int_par(esc, i, &r, 1)))
              printf("%s\n", strerror(rr));
          else
              printf("%d\n", r);
-         if (!csi_par(esc, i, &a, &b)) {
+         if (!get_par(esc, i, &a, &b)) {
              if (a<0)
                  printf("-\n");
              else
@@ -218,10 +218,10 @@ esc_reset(struct Esc *esc) {
     esc->seq = NULL;
 }
 
-char*
+char* // debug
 get_esc_str(struct Esc *esc, int desc) {
-    struct CtrlInfo *info;
-    int i, pos, n;
+    struct CtrlInfo *info, *info2;
+    int i, pos, n, ret;
     char *p;
     static char buf[BUFSIZ];
 
@@ -263,10 +263,34 @@ escfe:
                 MYPRINT("%s ", info->name);
             }
 
+            if (esc->csi == RM ||  esc->csi == SM) {
+                if (esc->seq[1] != '?')
+                    MYPRINT("unknown ");
+                else
+                    for (i=0; i<get_par_num(esc); i++) {
+                        if (get_str_par(esc, i, &p) || p == NULL) {
+                            MYPRINT("unknown ");
+                            continue;
+                        }
+                        if (i == 0)
+                            ret = str_to_dec(p+1, &n);
+                        else
+                            ret = str_to_dec(p, &n);
+
+                        if (ret || (ret = get_mode_info(n, &info2))) {
+                            MYPRINT("unknown ");
+                            continue;
+                        }
+                        MYPRINT("%s ", info2->name);
+                        if (desc)
+                            MYPRINT("%s ", info2->desc);
+                    }
+            }
+
             MYPRINT("[");
-            n = csi_par_num(esc);
+            n = get_par_num(esc);
             for (i=0; i<n; i++) {
-                if (csi_str_par(esc, i, &p) || p == NULL)
+                if (get_str_par(esc, i, &p) || p == NULL)
                     MYPRINT("%s", "-");
                 else
                     MYPRINT("%s", p);
@@ -274,7 +298,7 @@ escfe:
                     MYPRINT(",");
             }
             MYPRINT("] ");
-            csi_int_par(esc, 0, &i, 0);
+            get_int_par(esc, 0, &i, 0);
             get_sgr_info(i, &info);
             break;
 

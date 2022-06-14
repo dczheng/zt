@@ -229,32 +229,88 @@ xresize() {
 }
 
 void
-_Button(XEvent *ev) {
-    int r, c, n, b;
-    char buf[64];
-    XButtonEvent *e = &ev->xbutton;
+_Mouse(XEvent *ev) {
+    int r, c, b, n;
+    static int or=-1, oc=-1, ob=-1;
+    char t;
+    static char buf[64];
 
-    r = e->y / fh + 1;
-    c = e->x / fw + 1;
-    b = e->button;
-    /*
-    if (b == Button3) {
-        if (e->type == ButtonPress)
-            twrite("ok", 2);
-        return;
-    }
-    */
-
-    if (!MODE_HAS(MODE_REPORT_BUTTON))
-        return;
-
-    b -= Button1;
+    r = ev->xbutton.y / fh + 1;
+    c = ev->xbutton.x / fw + 1;
+    b = ev->xbutton.button-Button1;
     if (b >= 3)
         b += 64-3;
-    n = snprintf(buf, sizeof(buf), "\033[<%d;%d;%d%c",
-        b, c, r, e->type == ButtonRelease ? 'm' : 'M');
-    twrite(buf, n);
 
+/*
+    switch (ev->xbutton.type) {
+        case ButtonPress:
+            t = 'P';
+            break;
+        case ButtonRelease:
+            t = 'R';
+            break;
+
+        case MotionNotify:
+            t = 'M';
+            break;
+        default:
+            t = '-';
+    }
+    printf("%c (%d %d): %d, %d, %d, %d, %d, %d\n", t, r, c,
+        MODE_HAS(MODE_MOUSE), 
+        MODE_HAS(MODE_MOUSE_PRESS), 
+        MODE_HAS(MODE_MOUSE_RELEASE), 
+        MODE_HAS(MODE_MOUSE_MOTION_PRESS),
+        MODE_HAS(MODE_MOUSE_MOTION_ANY),
+        MODE_HAS(MODE_MOUSE_EXT)
+        );
+*/
+
+    if (!MODE_HAS(MODE_MOUSE))
+        return;
+
+    switch (ev->xbutton.type) {
+        case ButtonPress:
+            if (!MODE_HAS(MODE_MOUSE_PRESS))
+                return;
+            t = 'M';
+            or = r;
+            oc = c;
+            ob = b;
+            break;
+
+        case ButtonRelease:
+            if (!MODE_HAS(MODE_MOUSE_RELEASE))
+                return;
+            t = 'm';
+            break;
+
+        case MotionNotify:
+            if (!MODE_HAS(MODE_MOUSE_MOTION_PRESS) &&
+                !MODE_HAS(MODE_MOUSE_MOTION_ANY))
+                return;
+            if (r == or && c == oc)
+                return;
+            t = 'M';
+            or = r;
+            oc = c;
+            b = ob+32;
+            break;
+
+        default:
+            printf("Unsupported button type: %d\n",
+                ev->xbutton.type);
+            return;
+    }
+
+    if (MODE_HAS(MODE_MOUSE_EXT)) {
+        n = snprintf(buf, sizeof(buf),
+            "\033[<%d;%d;%d%c", b, c, r, t);
+    } else {
+        n = snprintf(buf, sizeof(buf),
+            "\033[M%c%c%c", 32+b, 32+c, 32+r);
+    } 
+    twrite(buf, n);
 }
 
 void
@@ -268,7 +324,7 @@ _Focus(XEvent *ev) {
 }
 
 void
-_Expose(XEvent *e __attribute__((unused))) {
+_Expose(XEvent *ev __attribute__((unused))) {
     xflush();
 }
 
@@ -333,8 +389,9 @@ xevent(void) {
             H(Expose)
             H(KeyPress)
             H(ConfigureNotify)
-            H2(ButtonPress, Button)
-            H2(ButtonRelease, Button)
+            H2(MotionNotify, Mouse)
+            H2(ButtonPress, Mouse)
+            H2(ButtonRelease, Mouse)
             H2(FocusIn, Focus)
             H2(FocusOut, Focus)
             case MapNotify:
@@ -452,6 +509,7 @@ xinit(void) {
                   | KeyPressMask
                   | ButtonPressMask
                   | ButtonReleaseMask
+                  | ButtonMotionMask
                   | FocusChangeMask
                   ;
 

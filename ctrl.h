@@ -155,14 +155,14 @@
 #define DECESKM      104
 #define DECOSCNM     106
 #define M_SBC         12
-#define M_RBP       1000
-#define M_RMBP      1002
-#define M_EAMM      1003
+#define M_MP        1000
+#define M_MMP       1002
+#define M_MMA       1003
 #define M_SF        1004
 #define M_MUTF8     1005
 #define M_BP        2004
 #define M_SS        1049
-#define M_ER        1006 
+#define M_ME        1006 
 
 // nf esc
 #define GZD4        '('
@@ -191,9 +191,9 @@ int esc_parse(unsigned char*, int, struct Esc*);
 void esc_reset(struct Esc*);
 int str_to_dec(char*, int*);
 char* get_esc_str(struct Esc*, int);
-int csi_par_num(struct Esc*);
-int csi_int_par(struct Esc*, int, int*, int);
-int csi_str_par(struct Esc*, int, char**);
+int get_par_num(struct Esc*);
+int get_int_par(struct Esc*, int, int*, int);
+int get_str_par(struct Esc*, int, char**);
 
 static inline int
 get_fp_esc_info(int type, struct CtrlInfo **info) {
@@ -277,12 +277,12 @@ get_mode_info(int type, struct CtrlInfo **info) {
         {M_SF     ,  {"M_SF"       , "Send Focus Events to TTY"             }},
         {M_BP     ,  {"M_BP"       , "Bracketed Paste"                      }},
         {M_SS     ,  {"M_SS"       , "Swap Screen"                          }},
-        {M_RBP    ,  {"M_RBP"      , "Report Button Press"                  }},
-        {M_RMBP   ,  {"M_RMBP"     , "Report Motion on Button Press"        }},
-        {M_EAMM   ,  {"M_EAMM"     , "Enalbe All Mouse Motions"             }},
-        {M_ER     ,  {"M_ER"       , "Extened Reporting"                    }},
         {M_SBC    ,  {"M_SBC"      , "Start Blinking Cursor"                }},
         {M_MUTF8  ,  {"M_MUTF8"    , "UTF-8 mouse"                          }},
+        {M_MP     ,  {"M_M "       , "Report Button Press"                  }},
+        {M_MMP    ,  {"M_MM "      , "Report Motion on Button Press"        }},
+        {M_MMA    ,  {"M_MMA"      , "Enalbe All Mouse Motions"             }},
+        {M_ME     ,  {"M_ME"       , "Extened Reporting"                    }},
     };
     for (int i=0; i<LEN(infos); i++)
         if (infos[i].type == type) {

@@ -71,16 +71,18 @@ int color_equal(struct MyColor, struct MyColor);
 #define MODE_TEXT_CURSOR        (1 << 0)
 #define MODE_SEND_FOCUS         (1 << 1)
 #define MODE_BRACKETED_PASTE    (1 << 2)
-#define MODE_REPORT_BUTTON      (1 << 3)
-#define MODE_REPORT_MOTION      (1 << 4)
+#define MODE_MOUSE              (1 << 3)
+#define MODE_MOUSE_PRESS        (1 << 4)
+#define MODE_MOUSE_RELEASE      (1 << 5)
+#define MODE_MOUSE_MOTION_PRESS (1 << 6)
+#define MODE_MOUSE_MOTION_ANY   (1 << 7)
+#define MODE_MOUSE_EXT          (1 << 8)
 
 #define MODE_HAS(m)     (BIT_GET(zt.mode, m) != 0)
 #define MODE_RESET() do { \
       zt.mode \
     = MODE_TEXT_CURSOR \
     | MODE_SEND_FOCUS \
-    | MODE_REPORT_BUTTON \
-    | MODE_REPORT_MOTION \
     ; \
 } while(0)
 #define MODE_SET(m, v) do { \
