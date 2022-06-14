@@ -308,6 +308,8 @@ esc_handle(unsigned char *buf, int len) {
     int ret;
 
     ret = esc_parse(buf, len, &esc);
+    ASSERT(len >= 0, "");
+    //dump(buf, len);
     if (ret) {
         if (ret == EILSEQ)
             ctrl_error = ERR_RETRY;
@@ -381,6 +383,7 @@ ctrl_handle(unsigned char *buf, int len) {
     unsigned char c = buf[0];
     struct CtrlInfo *info = NULL;
 
+    ASSERT(len >= 0, "");
     ctrl_error = 0;
     esc_reset(&esc);
     switch (c) {

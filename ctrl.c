@@ -153,9 +153,11 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
 
     esc->type = -1;
     esc->seq = seq;
+    ASSERT(len >= 0, "");
     if (!len)
         return EILSEQ;
 
+    //dump(seq, len);
     c = seq[0];
 
     if (c < 0x20 || c > 0x7E)

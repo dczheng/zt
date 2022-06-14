@@ -27,35 +27,31 @@ to_bytes(uint64_t b) {
 
 void
 dump_hex(unsigned char *buf, int n) {
-    unsigned char *p;
-
-    for (p=buf; p<buf+n; p++)
-        printf("0x%X ", *p);
+    for (int i = 0; i < n; i++)
+        printf("0x%X ", buf[i]);
     printf("\n");
     fflush(stdout);
 }
 
 void
 dump(unsigned char *buf, int n) {
-    unsigned char *p;
     struct CtrlInfo *ctrl_info = NULL;
+    int i;
 
-    for (p=buf; p<buf+n; p++) {
-        if (*p >= 0x20 && *p <= 0x7E) {
-            printf("%c", *p);
+    for (i = 0; i < n; i++) {
+        if (buf[i] >= 0x20 && buf[i] <= 0x7E) {
+            printf("%c", buf[i]);
+            continue;
         }
-        else {
-            if (*p) {
-                get_ctrl_info(*p, &ctrl_info);
-                printf(" %s ", ctrl_info->name);
-            } else {
-                printf(" 0x%X ", *p);
-            }
+        if (ISCTRL(buf[i])) {
+            get_ctrl_info(buf[i], &ctrl_info);
+            printf(" %s ", ctrl_info->name);
+            continue;
         }
+        printf(" 0x%X ", buf[i]);
     }
     printf("\n");
     fflush(stdout);
-
 }
 
 long
