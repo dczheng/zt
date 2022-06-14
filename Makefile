@@ -1,13 +1,13 @@
 SRC      = $(wildcard *.c)
 INC      = $(wildcard *.h)
 CC       = gcc  #-E
-CFLAGS   = -I/usr/local/include \
-           -I/usr/local/include/freetype2 \
+
+CFLAGS   = `pkg-config --cflags x11 freetype2` \
            -Wall -Wextra \
-           -Wno-deprecated-declarations \
            #-Wno-unused-parameter
-LDFLAGS  = -L/usr/local/lib -lX11 -lXft \
-           -lXinerama -lutil
+
+LDFLAGS  = `pkg-config --libs x11 freetype2 xft` \
+           -lutil
 
 OBJ = $(SRC:.c=.o)
 zt: $(OBJ)
