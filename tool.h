@@ -1,14 +1,14 @@
-#ifndef __UTIL_H__
-#define __UTIL_H__
+#ifndef __TOOL_H__
+#define __TOOL_H__
 
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
 
-void endrun(void);
 long get_time(void);
 void dump_hex(unsigned char*, int);
 void dump(unsigned char*, int);
-char *to_bytes(uint64_t);
+char *to_bytes(uint32_t);
 
 #define NANOSEC 1000000000
 #define MICROSEC 1000000
@@ -38,7 +38,7 @@ char *to_bytes(uint64_t);
     if (!(exp)) { \
         fprintf(stderr, "Assert failed: %s in %s %d, "fmt"\n", \
             #exp, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        endrun(); \
+        _exit(1);\
     }\
 } while(0)
 

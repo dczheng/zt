@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "util.h"
+#include "tool.h"
 
 struct MyColor {
     unsigned char type;

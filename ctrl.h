@@ -1,7 +1,7 @@
 #ifndef __CTRL_H__
 #define __CTRL_H__
 
-#include "util.h"
+#include "tool.h"
 
 // C0
 #define NUL  0x00

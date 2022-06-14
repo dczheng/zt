@@ -12,6 +12,8 @@
 
 #if defined(__linux)
 #include <pty.h>
+#elif defined(__APPLE__)
+#include <util.h>
 #elif defined(__DragonFly__)
 #include <libutil.h>
 #endif
@@ -28,7 +30,7 @@ void linit(void);
 void lclean(void);
 void xinit(void);
 void xclean(void);
-void xevent(void);
+int xevent(void);
 void xdraw(void);
 void ldirty_reset(void);
 
@@ -42,7 +44,6 @@ io_wait(int *r, int nr, int *w, int nw, int nano) {
         return 0;
 
     ptv = NULL;
-    ASSERT(nano != 0, "");
     if (nano > 0) {
         tv.tv_sec = nano / NANOSEC;
         tv.tv_nsec = nano % NANOSEC;
@@ -90,7 +91,7 @@ io_wait(int *r, int nr, int *w, int nw, int nano) {
 }
 
 void
-endrun(void) {
+cleanup(void) {
     lclean();
     xclean();
     close(zt.tty);
@@ -158,17 +159,11 @@ sigchld(int a __attribute__((unused))) {
     pid_t p;
 
     p = waitpid(pid, &stat, WNOHANG);
-    ASSERT(p >= 0, "failed to wait pid %hd: %s",
+    ASSERT(p >= 0, "failed to wait pid %d: %s",
         pid, strerror(errno));
     if (pid != p)
         return;
-    if (WIFEXITED(stat) && WEXITSTATUS(stat))
-        fprintf(stderr, "child exited with status: %d\n",
-            WEXITSTATUS(stat));
-    else if (WIFSIGNALED(stat))
-        fprintf(stderr, "child exited with signal: %d\n",
-            WTERMSIG(stat));
-    endrun();
+    cleanup();
 }
 
 void
@@ -244,8 +239,8 @@ main(void) {
 
     tinit();
     xinit();
-    tresize();
     linit();
+    tresize();
     MODE_RESET();
 
     last = get_time();
@@ -255,11 +250,15 @@ main(void) {
     timeout = -1;
     for (;;){
         ret = io_wait(fd, 2, NULL, 0, timeout);
-        switch (ret) {
-            CASE(-2, xevent())
-            CASE(-1, ASSERT(tread(-1) == 0, "can'5, be"))
-            default: ASSERT(timeout > 0, "can't be");
-        }
+
+        if (ret != -1 && ret != -2)
+            ASSERT(timeout > 0, "can't be");
+
+        if (ret == -1)
+             ASSERT(tread(-1) == 0, "can'5, be");
+
+        if (ret == -2 && xevent())
+            break;
 
         now = get_time();
         latency -= now-last;
@@ -277,7 +276,7 @@ main(void) {
         tdrawed();
 
     }
-    endrun();
 
+    cleanup();
     return 0;
 }

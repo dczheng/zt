@@ -10,7 +10,7 @@
 #include "ctrl.h"
 
 char *
-to_bytes(uint64_t b) {
+to_bytes(uint32_t b) {
 	static char buf[64];
 	char *p = "KMGT";
 	int i;
@@ -19,7 +19,7 @@ to_bytes(uint64_t b) {
 		if (b<(1ULL<<(10*(i+1))))
 			break;
 	if (i==0)
-		sprintf(buf, "%lu B", b);
+		sprintf(buf, "%u B", b);
 	else
 		sprintf(buf, "%.2f %cB", (double)b/(1ULL<<(10*i)), p[i-1]);
 	return buf;

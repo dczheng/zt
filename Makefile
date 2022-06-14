@@ -1,12 +1,14 @@
 SRC      = $(wildcard *.c)
 INC      = $(wildcard *.h)
-CC       = gcc  #-E
+CC       = gcc #-E
 
-CFLAGS   = `pkg-config --cflags x11 freetype2` \
+DEPS     = x11 freetype2 xft
+
+CFLAGS   = `pkg-config --cflags $(DEPS)` \
            -Wall -Wextra \
            #-Wno-unused-parameter
 
-LDFLAGS  = `pkg-config --libs x11 freetype2 xft` \
+LDFLAGS  = `pkg-config --libs $(DEPS)` \
            -lutil
 
 OBJ = $(SRC:.c=.o)
@@ -18,4 +20,3 @@ $(OBJ): %.o:%.c $(INC) Makefile
 
 clean:
 	rm -f zt $(OBJ)
-

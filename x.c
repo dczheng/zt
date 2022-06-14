@@ -379,7 +379,7 @@ _ConfigureNotify(XEvent *ev) {
     case type: \
         _##f(&e); \
         break; 
-void
+int
 xevent(void) {
     XEvent e;
     
@@ -399,12 +399,12 @@ xevent(void) {
             case UnmapNotify:
                 break;
             case DestroyNotify:
-                endrun();
-                break;
+                return 1;
             default:
                 printf("Unsupport event %d\n", e.type);
         }
     }
+    return 0;
 }
 #undef H
 #undef H2

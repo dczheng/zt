@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "ctrl.h"
-#include "util.h"
+#include "tool.h"
 
 int
 str_to_dec(char *p, int *r) {
