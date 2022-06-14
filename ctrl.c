@@ -49,7 +49,6 @@ get_par_num(struct Esc *esc) {
             n++;
     }
     return n+1;
-
 }
 
 int
@@ -147,21 +146,40 @@ csi_dump(struct Esc *esc) {
 }
 
 int
+osc_find_end(unsigned char *seq, int len, int *n) {
+    *n = esc_find(seq, len, ST, ST, 0);
+    if (*n<0) {
+        *n = esc_find(seq, len, BEL, BEL, 0);
+        if (*n<0)
+            return ESCOSCNOEND;
+    }
+    return 0;
+}
+
+int
+csi_find_end(unsigned char *seq, int len, int *n) {
+    *n = esc_find(seq, len, 0x40, 0x7E, 0);
+    if (*n < 0)
+        return ESCCSINOEND;
+    return 0;
+}
+
+int
 esc_parse(unsigned char *seq, int len, struct Esc *esc) {
     unsigned char c;
-    int n;
+    int n, ret;
 
     esc->type = -1;
     esc->seq = seq;
     ASSERT(len >= 0, "");
     if (!len)
-        return EILSEQ;
+        return ESCNOEND;
 
     //dump(seq, len);
     c = seq[0];
 
     if (c < 0x20 || c > 0x7E)
-        return EINVAL;
+        return ESCERR;
     esc->len = 1;
 
     if (c >= 0x20 && c <= 0x2F) {
@@ -169,7 +187,7 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
         esc->esc = c;
         n = esc_find(seq+1, len-1, 0x30, 0x7E, 0);
         if (n<0)
-            goto retry;
+            return ESCNFNOEND;
         esc->len += n+1;
     }
 
@@ -178,20 +196,16 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
         esc->esc = c - 0x40 + 0x80;
         switch (esc->esc) {
             case CSI:
-                n = esc_find(seq+1, len-1, 0x40, 0x7E, 0);
-                if (n<0)
-                    goto retry;
+                if ((ret = csi_find_end(seq+1, len-1, &n)))
+                    return ret;
                 esc->len += n+1;
                 esc->csi = seq[esc->len-1];
                 //csi_dump(esc);
                 break;
+
             case OSC:
-                n = esc_find(seq+1, len-1, ST, ST, 0);
-                if (n<0) {
-                    n = esc_find(seq+1, len-1, BEL, BEL, 0);
-                    if (n<0)
-                        goto retry;
-                }
+                if ((ret = osc_find_end(seq+1, len-1, &n)))
+                    return ret;
                 esc->len += n+1;
                 //dump(esc->seq, esc->len-1);
         }
@@ -208,9 +222,6 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
     }
 
     return 0;
-
-retry:
-    return EILSEQ;
 }
 
 void

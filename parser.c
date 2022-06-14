@@ -6,7 +6,7 @@
 #include "zt.h"
 #include "ctrl.h"
 
-int ctrl_error;
+int ctrl_error, esc_error;
 struct Esc esc;
 
 void lclear(int, int, int, int);
@@ -305,13 +305,11 @@ csi_handle(void) {
 
 void
 esc_handle(unsigned char *buf, int len) {
-    int ret;
 
-    ret = esc_parse(buf, len, &esc);
+    esc_error = esc_parse(buf, len, &esc);
     ASSERT(len >= 0, "");
-    //dump(buf, len);
-    if (ret) {
-        if (ret == EILSEQ)
+    if (esc_error) {
+        if (esc_error != ESCERR)
             ctrl_error = ERR_RETRY;
         else
             ctrl_error = ERR_ESC;
@@ -341,7 +339,6 @@ escfe:
         case OSC:
             //printf("%d\n", get_par_num(&esc));
             //dump(esc.seq, esc.len);
-            //printf("OSC: %s\n", esc.fe.osc);
             break;
         default:
             ctrl_error = ERR_UNSUPP;
@@ -521,7 +518,7 @@ parse(unsigned char *buf, int len, int force) {
     uint32_t u;
     int nread, n, ulen, char_bytes, ctrl_bytes,
     total_char_bytes, total_ctrl_bytes;
-    static int retries = 0;
+    static int retries = 0, osc_no_end = 0;
 
     if (!len)
         return 0;
@@ -542,7 +539,18 @@ parse(unsigned char *buf, int len, int force) {
     if (force)
         printf("force read\n");
 
-    for (nread=0; nread<len; nread+=n) {
+    nread = 0;
+    if (osc_no_end) {
+        if (osc_find_end(buf, len, &nread)) {
+            nread = len;
+            goto retry;
+        }
+        osc_no_end = 0;
+        nread++;
+    }
+    //dump(buf, len);
+
+    for (; nread<len; nread+=n) {
 
         if (ISCTRL(buf[nread])) {
 #ifdef CTRL_DEBUG
@@ -561,6 +569,11 @@ parse(unsigned char *buf, int len, int force) {
             ctrl_handle(buf+nread, len-nread);
             if (!force) {
                 if (ctrl_error == ERR_RETRY) {
+                    if (esc_error == ESCOSCNOEND) {
+                        osc_no_end = 1;
+                        nread = len;
+                        goto retry;
+                    }
                     if (retries < RETRY_MAX) {
                         retries++;
                         goto retry;

@@ -178,6 +178,12 @@
 #define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9F)
 #define ISCTRL(c)       (ISCTRLC0(c) || ISCTRLC1(c))
 
+#define ESCERR            1000
+#define ESCNOEND          1001
+#define ESCNFNOEND        1002
+#define ESCCSINOEND       1003
+#define ESCOSCNOEND       1004
+
 struct CtrlInfo {
     char *name, *desc;
 };
@@ -194,6 +200,7 @@ char* get_esc_str(struct Esc*, int);
 int get_par_num(struct Esc*);
 int get_int_par(struct Esc*, int, int*, int);
 int get_str_par(struct Esc*, int, char**);
+int osc_find_end(unsigned char*, int, int*);
 
 static inline int
 get_fp_esc_info(int type, struct CtrlInfo **info) {
