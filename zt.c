@@ -9,12 +9,13 @@
 #include <termios.h>
 #include <pwd.h>
 #include <errno.h>
+#include <locale.h>
 
 #if defined(__linux)
 #include <pty.h>
 #elif defined(__APPLE__)
 #include <util.h>
-#elif defined(__DragonFly__)
+#elif defined(__DragonFly__) || defined(__FreeBSD__)
 #include <libutil.h>
 #endif
 
@@ -57,13 +58,13 @@ io_wait(int *r, int nr, int *w, int nw, int nano) {
     FD_ZERO(&rfd);
     FD_ZERO(&wfd);
 
-    for (i=0; i<nr; i++) {
+    for (i = 0; i < nr; i++) {
         if (r[i] > m)
             m = r[i];
         FD_SET(r[i], &rfd);
     }
 
-    for (i=0; i<nw; i++) {
+    for (i = 0; i < nw; i++) {
         if (w[i] > m)
             m = w[i];
         FD_SET(w[i], &wfd);
@@ -78,11 +79,11 @@ io_wait(int *r, int nr, int *w, int nw, int nano) {
     if (ret == 0) // timeout
         return 0;
 
-    for (i=0; i<nr; i++)
+    for (i = 0; i < nr; i++)
         if (FD_ISSET(r[i], prfd))
             return -(i+1);
 
-    for (i=0; i<nw; i++)
+    for (i = 0; i < nw; i++)
         if (FD_ISSET(w[i], pwfd))
             return i+1;
 
@@ -154,7 +155,7 @@ twrite(char *s, int n) {
 }
 
 void
-sigchld(int a __attribute__((unused))) {
+sigchld(int a UNUSED) {
     int stat;
     pid_t p;
 
@@ -236,12 +237,13 @@ main(void) {
 
     zt.row = MAX(ROW, 8);
     zt.col = MAX(COL, 8);
+    setlocale(LC_CTYPE, "");
+    MODE_RESET();
 
     tinit();
     xinit();
     linit();
     tresize();
-    MODE_RESET();
 
     last = get_time();
     fd[0] = zt.tty;
@@ -255,7 +257,7 @@ main(void) {
             ASSERT(timeout > 0, "can't be");
 
         if (ret == -1)
-             ASSERT(tread(-1) == 0, "can'5, be");
+             ASSERT(tread(-1) == 0, "can't, be");
 
         if (ret == -2 && xevent())
             break;

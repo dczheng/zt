@@ -1,9 +1,11 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#include "zt.h"
+
 struct {
     unsigned char byte, mask;
-    uint32_t min, max;
+    MyRune min, max;
 } utf8[] = {
      {0x80, 0xC0,       0,        0},
      {0x00, 0x80,       0,     0x7F},
@@ -13,7 +15,7 @@ struct {
 };
 
 int
-utf8_byte_decode(unsigned char c, uint32_t *v) {
+utf8_byte_decode(unsigned char c, MyRune *v) {
     for (int i = 0; i < 5; i++)
         if ((c & utf8[i].mask) == utf8[i].byte) {
             *v = c & ~utf8[i].mask;
@@ -23,7 +25,7 @@ utf8_byte_decode(unsigned char c, uint32_t *v) {
 }
 
 int
-utf8_validate(uint32_t *u, size_t i) {
+utf8_validate(MyRune *u, size_t i) {
     if ((*u < utf8[i].min || *u > utf8[i].max) ||
         (*u >= 0xD800 && *u <= 0xDFFF))
         return 1;
@@ -31,9 +33,9 @@ utf8_validate(uint32_t *u, size_t i) {
 }
 
 int
-utf8_decode(unsigned char *c, int len, uint32_t *u, int *ulen) {
+utf8_decode(unsigned char *c, int len, MyRune *u, int *ulen) {
     int i, j;
-    uint32_t uu;
+    MyRune uu;
 
     if (!len)
         return 1;

@@ -2,7 +2,7 @@ SRC      = $(wildcard *.c)
 INC      = $(wildcard *.h)
 CC       = gcc #-E
 
-DEPS     = x11 freetype2 xft
+DEPS     = x11 freetype2 xft fontconfig
 
 CFLAGS   = `pkg-config --cflags $(DEPS)` \
            -Wall -Wextra \

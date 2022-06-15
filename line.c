@@ -1,4 +1,8 @@
 #include <stdlib.h>
+#if defined(__linux)
+#define  __USE_XOPEN
+#endif
+#include <wchar.h>
 
 #include "zt.h"
 
@@ -44,10 +48,8 @@ lerase(int y, int a, int b) {
     if (a >= zt.col)
         return;
     LIMIT(b, 0, zt.col-1);
-    for (; a<=b; a++) {
-        zt.line[y][a].c = ' ';
-        zt.line[y][a].attr = zt.attr;
-    }
+    for (; a <= b && a < zt.col; a++)
+        zt.line[y][a] = zt.c;
     ldirty(y, y);
 }
 
@@ -135,18 +137,30 @@ ltab(int n) {
 }
 
 void
-lwrite(uint32_t c) {
+lwrite0(MyRune c, char w) {
     if (zt.x >= zt.col) {
         lnew();
         zt.x = 0;
     }
-    if (zt.line[zt.y][zt.x].c != c ||
-        !(ATTR_EQUAL(zt.line[zt.y][zt.x].attr, zt.attr))) {
-            zt.line[zt.y][zt.x].c = c;
-            zt.line[zt.y][zt.x].attr = zt.attr;
-            ldirty(zt.y, zt.y);
-    }
+    zt.line[zt.y][zt.x] = zt.c;
+    zt.line[zt.y][zt.x].c = c;
+    zt.line[zt.y][zt.x].width = w;
+    ldirty(zt.y, zt.y);
     zt.x++;
+}
+
+void
+lwrite(MyRune c) {
+    int w;
+    
+    if ((w = wcwidth(c)) <= 0) {
+        //printf("can't find character width for %u\n", c);
+        lwrite0(c, 1);
+        return;
+    }
+    lwrite0(c, w);
+    for (w--; w > 0; w--)
+        lwrite0(' ', 1);
 }
 
 void
@@ -211,21 +225,20 @@ lalloc(void) {
 
     zt.line = (struct MyChar **)line_buffer;
     p = line_buffer + sizeof(struct MyChar*) * zt.row;
-    for (i=0; i<zt.row; i++) {
+    for (i = 0; i < zt.row; i++) {
         zt.line[i] = (struct MyChar*)p;
         p += sizeof(struct MyChar) * zt.col;
     }
     lclear(0, 0, zt.row-1, zt.col-1);
-
 }
 
 void
 linit(void) {
+    ATTR_RESET();
     lalloc();
     zt.top = 0;
     zt.bot = zt.row-1;
     zt.x = zt.y = 0;
-    ATTR_RESET(zt.attr);
 }
 
 void 

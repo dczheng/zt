@@ -14,7 +14,7 @@ void lerase(int, int, int);
 void lscroll_up(int, int);
 void lscroll_down(int, int);
 void lnew(void);
-void lwrite(uint32_t);
+void lwrite(MyRune);
 void linsert(int);
 void ldelete(int);
 void lmoveto(int, int);
@@ -25,7 +25,7 @@ void twrite(char*, int);
 void linsert_blank(int);
 void ldelete_char(int);
 int utf8_decode(unsigned char*, int,
-    uint32_t*, int*);
+    MyRune*, int*);
 
 #define ERR_OTHER  -1
 #define ERR_RETRY   1
@@ -37,6 +37,7 @@ int utf8_decode(unsigned char*, int,
 
 //#define CTRL_DEBUG
 //#define TERM_DEBUG
+//#define NOUTF_DEBUG
 
 void tdump(void);
 
@@ -52,38 +53,39 @@ sgr_handle(void) {
     SGR_PAR(0, n, 0);
 
     if (n >= 30 && n <= 37) {
-        SET_COLOR8(zt.attr.fg, n-30);
-        ATTR_UNSET(zt.attr, ATTR_DEFAULT_FG);
+        ATTR_FG8(n-30);
         return;
     }
 
     if (n >= 40 && n <= 47) {
-        SET_COLOR8(zt.attr.bg, n-40);
-        ATTR_UNSET(zt.attr, ATTR_DEFAULT_BG);
+        ATTR_BG8(n-40);
         return;
     }
 
     if (n >= 90 && n <= 97) {
-        SET_COLOR8(zt.attr.fg, n-90+8);
-        ATTR_UNSET(zt.attr, ATTR_DEFAULT_FG);
+        ATTR_FG8(n-90+8);
         return;
     }
 
     if (n >= 100 && n <= 107) {
-        SET_COLOR8(zt.attr.bg, n-100+8);
-        ATTR_UNSET(zt.attr, ATTR_DEFAULT_BG);
+        ATTR_BG8(n-100+8);
         return;
     }
 
     switch (n) {
 
-        CASE(0,  ATTR_RESET(zt.attr))
-        CASE(4,  ATTR_SET(zt.attr,    ATTR_UNDERLINE))
-        CASE(7,  ATTR_SET(zt.attr,    ATTR_COLOR_REVERSE))
-        CASE(24, ATTR_UNSET(zt.attr,  ATTR_UNDERLINE))
-        CASE(27, ATTR_UNSET(zt.attr,  ATTR_COLOR_REVERSE))
-        CASE(39, ATTR_SET(zt.attr,    ATTR_DEFAULT_FG))
-        CASE(49, ATTR_SET(zt.attr,    ATTR_DEFAULT_BG))
+        CASE(0,  ATTR_RESET())
+        CASE(1,  ATTR_SET(ATTR_BOLD))
+        CASE(2,  ATTR_SET(ATTR_FAINT))
+        CASE(3,  ATTR_SET(ATTR_ITALIC))
+        CASE(4,  ATTR_SET(ATTR_UNDERLINE))
+        CASE(7,  ATTR_SET(ATTR_COLOR_REVERSE))
+        CASE(22, ATTR_UNSET(ATTR_BOLD|ATTR_FAINT))
+        CASE(23, ATTR_UNSET(ATTR_ITALIC))
+        CASE(24, ATTR_UNSET(ATTR_UNDERLINE))
+        CASE(27, ATTR_UNSET(ATTR_COLOR_REVERSE))
+        CASE(39, ATTR_SET(ATTR_DEFAULT_FG))
+        CASE(49, ATTR_SET(ATTR_DEFAULT_BG))
             
         case 38:
         case 48:
@@ -100,9 +102,9 @@ sgr_handle(void) {
                     return;
                 }
                 if (n == 38) 
-                    SET_COLOR8(zt.attr.fg, v);
+                    ATTR_FG8(v);
                 else
-                    SET_COLOR8(zt.attr.bg, v);
+                    ATTR_BG8(v);
             } else {
                 SGR_PAR(2, r, 0);
                 if (r < 0 || r > 255) {
@@ -123,19 +125,12 @@ sgr_handle(void) {
                 }
                 
                 if (n == 38)
-                    SET_COLOR24(zt.attr.fg, r, g, b);
+                    ATTR_FG24(r, g, b);
                 else
-                    SET_COLOR24(zt.attr.bg, r, b, b);
+                    ATTR_BG24(r, g, b);
             }
-
-            if (n == 38)
-                ATTR_UNSET(zt.attr, ATTR_DEFAULT_FG);
-            else
-                ATTR_UNSET(zt.attr, ATTR_DEFAULT_BG);
             break;
 
-        case 1:    // Bold
-        case 2:    // Faint
         case 58:   // Set underline color
         case 59:   // Default underline color
             break; // TODO
@@ -156,7 +151,7 @@ mode_handle() {
         return;
     }
 
-    for (i=0; i<get_par_num(&esc); i++) {
+    for (i = 0; i < get_par_num(&esc); i++) {
         if (get_str_par(&esc, i, &p) || p == NULL)
             continue;
         if (i==0)
@@ -428,6 +423,7 @@ void // debug
 tdump(void) {
     static int frame = 0;
     int i, j, n;
+    MyRune c;
     char buf[10];
     char *space = "         ";
     
@@ -435,62 +431,63 @@ tdump(void) {
         frame, zt.row, zt.col, zt.top, zt.bot, zt.y, zt.x);
     frame++;
 
-#define _tdump(fmt, ...) { \
-    printf("%s", space); \
-    for (i=0; i<zt.col; i++) \
-        printf("*"); \
-    printf("\n"); \
-    printf("%s", space); \
-    for (i=0; i<zt.col; i++) \
-        if (i % 10 == 0) { \
-            n = snprintf(buf, sizeof(buf), "%d", i);\
-            i += n-1; \
-            printf("%s", buf); \
-        } else \
-            printf(" "); \
-    printf("\n"); \
-    for (i=0; i<zt.row; i++) { \
-        printf("[%d][%3d] ", zt.dirty[i], i); \
-        for (j=0; j<zt.col; j++) \
-            printf(fmt, ##__VA_ARGS__); \
-        printf("\n"); \
-    } \
-    printf("%s", space); \
-    for (i=0; i<zt.col; i++) \
-        printf("*"); \
-    printf("\n"); \
-    fflush(stdout);\
-}
-
-    _tdump("%c", zt.line[i][j].c);
-
+    printf("%s", space);
+    for (i = 0; i < zt.col; i++)
+        printf("*");
+    printf("\n");
+    printf("%s", space);
+    for (i = 0; i < zt.col; i++)
+        if (i % 10 == 0) {
+            n = snprintf(buf, sizeof(buf), "%d", i);
+            i += n-1;
+            printf("%s", buf);
+        } else
+            printf(" ");
+    printf("\n");
+    for (i = 0; i < zt.row; i++) {
+        printf("[%d][%3d] ", zt.dirty[i], i);
+        for (j = 0; j < zt.col; j++) {
+            c = zt.line[i][j].c;
+            if (ISPRINTABLE(c))
+                printf("%c", c);
+            else
+                printf("%X ", c);
+        }
+        printf("\n");
+    }
+    printf("%s", space);
+    for (i = 0; i < zt.col; i++)
+        printf("*");
+    printf("\n");
+    fflush(stdout);
 }
 
 void // debug
 ldump(int y, int x1, int x2) {
     int i;
-    unsigned char c;
-    struct MyAttr a;
+    struct MyChar c;
     if (x1 < 0)
         x1 = 0;
     if (x2 < 0)
         x2 = zt.col-1;
 
     printf("[%d] [%d-%d] ", zt.dirty[y], x1, x2);
-    for (i=x1; i<=x2; i++) {
+    for (i = x1; i <= x2; i++) {
         printf("[");
-        c = zt.line[y][x1].c;
-        a = zt.line[y][x1].attr;
-        printf("%c,", c);
-        if (ATTR_HAS(a, ATTR_DEFAULT_FG))
+        c = zt.line[y][i];
+        if (ISPRINTABLE(c.c))
+            printf("%c,", c.c);
+        else
+            printf("%X,", c.c);
+        if (ATTR_HAS(c, ATTR_DEFAULT_FG))
             printf("-");
         else
-            printf("%d", a.fg.c8);
+            printf("%d", c.fg.c8);
         printf(",");
-        if (ATTR_HAS(a, ATTR_DEFAULT_BG))
+        if (ATTR_HAS(c, ATTR_DEFAULT_BG))
             printf("-");
         else
-            printf("%d", a.bg.c8);
+            printf("%d", c.bg.c8);
         printf("]");
     }
     printf("\n");
@@ -509,13 +506,14 @@ cdump(unsigned char c, int n) {
         printf("[%3d] %-30s", 1, info->name);
     }
     printf("%5d %dx%d\n", n, zt.y, zt.x);
-    //ldump(10, -1, 50);
+    //ldump(11, -1, -1);
+    //ldump(zt.row-2, -1, -1);
     fflush(stdout);
 }
 
 int
 parse(unsigned char *buf, int len, int force) {
-    uint32_t u;
+    MyRune u;
     int nread, n, ulen, char_bytes, ctrl_bytes,
     total_char_bytes, total_ctrl_bytes;
     static int retries = 0, osc_no_end = 0;
@@ -550,16 +548,16 @@ parse(unsigned char *buf, int len, int force) {
     }
     //dump(buf, len);
 
-    for (; nread<len; nread+=n) {
+    for (; nread < len; nread += n) {
 
         if (ISCTRL(buf[nread])) {
 #ifdef CTRL_DEBUG
             cdump(last_c, char_bytes);
             last_c = buf[nread];
 #endif
-    
+
 #ifdef TERM_DEBUG
-     //       tdump();
+            //tdump();
 #endif
 
             total_char_bytes += char_bytes;
@@ -588,7 +586,7 @@ parse(unsigned char *buf, int len, int force) {
             continue;
         }
 
-#ifndef TERM_DEBUG
+#ifndef NOUTF_DEBUG
         if (utf8_decode(buf+nread, len-nread, &u, &ulen)) {
             if (!force) {
                 if (retries < RETRY_MAX) {
@@ -602,8 +600,8 @@ parse(unsigned char *buf, int len, int force) {
         }
         retries = 0;
 #else
-        u = buf[nread];
-        ulen = 1;
+    u = buf[nread];
+    ulen = 1;
 #endif
         lwrite(u);
         n = ulen;

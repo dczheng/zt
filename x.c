@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
@@ -23,13 +24,16 @@ Colormap colormap;
 Visual *visual;
 Atom wm_protocols, wm_delete;
 XftColor background, foreground, color8[256];
-XftFont *font;
 XftDraw *drawable;
 Pixmap pixmap;
 XftGlyphFontSpec *specs;
-FT_UInt space_idx;
-int screen, depth;
-int fw, fh, fb, nspec;
+int screen, depth, nspec;
+
+struct MyFont {
+    XftFont *font;
+    int weight, slant;
+} *fonts;
+int font_width, font_height, font_base, nfont;
 
 static inline void
 xflush(void) {
@@ -61,18 +65,8 @@ xcolor_free(XftColor *c) {
     XftColorFree(display, visual, colormap, c);
 }
 
-static inline FT_UInt
-xfont_idx(uint32_t c) {
-    FT_UInt idx = XftCharIndex(display, font, c);
-    if (!idx) {
-        //printf("can't draw 0x%X\n", c);
-        return space_idx;
-    }
-    return idx;
-}
-
 void
-xdraw_specs(struct MyAttr a) {
+xdraw_specs(struct MyChar c) {
     XftColor bg, fg;
     int x, y, w, rf, rb;
 
@@ -81,33 +75,33 @@ xdraw_specs(struct MyAttr a) {
 
     fg = foreground;
     bg = background;
-    y = specs[0].y - fb; 
+    y = specs[0].y - font_base;
     x = specs[0].x;
-    w = specs[nspec-1].x + fw - x;
+    w = specs[nspec-1].x + c.width * font_width - x;
     rf = rb = 1;
 
-    if ((!ATTR_HAS(a, ATTR_DEFAULT_FG))) {
-        switch (a.fg.type) {
-            CASE(COLOR8, fg = color8[a.fg.c8])
+    if ((!ATTR_HAS(c, ATTR_DEFAULT_FG))) {
+        switch (c.fg.type) {
+            CASE(COLOR8, fg = color8[c.fg.c8])
             CASE(COLOR24,
-                rf = xcolor_alloc(&fg, a.fg.rgb[0], a.fg.rgb[1], a.fg.rgb[2]))
+                rf = xcolor_alloc(&fg, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2]))
         }
     }
 
-    if ((!ATTR_HAS(a, ATTR_DEFAULT_BG))) {
-        switch (a.bg.type) {
-            CASE(COLOR8, bg = color8[a.bg.c8])
+    if ((!ATTR_HAS(c, ATTR_DEFAULT_BG))) {
+        switch (c.bg.type) {
+            CASE(COLOR8, bg = color8[c.bg.c8])
             CASE(COLOR24,
-                rb = xcolor_alloc(&bg, a.bg.rgb[0], a.bg.rgb[1], a.bg.rgb[2]))
+                rb = xcolor_alloc(&bg, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2]))
         }
     }
 
-    if (ATTR_HAS(a, ATTR_COLOR_REVERSE))
+    if (ATTR_HAS(c, ATTR_COLOR_REVERSE))
         SWAP(fg, bg);
 
-    XftDrawRect(drawable, &bg, x, y, w, fh);
-    if (ATTR_HAS(a, ATTR_UNDERLINE)) 
-        XftDrawRect(drawable, &fg, x, y+fb+1, w, 1);
+    XftDrawRect(drawable, &bg, x, y, w, font_height);
+    if (ATTR_HAS(c, ATTR_UNDERLINE)) 
+        XftDrawRect(drawable, &fg, x, y+font_base+1, w, 1);
 
     XftDrawGlyphFontSpec(drawable, &fg, specs, nspec);
     nspec = 0;
@@ -118,37 +112,67 @@ xdraw_specs(struct MyAttr a) {
 }
 
 void
+xfont_lookup(struct MyChar c, XftFont **f, FT_UInt *idx) {
+    int i, weight, slant;
+
+    weight = FC_WEIGHT_REGULAR;
+    slant = FC_SLANT_ROMAN;
+
+    if (ATTR_HAS(c, ATTR_BOLD))
+        weight = FC_WEIGHT_BOLD;
+
+    // TODO
+    if (ATTR_HAS(c, ATTR_FAINT))
+        weight = FC_WEIGHT_REGULAR;
+
+    if (ATTR_HAS(c, ATTR_ITALIC))
+        slant = FC_SLANT_ITALIC;
+
+    for (i = 0; i < nfont; i++) {
+        if (fonts[i].weight != weight ||
+            fonts[i].slant != slant)
+            continue;
+        *f = fonts[i].font;
+        if ((*idx = XftCharIndex(display, *f, c.c)))
+            return;
+    }
+
+    printf("can't find font for %X\n", c.c);
+    *f = fonts[0].font;
+    *idx = XftCharIndex(display, *f, ' ');
+}
+
+void
 xdraw_line(struct MyChar *l, int y) {
     XRectangle r;
     struct MyChar c;
-    struct MyAttr a;
     int i, x;
 
     r.x = 0;
     r.y = 0;
     r.width = zt.width;
-    r.height = fh;
+    r.height = font_height;
 
     XftDrawSetClipRectangles(drawable, 0, y, &r, 1);
-    //XftDrawRect(drawable, &background, 0, y, zt.width, fh);
-    for (i=0, x=0, nspec=0; i<zt.col; i++, x+=fw) {
-        c = l[i];
+    //XftDrawRect(drawable, &background, 0, y, zt.width, font_height);
+    for (i = 0, x = 0, nspec = 0; i < zt.col;) {
         if (nspec == 0)
-            a = c.attr;
-        if (ATTR_EQUAL(a, c.attr)) {
-            specs[nspec].font = font;
-            specs[nspec].glyph = xfont_idx(c.c);
+            c = l[i];
+
+        if (ATTR_EQUAL(c, l[i])) {
+            xfont_lookup(l[i], &specs[nspec].font,
+                &specs[nspec].glyph);
             specs[nspec].x = x;
-            specs[nspec].y = y + fb;
+            specs[nspec].y = y + font_base;
             nspec++;
+            i += c.width;
+            x += c.width * font_width;
             continue;
         }
-        xdraw_specs(a);
-        i--;
-        x -= fw;
+        xdraw_specs(c);
     }
     if (nspec)
-        xdraw_specs(a);
+        xdraw_specs(c);
     XftDrawSetClip(drawable, 0);
 }
 
@@ -158,14 +182,15 @@ xdraw_cursor(void) {
 
     if (last_y != -1) {
         if (last_y < zt.row)
-            xdraw_line(zt.line[last_y], last_y*fh);
+            xdraw_line(zt.line[last_y], last_y*font_height);
         last_y = zt.y;
     } else {
         last_y = zt.y;
     }
 
     if (MODE_HAS(MODE_TEXT_CURSOR))
-        XftDrawRect(drawable, &foreground, zt.x*fw, zt.y*fh+fh-3, fw, 3);
+        XftDrawRect(drawable, &foreground,
+            zt.x*font_width, (zt.y+1)*font_height-3, font_width, 3);
 }
 
 void
@@ -173,7 +198,7 @@ xdraw(void) {
     int y, i, nline=0;
 
     //XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
-    for (i=0, y=0; i<zt.row; i++, y+=fh) {
+    for (i = 0, y = 0; i < zt.row; i++, y += font_height) {
         if (!zt.dirty[i])
             continue;
         nline++;
@@ -235,8 +260,8 @@ _Mouse(XEvent *ev) {
     char t;
     static char buf[64];
 
-    r = ev->xbutton.y / fh + 1;
-    c = ev->xbutton.x / fw + 1;
+    r = ev->xbutton.y / font_height + 1;
+    c = ev->xbutton.x / font_width + 1;
     b = ev->xbutton.button-Button1;
     if (b >= 3)
         b += 64-3;
@@ -324,7 +349,7 @@ _Focus(XEvent *ev) {
 }
 
 void
-_Expose(XEvent *ev __attribute__((unused))) {
+_Expose(XEvent *ev UNUSED) {
     xflush();
 }
 
@@ -351,8 +376,8 @@ _ConfigureNotify(XEvent *ev) {
     if (w == zt.width && h == zt.height)
         return;
 
-    r = h / fh;
-    c = w / fw;
+    r = h / font_height;
+    c = w / font_width;
     r = MAX(r, 8);
     c = MAX(c, 8);
         
@@ -383,7 +408,7 @@ int
 xevent(void) {
     XEvent e;
     
-    while (XPending(display)){
+    for (;XPending(display);){
         XNextEvent(display, &e);
         switch(e.type) {
             H(Expose)
@@ -418,41 +443,83 @@ xerror(Display *display, XErrorEvent *e) {
 
 void 
 xclean(void) {
+    int i;
+
     XFreePixmap(display, pixmap);
     XFreeCursor(display, cursor);
     XftDrawDestroy(drawable);
-    XftFontClose(display, font);
+
+    printf("free fonts\n");
+    for (i = 0; i < nfont; i++)
+        XftFontClose(display, fonts[i].font);
+    free(fonts);
+
+    printf("free colors\n");
     xcolor_free(&background);
     xcolor_free(&foreground);
-    for (int i=0; i<256; i++) 
+    for (i = 0; i < 256; i++) 
         xcolor_free(&color8[i]);
+
     printf("free specs\n");
     free(specs);
+
     close(zt.xfd);
 }
 
 void
-xfont_init(void){
-    font = XftFontOpenName(display, screen, FONT);
-    ASSERT(font != NULL, "can't open font `%s`", FONT);
+xfont_load(char *str, struct MyFont *f) {
+    FcPattern *p, *m;
+    FcResult r;
 
-#define F(_s) printf("font "#_s": %d\n", font->_s)
-    F(height);
-    F(ascent);
-    F(descent);
-    F(max_advance_width);
-#undef F
-    fw = font->max_advance_width;
-    fh = font->height;
-    fb = font->height - font->descent;
+    ASSERT(p = FcNameParse((FcChar8*)str), "");
+    FcConfigSubstitute(NULL, p, FcMatchPattern);
+    FcDefaultSubstitute(p);
+    XftDefaultSubstitute(display, screen, p);
 
-    zt.width = zt.col * fw;
-    zt.height = zt.row * fh;
+    FcPatternDel(p, FC_WEIGHT);
+    FcPatternAddInteger(p, FC_WEIGHT, f->weight);
 
+    FcPatternDel(p, FC_SLANT);
+    FcPatternAddInteger(p, FC_SLANT, f->slant);
+
+    m = FcFontMatch(NULL, p, &r);
+    ASSERT(f->font = XftFontOpenPattern(display, m), "");
+
+    FcPatternDestroy(m);
+    FcPatternDestroy(p);
+}
+
+void
+xfont_init(void) {
+    int i;
+    struct MyFont *f;
+
+    ASSERT(FcInit(), "can't init fontconfig");
+    nfont = LEN(font_list) * 4;
+    fonts = malloc(nfont * sizeof(fonts[0]));
+    ASSERT(fonts != NULL, "");
+    printf("nfont: %d\n", nfont);
+    for (i = 0; i < nfont; i++) {
+        f = &fonts[i];
+        f->weight = ((i%4) / 2 == 0 ? FC_WEIGHT_REGULAR : FC_WEIGHT_BOLD);
+        f->slant = ((i%4) % 2 == 0 ? FC_SLANT_ROMAN : FC_SLANT_ITALIC);
+            xfont_load(font_list[i/4], f);
+
+        if (i % 4 != 0)
+            continue;
+        printf("%s: (%d %d %d)\n", font_list[i/4],
+            f->font->max_advance_width,
+            f->font->height,
+            f->font->height - f->font->descent);
+    }
+    font_width = fonts[0].font->max_advance_width;
+    font_height = fonts[0].font->height;
+    font_base = fonts[0].font->height-fonts[0].font->descent;
+
+    zt.width = zt.col * font_width;
+    zt.height = zt.row * font_height;
     printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-    printf("use font size: %dx%d\n", fw, fh);
-    space_idx = XftCharIndex(display, font, ' ');
-
+    printf("use font size: %dx%d\n", font_width, font_height);
 }
 
 void
@@ -465,7 +532,7 @@ xcolor_init(void) {
     ASSERT(specs != NULL, "");
     printf("allocate %s for specs\n", to_bytes(n));
 
-    for (n=0; n<256; n++) {
+    for (n = 0; n < 256; n++) {
         mc = c8_to_rgb(n);
         ASSERT(!xcolor_alloc(&color8[n],
             mc.rgb[0], mc.rgb[1], mc.rgb[2]), "n: %d", n);

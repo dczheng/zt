@@ -10,7 +10,7 @@
 #include "ctrl.h"
 
 char *
-to_bytes(uint32_t b) {
+to_bytes(unsigned long b) {
 	static char buf[64];
 	char *p = "KMGT";
 	int i;
@@ -19,7 +19,7 @@ to_bytes(uint32_t b) {
 		if (b<(1ULL<<(10*(i+1))))
 			break;
 	if (i==0)
-		sprintf(buf, "%u B", b);
+		sprintf(buf, "%lu B", b);
 	else
 		sprintf(buf, "%.2f %cB", (double)b/(1ULL<<(10*i)), p[i-1]);
 	return buf;
@@ -39,7 +39,7 @@ dump(unsigned char *buf, int n) {
     int i;
 
     for (i = 0; i < n; i++) {
-        if (buf[i] >= 0x20 && buf[i] <= 0x7E) {
+        if (ISPRINTABLE(buf[i])) {
             printf("%c", buf[i]);
             continue;
         }

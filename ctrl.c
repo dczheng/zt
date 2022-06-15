@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include "ctrl.h"
-#include "tool.h"
 
 int
 str_to_dec(char *p, int *r) {
@@ -29,7 +28,7 @@ esc_find(unsigned char *seq, int len,
         unsigned char a, unsigned char b, int mode) {
     int i;
 
-    for (i=0; i<len; i++) {
+    for (i = 0; i < len; i++) {
         if ((!mode) && (seq[i] >= a && seq[i] <= b))
             break;
         if ((mode) && (seq[i] < a && seq[i] > b))
@@ -44,7 +43,7 @@ int
 get_par_num(struct Esc *esc) {
     int i, n;
 
-    for (i=1, n=0; i<esc->len-1; i++) {
+    for (i = 1, n = 0; i < esc->len-1; i++) {
         if (esc->seq[i] == ';')
             n++;
     }
@@ -56,7 +55,7 @@ get_par(struct Esc *esc, int idx, int *a, int *b) {
     int i, n;
 
     *a = *b = 1;
-    for (i=1, n=0; i<esc->len-1; i++) {
+    for (i = 1, n = 0; i < esc->len-1; i++) {
         if (esc->seq[i] != ';')
             continue;
         if (n == idx) {
@@ -130,7 +129,7 @@ csi_dump(struct Esc *esc) {
      if (esc->csi != SGR)
         return;
      dump(esc->seq, esc->len);
-     for (i=0; i<get_par_num(esc); i++) {
+     for (i = 0; i < get_par_num(esc); i++) {
          if ((rr = get_int_par(esc, i, &r, 1)))
              printf("%s\n", strerror(rr));
          else
@@ -280,7 +279,7 @@ escfe:
                 if (esc->seq[1] != '?')
                     MYPRINT("unknown ");
                 else
-                    for (i=0; i<get_par_num(esc); i++) {
+                    for (i = 0; i < get_par_num(esc); i++) {
                         if (get_str_par(esc, i, &p) || p == NULL) {
                             MYPRINT("unknown ");
                             continue;
@@ -302,7 +301,7 @@ escfe:
 
             MYPRINT("[");
             n = get_par_num(esc);
-            for (i=0; i<n; i++) {
+            for (i = 0; i < n; i++) {
                 if (get_str_par(esc, i, &p) || p == NULL)
                     MYPRINT("%s", "-");
                 else

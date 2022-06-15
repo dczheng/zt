@@ -1,7 +1,7 @@
 #ifndef __CTRL_H__
 #define __CTRL_H__
 
-#include "tool.h"
+#include "zt.h"
 
 // C0
 #define NUL  0x00
@@ -177,6 +177,7 @@
 #define ISCTRLC0(c)     ((c) <= 0x1F || (c) == 0x7F)
 #define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9F)
 #define ISCTRL(c)       (ISCTRLC0(c) || ISCTRLC1(c))
+#define ISPRINTABLE(c)  ((c) >= 0x20 && (c) <= 0x7E)
 
 #define ESCERR            1000
 #define ESCNOEND          1001
@@ -211,7 +212,7 @@ get_fp_esc_info(int type, struct CtrlInfo **info) {
         {DECPAM   ,  {"DECPAM"     , "Application Keypad"     }},
         {DECPNM   ,  {"DECPNM"     , "Normal Keypad"          }},
     };
-    for (int i=0; i<LEN(infos); i++)
+    for (int i = 0; i < LEN(infos); i++)
         if (infos[i].type == type) {
             *info = &infos[i].info;
             return 0;
@@ -230,7 +231,7 @@ get_nf_esc_info(int type, struct CtrlInfo **info) {
         {G2D4   ,  {"G2D4"     , "Set Charset G2"     }},
         {G3D4   ,  {"G3D4"     , "Set Charset G3"     }},
     };
-    for (int i=0; i<LEN(infos); i++)
+    for (int i = 0; i < LEN(infos); i++)
         if (infos[i].type == type) {
             *info = &infos[i].info;
             return 0;
@@ -291,7 +292,7 @@ get_mode_info(int type, struct CtrlInfo **info) {
         {M_MMA    ,  {"M_MMA"      , "Enalbe All Mouse Motions"             }},
         {M_ME     ,  {"M_ME"       , "Extened Reporting"                    }},
     };
-    for (int i=0; i<LEN(infos); i++)
+    for (int i = 0; i < LEN(infos); i++)
         if (infos[i].type == type) {
             *info = &infos[i].info;
             return 0;
@@ -372,7 +373,7 @@ get_ctrl_info(unsigned char type, struct CtrlInfo **info) {
         {APC , {"APC" , "Application Program Command"                }},
     };
 
-    for (int i=0; i<LEN(infos); i++)
+    for (int i = 0; i < LEN(infos); i++)
         if (type == infos[i].type) {
             *info = &infos[i].info;
             return 0;
@@ -423,7 +424,7 @@ get_csi_info(unsigned char type, struct CtrlInfo **info) {
         {HPA    , {"HPA"    , "Horizontal Position Absolute"    }},
         {HPR    , {"HPR"    , "Horizontal Position Relative"    }},
     };
-    for (int i=0; i<LEN(infos); i++)
+    for (int i = 0; i < LEN(infos); i++)
         if (infos[i].type == type) {
             *info = &infos[i].info;
             return 0;
