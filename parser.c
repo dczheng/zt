@@ -280,8 +280,9 @@ csi_handle(void) {
         case ED:
             switch (n) {
                 CASE(0, lclear(zt.y, zt.x, zt.row-1, zt.col-1))
-                CASE(1, lclear(   0, 0   , zt.y , zt.x ))
-                CASE(2, lclear(   0, 0   , zt.row-1, zt.col-1); lmoveto(0,0))
+                CASE(1, lclear(0, 0, zt.y , zt.x ))
+                CASE(2, lclear(0, 0, zt.row-1, zt.col-1); lmoveto(0,0))
+                CASE(3, lclear(0, 0, zt.row-1, zt.col-1); lmoveto(0,0))
                 default: ctrl_error = ERR_UNSUPP;
             }
             break;
