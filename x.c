@@ -244,7 +244,6 @@ xpointer(int *x, int *y) {
 
 void
 xresize() {
-    XResizeWindow(display, window, zt.width, zt.height);
     XFreePixmap(display, pixmap);
     pixmap = XCreatePixmap(display, window, zt.width, zt.height, depth);
     XftDrawChange(drawable, pixmap);
@@ -393,8 +392,7 @@ _ConfigureNotify(XEvent *ev) {
 
     xresize();
     tresize();
-    lresize();
-}
+    lresize(); }
 
 #define H(type) \
     case type: \
