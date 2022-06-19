@@ -310,8 +310,6 @@ escfe:
                     MYPRINT(",");
             }
             MYPRINT("] ");
-            get_int_par(esc, 0, &i, 0);
-            get_sgr_info(i, &info);
             break;
 
         case OSC:

@@ -43,107 +43,109 @@ void tdump(void);
 
 void 
 sgr_handle(void) {
-    int n, m, v, r, g, b;
+    int n, m, v, r, g, b, i, npar;
 
 #define SGR_PAR(idx, v, v0) \
         if (get_int_par(&esc, idx, &v, v0)) { \
             ctrl_error = ERR_PAR; \
             return;\
         }
-    SGR_PAR(0, n, 0);
+    npar = get_par_num(&esc);
+    for (i = 0; i < npar;) {
+        SGR_PAR(i++, n, 0);
 
-    if (n >= 30 && n <= 37) {
-        ATTR_FG8(n-30);
-        return;
-    }
+        if (n >= 30 && n <= 37) {
+            ATTR_FG8(n-30);
+            return;
+        }
 
-    if (n >= 40 && n <= 47) {
-        ATTR_BG8(n-40);
-        return;
-    }
+        if (n >= 40 && n <= 47) {
+            ATTR_BG8(n-40);
+            return;
+        }
 
-    if (n >= 90 && n <= 97) {
-        ATTR_FG8(n-90+8);
-        return;
-    }
+        if (n >= 90 && n <= 97) {
+            ATTR_FG8(n-90+8);
+            return;
+        }
 
-    if (n >= 100 && n <= 107) {
-        ATTR_BG8(n-100+8);
-        return;
-    }
+        if (n >= 100 && n <= 107) {
+            ATTR_BG8(n-100+8);
+            return;
+        }
 
-    switch (n) {
+        switch (n) {
 
-        CASE(0,  ATTR_RESET())
-        CASE(1,  ATTR_SET(ATTR_BOLD))
-        CASE(2,  ATTR_SET(ATTR_FAINT))
-        CASE(3,  ATTR_SET(ATTR_ITALIC))
-        CASE(4,  ATTR_SET(ATTR_UNDERLINE))
-        CASE(7,  ATTR_SET(ATTR_COLOR_REVERSE))
-        CASE(22, ATTR_UNSET(ATTR_BOLD|ATTR_FAINT))
-        CASE(23, ATTR_UNSET(ATTR_ITALIC))
-        CASE(24, ATTR_UNSET(ATTR_UNDERLINE))
-        CASE(27, ATTR_UNSET(ATTR_COLOR_REVERSE))
-        CASE(39, ATTR_SET(ATTR_DEFAULT_FG))
-        CASE(49, ATTR_SET(ATTR_DEFAULT_BG))
-            
-        case 38:
-        case 48:
-            SGR_PAR(1, m, 0);
-            if (m != 5 && m != 2) {
-                ctrl_error = ERR_UNSUPP;
-                return;
-            }
-
-            if (m == 5) {
-                SGR_PAR(2, v, 0);
-                if (v < 0 || v > 255) {
-                    ctrl_error = ERR_PAR;
-                    return;
-                }
-                if (n == 38) 
-                    ATTR_FG8(v);
-                else
-                    ATTR_BG8(v);
-            } else {
-                SGR_PAR(2, r, 0);
-                if (r < 0 || r > 255) {
-                    ctrl_error = ERR_PAR;
-                    return;
-                }
-
-                SGR_PAR(3, g, 0);
-                if (g < 0 || g > 255) {
-                    ctrl_error = ERR_PAR;
-                    return;
-                }
-
-                SGR_PAR(4, b, 0);
-                if (b < 0 || b > 255) {
-                    ctrl_error = ERR_PAR;
-                    return;
-                }
+            CASE(0,  ATTR_RESET())
+            CASE(1,  ATTR_SET(ATTR_BOLD))
+            CASE(2,  ATTR_SET(ATTR_FAINT))
+            CASE(3,  ATTR_SET(ATTR_ITALIC))
+            CASE(4,  ATTR_SET(ATTR_UNDERLINE))
+            CASE(7,  ATTR_SET(ATTR_COLOR_REVERSE))
+            CASE(22, ATTR_UNSET(ATTR_BOLD|ATTR_FAINT))
+            CASE(23, ATTR_UNSET(ATTR_ITALIC))
+            CASE(24, ATTR_UNSET(ATTR_UNDERLINE))
+            CASE(27, ATTR_UNSET(ATTR_COLOR_REVERSE))
+            CASE(39, ATTR_SET(ATTR_DEFAULT_FG))
+            CASE(49, ATTR_SET(ATTR_DEFAULT_BG))
                 
-                if (n == 38)
-                    ATTR_FG24(r, g, b);
-                else
-                    ATTR_BG24(r, g, b);
-            }
-            break;
+            case 38:
+            case 48:
+                SGR_PAR(i++, m, 0);
+                if (m != 5 && m != 2) {
+                    ctrl_error = ERR_UNSUPP;
+                    return;
+                }
 
-        case 58:   // Set underline color
-        case 59:   // Default underline color
-            break; // TODO
-        default:
-            ctrl_error = ERR_UNSUPP;
+                if (m == 5) {
+                    SGR_PAR(i++, v, 0);
+                    if (v < 0 || v > 255) {
+                        ctrl_error = ERR_PAR;
+                        return;
+                    }
+                    if (n == 38) 
+                        ATTR_FG8(v);
+                    else
+                        ATTR_BG8(v);
+                } else {
+                    SGR_PAR(i++, r, 0);
+                    if (r < 0 || r > 255) {
+                        ctrl_error = ERR_PAR;
+                        return;
+                    }
+
+                    SGR_PAR(i++, g, 0);
+                    if (g < 0 || g > 255) {
+                        ctrl_error = ERR_PAR;
+                        return;
+                    }
+
+                    SGR_PAR(i++, b, 0);
+                    if (b < 0 || b > 255) {
+                        ctrl_error = ERR_PAR;
+                        return;
+                    }
+                    
+                    if (n == 38)
+                        ATTR_FG24(r, g, b);
+                    else
+                        ATTR_BG24(r, g, b);
+                }
+                break;
+
+            case 58:   // Set underline color
+            case 59:   // Default underline color
+                break; // TODO
+            default:
+                ctrl_error = ERR_UNSUPP;
+        }
     }
-
 #undef SGR_PAR
 }
 
 void
 mode_handle() {
-    int i, n, ret;
+    int i, n, ret, npar;
     char *p;
 
     if (esc.seq[1] != '?') {
@@ -151,7 +153,8 @@ mode_handle() {
         return;
     }
 
-    for (i = 0; i < get_par_num(&esc); i++) {
+    npar = get_par_num(&esc);
+    for (i = 0; i < npar; i++) {
         if (get_str_par(&esc, i, &p) || p == NULL)
             continue;
         if (i==0)
