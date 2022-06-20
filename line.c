@@ -155,8 +155,7 @@ lwrite(MyRune c) {
     
     if ((w = wcwidth(c)) <= 0) {
         //printf("can't find character width for %u\n", c);
-        lwrite0(c, 1);
-        return;
+        w = 1;
     }
     lwrite0(c, w);
     for (w--; w > 0; w--)
