@@ -30,6 +30,7 @@ struct ZT {
     int row_old, col_old; // for resize
     int tty, xfd;
     struct MyChar **line, c;
+    MyRune lastc;
     unsigned long mode;
 };
 extern struct ZT zt;

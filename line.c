@@ -205,6 +205,14 @@ ltab_reset(void)  {
 }
 
 void
+lrepeat_last(int n) {
+    if (!zt.lastc)
+        return;
+    for (; n > 0; n--)
+        lwrite(zt.lastc);
+}
+
+void
 lalloc(void) {
     char *p;
     int i, n;
@@ -238,6 +246,7 @@ linit(void) {
     zt.top = 0;
     zt.bot = zt.row-1;
     zt.x = zt.y = 0;
+    zt.lastc = 0;
 }
 
 void 

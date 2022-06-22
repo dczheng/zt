@@ -21,6 +21,7 @@ void lmoveto(int, int);
 void lsettb(int, int);
 void ltab(int);
 void ltab_clear(void);
+void lrepeat_last(int);
 void twrite(char*, int);
 void linsert_blank(int);
 void ldelete_char(int);
@@ -215,6 +216,7 @@ csi_handle(void) {
         CASE(CHT,        CSI_PAR(0, n, 1))
         CASE(CBT,        CSI_PAR(0, n, 1))
         CASE(ICH,        CSI_PAR(0, n, 1))
+        CASE(REP,        CSI_PAR(0, n, 1))
 
         CASE(ED,         CSI_PAR(0, n, 0))
         CASE(EL,         CSI_PAR(0, n, 0))
@@ -271,6 +273,7 @@ csi_handle(void) {
         CASE(CBT,       ltab(-n))
         CASE(ICH,       linsert_blank(n))
         CASE(DCH,       ldelete_char(n))
+        CASE(REP,       lrepeat_last(n))
 
         case EL:
             switch (n) {
@@ -386,6 +389,7 @@ ctrl_handle(unsigned char *buf, int len) {
 
     ASSERT(len >= 0, "");
     ctrl_error = 0;
+    zt.lastc = 0;
     esc_reset(&esc);
     switch (c) {
         CASE(ESC, esc_handle(buf+1, len-1))
