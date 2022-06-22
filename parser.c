@@ -300,7 +300,8 @@ csi_handle(void) {
             break;
 
         case DECLL:  // load LEDs
-            break;  // TODO
+        case MC:     // Media Copy
+            break;   // TODO
         default:
             ctrl_error = ERR_UNSUPP;
     }
