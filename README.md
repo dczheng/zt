@@ -12,5 +12,5 @@ A simple terminal for X.
 - Multiple platforms: DragonFlyBSD, FreeBSD, Linux, macOS
 
 ### Configuration
-Edit **config.h** according to you needs.
+Edit **config.h** according to your needs.
 
