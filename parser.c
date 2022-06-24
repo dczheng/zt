@@ -443,7 +443,7 @@ void // debug
 tdump(void) {
     static int frame = 0;
     int i, j, n;
-    MyRune c;
+    struct MyChar c;
     char buf[10];
     char *space = "         ";
     
@@ -467,11 +467,12 @@ tdump(void) {
     for (i = 0; i < zt.row; i++) {
         printf("[%d][%3d] ", zt.dirty[i], i);
         for (j = 0; j < zt.col; j++) {
-            c = zt.line[i][j].c;
-            if (ISPRINTABLE(c))
-                printf("%c", c);
+            c = zt.line[i][j];
+            //printf("%d", c.width);
+            if (ISPRINTABLE(c.c))
+                printf("%c", c.c);
             else
-                printf("%X ", c);
+                printf("%X ", c.c);
         }
         printf("\n");
     }

@@ -11,6 +11,8 @@
 #include "zt.h"
 #include "ctrl.h"
 
+//#define XDEBUG
+
 struct MyColor c8_to_rgb(unsigned char);
 void twrite(char*, int);
 void tresize(void);
@@ -68,7 +70,7 @@ xcolor_free(XftColor *c) {
 void
 xdraw_specs(struct MyChar c) {
     XftColor bg, fg;
-    int x, y, w, rf, rb;
+    int x, y, w, rf, rb, t;
 
     if (!nspec)
         return;
@@ -77,8 +79,17 @@ xdraw_specs(struct MyChar c) {
     bg = background;
     y = specs[0].y - font_base;
     x = specs[0].x;
-    w = specs[nspec-1].x + c.width * font_width - x;
+    w = nspec * c.width * font_width;
     rf = rb = 1;
+
+    t = zt.width - x - w;
+    if (t > 0 && t < font_width)
+        w = zt.width-x;
+
+#ifdef XDEBUG
+        printf("(%d, %d, %d, %d, %d) ", nspec, c.width, x, w,
+            specs[nspec-1].x);
+#endif
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_FG))) {
         switch (c.fg.type) {
@@ -143,9 +154,9 @@ xfont_lookup(struct MyChar c, XftFont **f, FT_UInt *idx) {
 }
 
 void
-xdraw_line(struct MyChar *l, int y) {
+xdraw_line(int k, int y) {
     XRectangle r;
-    struct MyChar c;
+    struct MyChar c, c0;
     int i, x;
 
     r.x = 0;
@@ -153,26 +164,32 @@ xdraw_line(struct MyChar *l, int y) {
     r.width = zt.width;
     r.height = font_height;
 
+#ifdef XDEBUG
+    printf("[%3d] ", k);
+#endif
     XftDrawSetClipRectangles(drawable, 0, y, &r, 1);
     //XftDrawRect(drawable, &background, 0, y, zt.width, font_height);
     for (i = 0, x = 0, nspec = 0; i < zt.col;) {
+        c = zt.line[k][i];
         if (nspec == 0)
-            c = l[i];
+            c0 = c;
 
-        if (ATTR_EQUAL(c, l[i])) {
-            xfont_lookup(l[i], &specs[nspec].font,
+        if (ATTR_EQUAL(c0, c)) {
+            xfont_lookup(c, &specs[nspec].font,
                 &specs[nspec].glyph);
             specs[nspec].x = x;
             specs[nspec].y = y + font_base;
             nspec++;
-            i += c.width;
-            x += c.width * font_width;
+            i += c0.width;
+            x += c0.width * font_width;
             continue;
         }
-        xdraw_specs(c);
+        xdraw_specs(c0);
     }
-    if (nspec)
-        xdraw_specs(c);
+    xdraw_specs(c0);
+#ifdef XDEBUG
+    printf("\n");
+#endif
     XftDrawSetClip(drawable, 0);
 }
 
@@ -182,7 +199,7 @@ xdraw_cursor(void) {
 
     if (last_y != -1) {
         if (last_y < zt.row)
-            xdraw_line(zt.line[last_y], last_y*font_height);
+            xdraw_line(last_y, last_y*font_height);
         last_y = zt.y;
     } else {
         last_y = zt.y;
@@ -198,11 +215,15 @@ xdraw(void) {
     int y, i, nline=0;
 
     //XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
+#ifdef XDEBUG
+    printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
+    printf("font size: %dx%d\n", font_width, font_height);
+#endif
     for (i = 0, y = 0; i < zt.row; i++, y += font_height) {
         if (!zt.dirty[i])
             continue;
         nline++;
-        xdraw_line(zt.line[i], y);
+        xdraw_line(i, y);
     }
     //printf("drawed: %d lines\n", nline);
     xdraw_cursor();

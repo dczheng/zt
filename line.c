@@ -145,19 +145,6 @@ ltab(int n) {
 }
 
 void
-lwrite0(MyRune c, char w) {
-    if (zt.x >= zt.col) {
-        lnew();
-        zt.x = 0;
-    }
-    zt.line[zt.y][zt.x] = zt.c;
-    zt.line[zt.y][zt.x].c = c;
-    zt.line[zt.y][zt.x].width = w;
-    ldirty(zt.y, zt.y);
-    zt.x++;
-}
-
-void
 lwrite(MyRune c) {
     int w;
     
@@ -165,9 +152,17 @@ lwrite(MyRune c) {
         //printf("can't find character width for %u\n", c);
         w = 1;
     }
-    lwrite0(c, w);
-    for (w--; w > 0; w--)
-        lwrite0(' ', 1);
+
+    if (zt.col - zt.x < w) {
+        lnew();
+        zt.x = 0;
+    }
+    zt.line[zt.y][zt.x] = zt.c;
+    zt.line[zt.y][zt.x].c = c;
+    zt.line[zt.y][zt.x].width = w;
+    ldirty(zt.y, zt.y);
+    for (w--, zt.x++; w > 0; zt.x++, w--)
+        zt.line[zt.y][zt.x] = zt.c;
 }
 
 void
