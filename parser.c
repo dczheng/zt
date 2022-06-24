@@ -356,6 +356,9 @@ escfe:
             //printf("%d\n", get_par_num(&esc));
             //dump(esc.seq, esc.len);
             break;
+        case DCS:
+            //dump(esc.seq, esc.len);
+            break;
         default:
             ctrl_error = ERR_UNSUPP;
     }
@@ -626,8 +629,8 @@ parse(unsigned char *buf, int len, int force) {
         }
         retries = 0;
 #else
-    u = buf[nread];
-    ulen = 1;
+        u = buf[nread];
+        ulen = 1;
 #endif
         lwrite(u);
         n = ulen;

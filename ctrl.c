@@ -164,6 +164,14 @@ csi_find_end(unsigned char *seq, int len, int *n) {
 }
 
 int
+dcs_find_end(unsigned char *seq, int len, int *n) {
+    *n = esc_find(seq, len, ST-0x80+0x40, ST-0x80+0x40, 0);
+    if (*n<0)
+        return ESCOSCNOEND;
+    return 0;
+}
+
+int
 esc_parse(unsigned char *seq, int len, struct Esc *esc) {
     unsigned char c;
     int n, ret;
@@ -207,6 +215,12 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
                     return ret;
                 esc->len += n+1;
                 //dump(esc->seq, esc->len-1);
+                break;
+            case DCS:
+                if ((ret = dcs_find_end(seq+1, len-1, &n)))
+                    return ret;
+                esc->len += n+1;
+                break;
         }
     }
 
