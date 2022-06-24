@@ -491,6 +491,12 @@ void
 xfont_init(void) {
     int i;
     struct MyFont *f;
+    XGlyphInfo exts;
+    char printable[PRINTABLE_END-PRINTABLE_START+2];
+
+    for (i = 0; i <= PRINTABLE_END-PRINTABLE_START; i++)
+        printable[i] = i + PRINTABLE_START;
+    printable[i] = '\0';
 
     ASSERT(FcInit(), "can't init fontconfig");
     nfont = LEN(font_list) * 4;
@@ -510,14 +516,17 @@ xfont_init(void) {
             f->font->height,
             f->font->height - f->font->descent);
     }
-    font_width = fonts[0].font->max_advance_width;
+
     font_height = fonts[0].font->height;
     font_base = fonts[0].font->height-fonts[0].font->descent;
+    XftTextExtentsUtf8(display, fonts[0].font,
+        (const FcChar8*)printable, strlen(printable), &exts);
+    font_width = (exts.xOff + strlen(printable)-1) / strlen(printable);
 
     zt.width = zt.col * font_width;
     zt.height = zt.row * font_height;
     printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-    printf("use font size: %dx%d\n", font_width, font_height);
+    printf("font size: %dx%d\n", font_width, font_height);
 }
 
 void

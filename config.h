@@ -12,7 +12,7 @@
 #define USED_COLOR UBUNTU_COLOR // UTUNBU_COLOR or XTERM_COLOR
 
 static char *font_list[] UNUSED = {
-    "Ubuntu Mono:pixelsize=20",
+    "Iosevka:pixelsize=20",
     "Noto Sans SC:pixelsize=18",
     "Noto Emoji:pixelsize=8",
     "Unifont:pixelsize=16",
