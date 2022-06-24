@@ -25,10 +25,11 @@ struct MyChar {
 
 // global namespace
 struct ZT {
-    int *dirty, *tabs;
-    int top, bot, x, y, row, col, width ,height;
-    int row_old, col_old; // for resize
-    int tty, xfd;
+    int *dirty, *tabs,
+        top, bot, width ,height,
+        x, y, x_saved, y_saved,
+        row, col, row_old, col_old,
+        tty, xfd;
     struct MyChar **line, c;
     MyRune lastc;
     unsigned long mode;

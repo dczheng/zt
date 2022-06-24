@@ -125,6 +125,7 @@ lnew(void) {
     if (zt.y == zt.bot)
         lscroll_up(zt.top, 1);
     zt.y++;
+    YASSERT(zt.y);
 }
 
 void
@@ -213,6 +214,17 @@ lrepeat_last(int n) {
 }
 
 void
+lcursor(int m) {
+    if (m == 0) {
+        zt.x_saved = zt.x;
+        zt.y_saved = zt.y;
+        return;
+    }
+    zt.x = zt.x_saved;
+    zt.y = zt.y_saved;
+}
+
+void
 lalloc(void) {
     char *p;
     int i, n;
@@ -246,6 +258,7 @@ linit(void) {
     zt.top = 0;
     zt.bot = zt.row-1;
     zt.x = zt.y = 0;
+    zt.x_saved = zt.y_saved = 0;
     zt.lastc = 0;
 }
 

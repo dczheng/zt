@@ -165,14 +165,16 @@
 #define M_ME        1006 
 
 // nf esc
-#define GZD4        '('
-#define G1D4        ')'
-#define G2D4        '*'
-#define G3D4        '+'
+#define NF_GZD4        '('
+#define NF_G1D4        ')'
+#define NF_G2D4        '*'
+#define NF_G3D4        '+'
 
 // fp esc
-#define DECPAM      '='
-#define DECPNM      '>'
+#define FP_DECPAM      '='
+#define FP_DECPNM      '>'
+#define FP_DECSC       '7'
+#define FP_DECRC       '8'
 
 #define ISCTRLC0(c)     ((c) <= 0x1F || (c) == 0x7F)
 #define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9F)
@@ -209,8 +211,10 @@ get_fp_esc_info(int type, struct CtrlInfo **info) {
         int type;
         struct CtrlInfo info;
     } infos[] = {
-        {DECPAM   ,  {"DECPAM"     , "Application Keypad"     }},
-        {DECPNM   ,  {"DECPNM"     , "Normal Keypad"          }},
+        {FP_DECPAM   ,  {"DECPAM"     , "Application Keypad"     }},
+        {FP_DECPNM   ,  {"DECPNM"     , "Normal Keypad"          }},
+        {FP_DECSC    ,  {"DECSC"      , "Save Cursor"            }},
+        {FP_DECRC    ,  {"DECRC"      , "Restore Cursor"         }},
     };
     for (int i = 0; i < LEN(infos); i++)
         if (infos[i].type == type) {
@@ -226,10 +230,10 @@ get_nf_esc_info(int type, struct CtrlInfo **info) {
         int type;
         struct CtrlInfo info;
     } infos[] = {
-        {GZD4   ,  {"GZD4"     , "Set Charset G0"     }},
-        {G1D4   ,  {"G1D4"     , "Set Charset G1"     }},
-        {G2D4   ,  {"G2D4"     , "Set Charset G2"     }},
-        {G3D4   ,  {"G3D4"     , "Set Charset G3"     }},
+        {NF_GZD4   ,  {"GZD4"     , "Set Charset G0"     }},
+        {NF_G1D4   ,  {"G1D4"     , "Set Charset G1"     }},
+        {NF_G2D4   ,  {"G2D4"     , "Set Charset G2"     }},
+        {NF_G3D4   ,  {"G3D4"     , "Set Charset G3"     }},
     };
     for (int i = 0; i < LEN(infos); i++)
         if (infos[i].type == type) {

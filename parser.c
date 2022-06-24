@@ -25,6 +25,7 @@ void lrepeat_last(int);
 void twrite(char*, int);
 void linsert_blank(int);
 void ldelete_char(int);
+void lcursor(int);
 int utf8_decode(unsigned char*, int,
     MyRune*, int*);
 
@@ -226,6 +227,7 @@ csi_handle(void) {
                          CSI_PAR(1, m, zt.row))
 
         case CUP:
+        case HVP:
             if (get_par_num(&esc) == 1) {
                 m = 1;
                 CSI_PAR(0, n, 1);
@@ -253,6 +255,7 @@ csi_handle(void) {
         CASE(CPL,       lmoveto(zt.y-n, 0      ))
         CASE(CNL,       lmoveto(zt.y+n, 0      ))
         CASE(CUP,       lmoveto(n-1   , m-1    ))
+        CASE(HVP,       lmoveto(n-1   , m-1    ))
         CASE(CHA,       lmoveto(zt.y  , n-1    ))
         CASE(HPA,       lmoveto(zt.y  , n-1    ))
         CASE(VPA,       lmoveto(n-1   , zt.x   ))
@@ -274,6 +277,8 @@ csi_handle(void) {
         CASE(ICH,       linsert_blank(n))
         CASE(DCH,       ldelete_char(n))
         CASE(REP,       lrepeat_last(n))
+        CASE(DECSC,     lcursor(0))
+        CASE(DECRC,     lcursor(1))
 
         case EL:
             switch (n) {
@@ -355,10 +360,10 @@ escfe:
 //TODO
 escnf:
     switch (esc.esc) {
-        case GZD4:
-        case G1D4:
-        case G2D4:
-        case G3D4:
+        case NF_GZD4:
+        case NF_G1D4:
+        case NF_G2D4:
+        case NF_G3D4:
             break;
         default:
             ctrl_error = ERR_UNSUPP;
@@ -368,8 +373,10 @@ escnf:
 //TODO
 escfp:
     switch (esc.esc) {
-        case DECPAM:
-        case DECPNM:
+        CASE(FP_DECSC, lcursor(0))
+        CASE(FP_DECRC, lcursor(1))
+        case FP_DECPAM:
+        case FP_DECPNM:
             break;
         default:
             ctrl_error = ERR_UNSUPP;
@@ -541,6 +548,7 @@ parse(unsigned char *buf, int len, int force) {
     printf("TTY[%d]: %d\n", count, len);
     printf("DISPLAY: %dx%d\n", zt.row, zt.col);
     printf("CURSOR: %dx%d\n", zt.y, zt.x);
+    printf("MARGIN: %d-%d\n", zt.top, zt.bot);
     count++;
 #endif
 
