@@ -146,9 +146,9 @@ csi_dump(struct Esc *esc) {
 
 int
 osc_find_end(unsigned char *seq, int len, int *n) {
-    *n = esc_find(seq, len, ST, ST, 0);
+    *n = esc_find(seq, len, BEL, BEL, 0);
     if (*n<0) {
-        *n = esc_find(seq, len, BEL, BEL, 0);
+        *n = esc_find(seq, len, ST, ST, 0);
         if (*n<0)
             return ESCOSCNOEND;
     }

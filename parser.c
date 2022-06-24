@@ -635,8 +635,8 @@ retry:
 
 #ifdef CTRL_DEBUG
     cdump(last_c, char_bytes);
-    printf("CTRL: %d, CHAR: %d\n",
-        total_ctrl_bytes, total_char_bytes);
+    printf("TOTAL: %d, READ: %d, CTRL: %d, CHAR: %d\n",
+        len, nread, total_ctrl_bytes, total_char_bytes);
 #endif
 
 #ifdef TERM_DEBUG

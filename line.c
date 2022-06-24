@@ -78,9 +78,18 @@ lclear(int y1, int x1, int y2, int x2) {
 }
 
 void
+lmoveto(int y, int x) {
+    zt.y = y;
+    zt.x = x;
+    LIMIT(zt.y, 0, zt.row-1);
+    LIMIT(zt.x, 0, zt.col-1);
+}
+
+void
 lsettb(int t, int b) {
     zt.top = t;
     zt.bot = b;
+    lmoveto(0, 0);
     LIMIT(zt.top, 0, zt.row-1);
     LIMIT(zt.bot, 0, zt.row-1);
     ASSERT(zt.top < zt.bot, "top: %d, bot: %d", zt.top, zt.bot);
@@ -103,8 +112,6 @@ lscroll_up(int y, int n) {
         SWAP(zt.line[i], zt.line[i+n]);
     ldirty(y, zt.bot);
     lclear(zt.bot-n+1, 0, zt.bot, zt.col-1);
-    if (zt.y >= y && zt.y <= zt.bot)
-        zt.y = MAX(zt.y-n, y);
 }
 
 void
@@ -116,14 +123,14 @@ lscroll_down(int y, int n) {
         SWAP(zt.line[i], zt.line[i-n]);
     ldirty(y, zt.bot);
     lclear(y, 0, y+n-1, zt.col-1);
-    if (zt.y >= y && zt.y <= zt.bot)
-        zt.y = MIN(zt.y+n, zt.bot);
 }
 
 void
 lnew(void) {
-    if (zt.y == zt.bot)
+    if (zt.y == zt.bot) {
         lscroll_up(zt.top, 1);
+        return;
+    }
     zt.y++;
     YASSERT(zt.y);
 }
@@ -165,24 +172,14 @@ lwrite(MyRune c) {
 
 void
 linsert(int n) {
-    int y = zt.y;
-    lscroll_down(zt.y, n);
-    zt.y = y;
+    if (zt.y >= zt.top && zt.y <= zt.bot)
+        lscroll_down(zt.y, n);
 }
 
 void
 ldelete(int n) {
-    int y = zt.y;
-    lscroll_up(zt.y, n);
-    zt.y = y;
-}
-
-void
-lmoveto(int y, int x) {
-    zt.y = y;
-    zt.x = x;
-    LIMIT(zt.y, 0, zt.row-1);
-    LIMIT(zt.x, 0, zt.col-1);
+    if (zt.y >= zt.top && zt.y <= zt.bot)
+        lscroll_up(zt.y, n);
 }
 
 void
@@ -220,8 +217,7 @@ lcursor(int m) {
         zt.y_saved = zt.y;
         return;
     }
-    zt.x = zt.x_saved;
-    zt.y = zt.y_saved;
+    lmoveto(zt.y_saved, zt.x_saved);
 }
 
 void
