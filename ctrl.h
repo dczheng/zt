@@ -108,6 +108,7 @@
 #define DECSTBM  'r'
 #define DECSC    's'
 #define DECRC    'u'
+#define WINMAN   't'
 #define HPA      '`'
 
 // esc type
@@ -430,6 +431,7 @@ get_csi_info(unsigned char type, struct CtrlInfo **info) {
         {VPR    , {"VPR"    , "Vertical Position Relative"      }},
         {HPA    , {"HPA"    , "Horizontal Position Absolute"    }},
         {HPR    , {"HPR"    , "Horizontal Position Relative"    }},
+        {WINMAN , {"WINMAN" , "Window Manipulation"             }},
     };
     for (int i = 0; i < LEN(infos); i++)
         if (infos[i].type == type) {

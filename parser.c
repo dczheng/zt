@@ -311,6 +311,7 @@ csi_handle(void) {
             }
             break;
 
+        case WINMAN: // Window Manipulation
         case DECLL:  // load LEDs
         case MC:     // Media Copy
             break;   // TODO
