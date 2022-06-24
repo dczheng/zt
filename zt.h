@@ -105,10 +105,6 @@ int color_equal(struct MyColor, struct MyColor);
 #define MODE_HAS(m)     ((zt.mode & (m)) != 0)
 #define MODE_RESET() do { \
     zt.mode = MODE_TEXT_CURSOR \
-            | MODE_SEND_FOCUS \
-            | MODE_MOUSE \
-            | MODE_MOUSE_PRESS \
-            | MODE_MOUSE_RELEASE \
             ; \
 } while(0)
 

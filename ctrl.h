@@ -293,7 +293,7 @@ get_mode_info(int type, struct CtrlInfo **info) {
         {M_SS     ,  {"M_SS"       , "Swap Screen"                          }},
         {M_SBC    ,  {"M_SBC"      , "Start Blinking Cursor"                }},
         {M_MUTF8  ,  {"M_MUTF8"    , "UTF-8 mouse"                          }},
-        {M_MP     ,  {"M_M "       , "Report Button Press"                  }},
+        {M_MP     ,  {"M_MP"       , "Report Button Press"                  }},
         {M_MMP    ,  {"M_MM "      , "Report Motion on Button Press"        }},
         {M_MMA    ,  {"M_MMA"      , "Enalbe All Mouse Motions"             }},
         {M_ME     ,  {"M_ME"       , "Extened Reporting"                    }},

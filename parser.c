@@ -155,6 +155,7 @@ mode_handle() {
         return;
     }
 
+    //printf("%s\n", get_esc_str(&esc, 0));
     npar = get_par_num(&esc);
     for (i = 0; i < npar; i++) {
         if (get_str_par(&esc, i, &p) || p == NULL)
@@ -169,11 +170,14 @@ mode_handle() {
             CASE(M_SF,      MODE_SET(esc.csi, MODE_SEND_FOCUS))
             CASE(DECTCEM,   MODE_SET(esc.csi, MODE_TEXT_CURSOR))
             CASE(M_BP,      MODE_SET(esc.csi, MODE_BRACKETED_PASTE))
-            CASE(M_MP,      MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_PRESS))
-            CASE(M_MMP,     
+            CASE(M_MP,
+                MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_PRESS))
+            CASE(M_MMP,
                 MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS))
-            CASE(M_MMA,     MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_MOTION_ANY))
-            CASE(M_ME,      MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_EXT))
+            CASE(M_MMA,
+                MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_MOTION_ANY))
+            CASE(M_ME,
+                MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT))
             case DECAWM:
             case DECCKM:
             case M_SS:
