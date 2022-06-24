@@ -74,11 +74,10 @@ char *to_bytes(unsigned long);
 
 // color
 int color_equal(struct MyColor, struct MyColor);
-#define UBUNTU_COLOR8    1
-#define XTERM_COLOR8     2
+#define UBUNTU_COLOR    1
+#define XTERM_COLOR     2
 #define COLOR8    8
 #define COLOR24  24 
-#define USED_COLOR8   UBUNTU_COLOR8
 
 #define COLOR_RESET(c)  bzero(&c, sizeof(struct MyColor))
 #define SET_COLOR8(c, v) do { \

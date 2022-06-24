@@ -9,6 +9,7 @@
 #define ROW 24
 #define COL 80 
 #define TABSPACE 4
+#define USED_COLOR UBUNTU_COLOR // UTUNBU_COLOR or XTERM_COLOR
 
 static char *font_list[] UNUSED = {
     "Ubuntu Mono:pixelsize=20",

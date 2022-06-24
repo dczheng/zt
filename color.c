@@ -88,10 +88,10 @@ c8_to_rgb(unsigned char v) {
     unsigned char r, g, b;
 
     if (v <= 15) {
-        switch (USED_COLOR8) {
-            case UBUNTU_COLOR8:
+        switch (USED_COLOR) {
+            case UBUNTU_COLOR:
                 return ubuntu_c8(v);
-            case XTERM_COLOR8:
+            case XTERM_COLOR:
                 return xterm_c8(v);
             default:
                 return ubuntu_c8(v);
