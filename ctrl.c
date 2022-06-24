@@ -175,7 +175,7 @@ find_csi_end(unsigned char *seq, int len, int *n) {
 int
 find_dcs_end(unsigned char *seq, int len, int *n) {
     if ((*n = search(seq, len, 1, ST-0x80+0x40)) < 0)
-        return ESCDSCNOEND;
+        return ESCDCSNOEND;
     return 0;
 }
 

@@ -189,7 +189,7 @@
 #define ESCNFNOEND        1002
 #define ESCCSINOEND       1003
 #define ESCOSCNOEND       1004
-#define ESCDSCNOEND       1005
+#define ESCDCSNOEND       1005
 
 struct CtrlInfo {
     char *name, *desc;
