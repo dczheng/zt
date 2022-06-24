@@ -568,7 +568,7 @@ parse(unsigned char *buf, int len, int force) {
 
     nread = 0;
     if (osc_no_end) {
-        if (osc_find_end(buf, len, &nread)) {
+        if (find_osc_end(buf, len, &nread)) {
             nread = len;
             goto retry;
         }

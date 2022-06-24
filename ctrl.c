@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "ctrl.h"
 
@@ -24,19 +25,32 @@ str_to_dec(char *p, int *r) {
 }
 
 int
-esc_find(unsigned char *seq, int len,
+range_search(unsigned char *seq, int len,
         unsigned char a, unsigned char b, int mode) {
-    int i;
-
-    for (i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         if ((!mode) && (seq[i] >= a && seq[i] <= b))
-            break;
+            return i;
         if ((mode) && (seq[i] < a && seq[i] > b))
-            break;
+            return i;
     }
-    if (i == len)
-        return -1;
-    return i;
+    return -1;
+}
+
+int
+search(unsigned char *seq, int len, int n, ...) {
+    int i, j;
+    va_list ap;
+    unsigned char c;
+
+    va_start(ap, n);
+    for (i = 0; i < n; i++) {
+        c = va_arg(ap, int);
+        for (j = 0; j < len; j++)
+            if (seq[j] == c)
+                return j;
+    }
+    va_end(ap);
+    return -1;
 }
 
 int
@@ -145,29 +159,30 @@ csi_dump(struct Esc *esc) {
 }
 
 int
-osc_find_end(unsigned char *seq, int len, int *n) {
-    *n = esc_find(seq, len, BEL, BEL, 0);
-    if (*n<0) {
-        *n = esc_find(seq, len, ST, ST, 0);
-        if (*n<0)
-            return ESCOSCNOEND;
-    }
+find_osc_end(unsigned char *seq, int len, int *n) {
+    if ((*n = search(seq, len, 2, BEL, ST)) < 0)
+        return ESCOSCNOEND;
     return 0;
 }
 
 int
-csi_find_end(unsigned char *seq, int len, int *n) {
-    *n = esc_find(seq, len, 0x40, 0x7E, 0);
-    if (*n < 0)
+find_csi_end(unsigned char *seq, int len, int *n) {
+    if ((*n = range_search(seq, len, 0x40, 0x7E, 0)) < 0)
         return ESCCSINOEND;
     return 0;
 }
 
 int
-dcs_find_end(unsigned char *seq, int len, int *n) {
-    *n = esc_find(seq, len, ST-0x80+0x40, ST-0x80+0x40, 0);
-    if (*n<0)
-        return ESCOSCNOEND;
+find_dcs_end(unsigned char *seq, int len, int *n) {
+    if ((*n = search(seq, len, 1, ST-0x80+0x40)) < 0)
+        return ESCDSCNOEND;
+    return 0;
+}
+
+int
+find_nfesc_end(unsigned char *seq, int len, int *n) {
+    if ((*n = range_search(seq, len, 0x30, 0x7E, 0)) < 0)
+        return ESCNFNOEND;
     return 0;
 }
 
@@ -192,9 +207,8 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
     if (c >= 0x20 && c <= 0x2F) {
         esc->type = ESCNF;
         esc->esc = c;
-        n = esc_find(seq+1, len-1, 0x30, 0x7E, 0);
-        if (n<0)
-            return ESCNFNOEND;
+        if ((ret = find_nfesc_end(seq+1, len-1, &n)))
+            return ret;
         esc->len += n+1;
     }
 
@@ -203,7 +217,7 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
         esc->esc = c - 0x40 + 0x80;
         switch (esc->esc) {
             case CSI:
-                if ((ret = csi_find_end(seq+1, len-1, &n)))
+                if ((ret = find_csi_end(seq+1, len-1, &n)))
                     return ret;
                 esc->len += n+1;
                 esc->csi = seq[esc->len-1];
@@ -211,13 +225,13 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
                 break;
 
             case OSC:
-                if ((ret = osc_find_end(seq+1, len-1, &n)))
+                if ((ret = find_osc_end(seq+1, len-1, &n)))
                     return ret;
                 esc->len += n+1;
                 //dump(esc->seq, esc->len-1);
                 break;
             case DCS:
-                if ((ret = dcs_find_end(seq+1, len-1, &n)))
+                if ((ret = find_dcs_end(seq+1, len-1, &n)))
                     return ret;
                 esc->len += n+1;
                 break;

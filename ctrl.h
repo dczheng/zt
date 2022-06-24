@@ -188,6 +188,7 @@
 #define ESCNFNOEND        1002
 #define ESCCSINOEND       1003
 #define ESCOSCNOEND       1004
+#define ESCDSCNOEND       1005
 
 struct CtrlInfo {
     char *name, *desc;
@@ -205,7 +206,7 @@ char* get_esc_str(struct Esc*, int);
 int get_par_num(struct Esc*);
 int get_int_par(struct Esc*, int, int*, int);
 int get_str_par(struct Esc*, int, char**);
-int osc_find_end(unsigned char*, int, int*);
+int find_osc_end(unsigned char*, int, int*);
 
 static inline int
 get_fp_esc_info(int type, struct CtrlInfo **info) {
