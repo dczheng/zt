@@ -1,7 +1,6 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define VTIDEN "\033[?6c"
 #define TERM "xterm-256color"
 #define BACKGROUND "gray20"
 #define FOREGROUND "white"

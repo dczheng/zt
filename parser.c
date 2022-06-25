@@ -6,6 +6,9 @@
 #include "zt.h"
 #include "ctrl.h"
 
+#define PRIMARY_DA "\033[?6c" // vt102
+#define SECONDARY_DA "\033[>1;95;0c" // vt220
+
 int ctrl_error, esc_error;
 struct Esc esc;
 
@@ -265,7 +268,6 @@ csi_handle(void) {
         CASE(VPA,       lmoveto(n-1   , zt.x   ))
         CASE(HPR,       lmoveto(zt.y  , zt.x+n ))
         CASE(VPR,       lmoveto(zt.y+n, zt.y    ))
-        CASE(DA,        twrite(VTIDEN, strlen(VTIDEN)))
         CASE(DSR,       twrite(wbuf, nw))
         CASE(IL,        linsert(n))
         CASE(DL,        ldelete(n))
@@ -283,6 +285,11 @@ csi_handle(void) {
         CASE(REP,       lrepeat_last(n))
         CASE(DECSC,     lcursor(0))
         CASE(DECRC,     lcursor(1))
+
+        case DA:
+            if (get_par_num(&esc) == 0 || esc.seq[1] != '>') 
+                twrite(PRIMARY_DA, strlen(PRIMARY_DA));
+            break;
 
         case EL:
             switch (n) {
