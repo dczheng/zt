@@ -112,7 +112,9 @@ xdraw_specs(struct MyChar c) {
 
     XftDrawRect(drawable, &bg, x, y, w, font_height);
     if (ATTR_HAS(c, ATTR_UNDERLINE)) 
-        XftDrawRect(drawable, &fg, x, y+font_base+1, w, 1);
+        XftDrawRect(drawable, &fg, x, y + font_base + 1, w, 1);
+    if (ATTR_HAS(c, ATTR_CROSSED_OUT))
+        XftDrawRect(drawable, &fg, x, y + font_height / 2, w, 1);
 
     XftDrawGlyphFontSpec(drawable, &fg, specs, nspec);
     nspec = 0;

@@ -121,7 +121,10 @@ tread(int wait) {
         return 1;
 
     ret = read(zt.tty, buf+n, sizeof(buf)-n);
-    ASSERT(ret >= 0, "failed to read: %s", strerror(errno));
+    if (ret < 0) {
+        printf("failed to read tty: %s\n", strerror(errno));
+        return 0;
+    }
 
     n += ret;
     m = parse(buf, n, 0);
@@ -144,7 +147,10 @@ twrite(char *s, int n) {
         if (io_wait(NULL, 0, &zt.tty, 1, wait) != 1)
             continue;
         ret = write(zt.tty, s, n);
-        ASSERT(ret >= 0, "failed to write tty: %s", strerror(errno));
+        if (ret < 0)  {
+            printf("failed to read tty: %s\n", strerror(errno));
+            return;
+        }
 
         if (ret == n || !tread(wait))
             ntry = 0;

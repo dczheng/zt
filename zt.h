@@ -92,15 +92,15 @@ int color_equal(struct MyColor, struct MyColor);
 } while(0)
 
 // mode
-#define MODE_TEXT_CURSOR        (1 << 0)
-#define MODE_SEND_FOCUS         (1 << 1)
-#define MODE_BRACKETED_PASTE    (1 << 2)
-#define MODE_MOUSE              (1 << 3)
-#define MODE_MOUSE_PRESS        (1 << 4)
-#define MODE_MOUSE_RELEASE      (1 << 5)
-#define MODE_MOUSE_MOTION_PRESS (1 << 6)
-#define MODE_MOUSE_MOTION_ANY   (1 << 7)
-#define MODE_MOUSE_EXT          (1 << 8)
+#define MODE_TEXT_CURSOR        (1<<0)
+#define MODE_SEND_FOCUS         (1<<1)
+#define MODE_BRACKETED_PASTE    (1<<2)
+#define MODE_MOUSE              (1<<3)
+#define MODE_MOUSE_PRESS        (1<<4)
+#define MODE_MOUSE_RELEASE      (1<<5)
+#define MODE_MOUSE_MOTION_PRESS (1<<6)
+#define MODE_MOUSE_MOTION_ANY   (1<<7)
+#define MODE_MOUSE_EXT          (1<<8)
 
 #define MODE_HAS(m)     ((zt.mode & (m)) != 0)
 #define MODE_RESET() do { \
@@ -123,6 +123,7 @@ int color_equal(struct MyColor, struct MyColor);
 #define ATTR_ITALIC                    (1<<4)
 #define ATTR_FAINT                     (1<<5)
 #define ATTR_COLOR_REVERSE             (1<<6)
+#define ATTR_CROSSED_OUT               (1<<7)
 
 #define ATTR_SET(v)       (zt.c.flag |= (v))
 #define ATTR_UNSET(v)     (zt.c.flag &= ~(v))
