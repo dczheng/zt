@@ -6,7 +6,7 @@
 
 #include "zt.h"
 
-char *line_buffer;
+char *norm_line_buffer, *alt_line_buffer;
 
 #define PASSERT(x) \
     ASSERT(x >= 0, #x": %d", x)
@@ -22,6 +22,11 @@ ldirty(int a, int b) {
     LIMIT(b, 0, zt.col-1);
     for (; a <= b; a++)
         zt.dirty[a] = 1;
+}
+
+void
+ldirty_all(void) {
+    ldirty(0, zt.row-1);
 }
 
 void
@@ -78,6 +83,11 @@ lclear(int y1, int x1, int y2, int x2) {
 }
 
 void
+lclear_all(void) {
+    lclear(0, 0, zt.row-1, zt.col-1);
+}
+
+void
 lmoveto(int y, int x) {
     zt.y = y;
     zt.x = x;
@@ -98,7 +108,8 @@ lsettb(int t, int b) {
 void
 lclean(void) {
     printf("free line buffer\n");
-    free(line_buffer);
+    free(norm_line_buffer);
+    free(alt_line_buffer);
     printf("free dirty\n");
     free(zt.dirty);
 }
@@ -207,12 +218,12 @@ lrepeat_last(int n) {
 
 void
 lcursor(int m) {
-    if (m == 0) {
+    ASSERT(m == SET || m == RESET, "");
+    if (m == SET) {
         zt.x_saved = zt.x;
         zt.y_saved = zt.y;
-        return;
-    }
-    lmoveto(zt.y_saved, zt.x_saved);
+    } else
+        lmoveto(zt.y_saved, zt.x_saved);
 }
 
 void
@@ -222,7 +233,7 @@ lalloc(void) {
 
     zt.dirty = malloc(zt.row * sizeof(*zt.dirty));
     ASSERT(zt.dirty != NULL, "");
-    ldirty(0, zt.row-1);
+    ldirty_all();
 
     zt.tabs = malloc(zt.col * sizeof(*zt.tabs));
     ASSERT(zt.tabs != NULL, "");
@@ -230,16 +241,22 @@ lalloc(void) {
 
     n = (sizeof(struct MyChar*) +
         sizeof(struct MyChar) * zt.col) * zt.row;
-    line_buffer = malloc(n);
-    ASSERT(line_buffer != NULL, "");
 
-    zt.line = (struct MyChar **)line_buffer;
-    p = line_buffer + sizeof(struct MyChar*) * zt.row;
-    for (i = 0; i < zt.row; i++) {
-        zt.line[i] = (struct MyChar*)p;
-        p += sizeof(struct MyChar) * zt.col;
-    }
-    lclear(0, 0, zt.row-1, zt.col-1);
+#define F(ls, buf) \
+    buf = malloc(n); \
+    ASSERT(buf != NULL, ""); \
+    ls = (struct MyChar **)buf; \
+    p = buf + sizeof(struct MyChar*) * zt.row; \
+    for (i = 0; i < zt.row; i++) { \
+        ls[i] = (struct MyChar*)p; \
+        p += sizeof(struct MyChar) * zt.col; \
+    }  \
+    zt.line = ls; \
+    lclear_all();
+
+    F(zt.alt_line, alt_line_buffer);
+    F(zt.norm_line, norm_line_buffer);
+#undef F
 }
 
 void
@@ -256,8 +273,10 @@ linit(void) {
 void 
 lresize(void) {
     int i, j, mr, mc;
-    char *line_buffer_old = line_buffer;
-    struct MyChar **line_old = zt.line;
+    char *norm_line_buffer_old = norm_line_buffer;
+    char *alt_line_buffer_old = alt_line_buffer;
+    struct MyChar **norm_line_old = zt.norm_line;
+    struct MyChar **alt_line_old = zt.alt_line;
     int *tabs_old = zt.tabs;
 
     mr = MIN(zt.row, zt.row_old);
@@ -267,9 +286,12 @@ lresize(void) {
     lalloc();
 
     for (i = 0; i < mr; i++)
-        for (j = 0; j < mc; j++)
-            zt.line[i][j] = line_old[i][j];
-    free(line_buffer_old);
+        for (j = 0; j < mc; j++) {
+            zt.norm_line[i][j] = norm_line_old[i][j];
+            zt.alt_line[i][j] = alt_line_old[i][j];
+        }
+    free(norm_line_buffer_old);
+    free(alt_line_buffer_old);
 
     for (i = 0; i < mc; i++) 
         zt.tabs[i] = tabs_old[i];

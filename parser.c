@@ -13,6 +13,7 @@ int ctrl_error, esc_error;
 struct Esc esc;
 
 void lclear(int, int, int, int);
+void lclear_all();
 void lerase(int, int, int);
 void lscroll_up(int, int);
 void lscroll_down(int, int);
@@ -29,6 +30,7 @@ void twrite(char*, int);
 void linsert_blank(int);
 void ldelete_char(int);
 void lcursor(int);
+void ldirty_all(void);
 int utf8_decode(unsigned char*, int,
     MyRune*, int*);
 
@@ -152,7 +154,7 @@ sgr_handle(void) {
 
 void
 mode_handle(void) {
-    int i, n, ret, npar;
+    int i, n, ret, npar, s;
     char *p;
 
     if (esc.seq[1] != '?') {
@@ -162,6 +164,7 @@ mode_handle(void) {
 
     //printf("%s\n", get_esc_str(&esc, 0));
     npar = get_par_num(&esc);
+    s = (esc.csi == SM ? SET : RESET);
     for (i = 0; i < npar; i++) {
         if (get_str_par(&esc, i, &p) || p == NULL)
             continue;
@@ -174,20 +177,30 @@ mode_handle(void) {
             continue;
         }
         switch (n) {
-            CASE(M_SF,      MODE_SET(esc.csi, MODE_SEND_FOCUS))
-            CASE(DECTCEM,   MODE_SET(esc.csi, MODE_TEXT_CURSOR))
-            CASE(M_BP,      MODE_SET(esc.csi, MODE_BRACKETED_PASTE))
+            CASE(M_SF,      MODE_SET(s, MODE_SEND_FOCUS))
+            CASE(DECTCEM,   MODE_SET(s, MODE_TEXT_CURSOR))
+            CASE(M_BP,      MODE_SET(s, MODE_BRACKETED_PASTE))
             CASE(M_MP,
-                MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_PRESS))
+                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_PRESS))
             CASE(M_MMP,
-                MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS))
+                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS))
             CASE(M_MMA,
-                MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_MOTION_ANY))
+                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_MOTION_ANY))
             CASE(M_ME,
-                MODE_SET(esc.csi, MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT))
+                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT))
+            CASE(M_SC,   lcursor(s))
+            CASE(M_ALTS, 
+                zt.line = (s ? zt.alt_line : zt.norm_line);
+                ldirty_all())
+            CASE(M_SC_ALTS,
+                lcursor(s);
+                zt.line = (s ? zt.alt_line : zt.norm_line);
+                if (s == SET)
+                    lclear_all();
+                ldirty_all())
+
             case DECAWM:
             case DECCKM:
-            case M_SS:
             case M_SBC:
             case M_MUTF8:
                 break;
@@ -308,8 +321,8 @@ csi_handle(void) {
         CASE(ICH,       linsert_blank(n))
         CASE(DCH,       ldelete_char(n))
         CASE(REP,       lrepeat_last(n))
-        CASE(DECSC,     lcursor(0))
-        CASE(DECRC,     lcursor(1))
+        CASE(DECSC,     lcursor(SET))
+        CASE(DECRC,     lcursor(RESET))
         CASE(DSR,       dsr_handle())
         case DA:
             if (get_par_num(&esc) == 0 || esc.seq[1] != '>') 
@@ -329,8 +342,8 @@ csi_handle(void) {
             switch (n) {
                 CASE(0, lclear(zt.y, zt.x, zt.row-1, zt.col-1))
                 CASE(1, lclear(0, 0, zt.y , zt.x ))
-                CASE(2, lclear(0, 0, zt.row-1, zt.col-1); lmoveto(0,0))
-                CASE(3, lclear(0, 0, zt.row-1, zt.col-1); lmoveto(0,0))
+                CASE(2, lclear_all(); lmoveto(0,0))
+                CASE(3, lclear_all(); lmoveto(0,0))
                 default: ctrl_error = ERR_UNSUPP;
             }
             break;

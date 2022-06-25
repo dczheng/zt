@@ -30,7 +30,7 @@ struct ZT {
         x, y, x_saved, y_saved,
         row, col, row_old, col_old,
         tty, xfd;
-    struct MyChar **line, c;
+    struct MyChar **line, **alt_line, **norm_line, c;
     MyRune lastc;
     unsigned long mode;
 };
@@ -102,16 +102,20 @@ int color_equal(struct MyColor, struct MyColor);
 #define MODE_MOUSE_MOTION_ANY   (1<<7)
 #define MODE_MOUSE_EXT          (1<<8)
 
+#define SET      1
+#define RESET    0
+
 #define MODE_HAS(m)     ((zt.mode & (m)) != 0)
 #define MODE_RESET() do { \
     zt.mode = MODE_TEXT_CURSOR \
             ; \
 } while(0)
 
-#define MODE_SET(m, v) do { \
-    if (m == SM) \
+#define MODE_SET(s, v) do { \
+    ASSERT(s == SET || s == RESET, "");\
+    if (s == SET) \
         zt.mode |= (v); \
-    if (m == RM) \
+    else \
         zt.mode &= ~(v); \
 } while (0)
 
