@@ -149,7 +149,7 @@ sgr_handle(void) {
 }
 
 void
-mode_handle() {
+mode_handle(void) {
     int i, n, ret, npar;
     char *p;
 
@@ -167,8 +167,10 @@ mode_handle() {
             ret = str_to_dec(p+1, &n);
         else
             ret = str_to_dec(p, &n);
-        if (ret)
+        if (ret) {
+            ctrl_error = ERR_PAR;
             continue;
+        }
         switch (n) {
             CASE(M_SF,      MODE_SET(esc.csi, MODE_SEND_FOCUS))
             CASE(DECTCEM,   MODE_SET(esc.csi, MODE_TEXT_CURSOR))
@@ -194,9 +196,38 @@ mode_handle() {
 }
 
 void
+dsr_handle(void) {
+    int n, ret, nw;
+    char wbuf[32], *p;
+
+    ctrl_error = ERR_PAR;
+    if (get_par_num(&esc) == 0 || get_str_par(&esc, 0, &p) || p == NULL)
+        return;
+
+    if (p[0] == '?')
+        ret = str_to_dec(p+1, &n);
+    else
+        ret = str_to_dec(p, &n);
+
+    if (ret)
+        ctrl_error = ERR_PAR;
+
+    ctrl_error = ERR_UNSUPP;
+    switch (n) {
+        CASE(5, nw = snprintf(wbuf, sizeof(wbuf), "\0330n"))
+        CASE(6,
+            nw = snprintf(wbuf, sizeof(wbuf), "\033[%d;%dR",
+                zt.y+1, zt.x+1))
+        default:
+            return;
+    }
+    ctrl_error = 0;
+    twrite(wbuf, nw);
+}
+
+void
 csi_handle(void) {
-    int n, m, nw=0;
-    char wbuf[32];
+    int n, m;
 
 #define CSI_PAR(idx, v, v0) \
         if (get_int_par(&esc, idx, &v, v0)) { \
@@ -243,13 +274,6 @@ csi_handle(void) {
             CSI_PAR(0, n, 1);
             CSI_PAR(1, m, 1);
             break;
-        case DSR:
-            CSI_PAR(0, n, 0);
-            nw = 0;
-            if (n == 6)
-                nw = snprintf(wbuf, sizeof(wbuf), "\033[%d;%dR",
-                     zt.y+1, zt.x+1);
-            break;
     }
 #undef CSI_PAR
 
@@ -268,7 +292,6 @@ csi_handle(void) {
         CASE(VPA,       lmoveto(n-1   , zt.x   ))
         CASE(HPR,       lmoveto(zt.y  , zt.x+n ))
         CASE(VPR,       lmoveto(zt.y+n, zt.y    ))
-        CASE(DSR,       twrite(wbuf, nw))
         CASE(IL,        linsert(n))
         CASE(DL,        ldelete(n))
         CASE(SGR,       sgr_handle())
@@ -285,7 +308,7 @@ csi_handle(void) {
         CASE(REP,       lrepeat_last(n))
         CASE(DECSC,     lcursor(0))
         CASE(DECRC,     lcursor(1))
-
+        CASE(DSR,       dsr_handle())
         case DA:
             if (get_par_num(&esc) == 0 || esc.seq[1] != '>') 
                 twrite(PRIMARY_DA, strlen(PRIMARY_DA));
