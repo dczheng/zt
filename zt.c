@@ -252,8 +252,8 @@ main(void) {
     tresize();
 
     last = get_time();
-    fd[0] = zt.tty;
-    fd[1] = zt.xfd;
+    fd[0] = zt.xfd;
+    fd[1] = zt.tty;
     latency = LATENCY * MICROSEC;
     timeout = -1;
     for (;;){
@@ -262,11 +262,11 @@ main(void) {
         if (ret != -1 && ret != -2)
             ASSERT(timeout > 0, "can't be");
 
-        if (ret == -1)
-             ASSERT(tread(-1) == 0, "can't, be");
-
-        if (ret == -2 && xevent())
+        if (ret == -1 && xevent())
             break;
+
+        if (ret == -2)
+             ASSERT(tread(-1) == 0, "can't, be");
 
         now = get_time();
         latency -= now-last;
