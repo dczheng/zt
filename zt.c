@@ -27,13 +27,10 @@ struct ZT zt;
 pid_t pid;
 
 int parse(unsigned char*, int, int);
-void linit(void);
-void lclean(void);
 void xinit(void);
 void xclean(void);
 int xevent(void);
 void xdraw(void);
-void ldirty_reset(void);
 
 int
 io_wait(int *r, int nr, int *w, int nw, int nano) {

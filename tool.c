@@ -7,6 +7,7 @@
 #include <sys/select.h>
 #include <errno.h>
 
+#include "zt.h"
 #include "ctrl.h"
 
 char *

@@ -12,25 +12,6 @@
 int ctrl_error, esc_error;
 struct Esc esc;
 
-void lclear(int, int, int, int);
-void lclear_all();
-void lerase(int, int, int);
-void lscroll_up(int, int);
-void lscroll_down(int, int);
-void lnew(void);
-void lwrite(MyRune);
-void linsert(int);
-void ldelete(int);
-void lmoveto(int, int);
-void lsettb(int, int);
-void ltab(int);
-void ltab_clear(void);
-void lrepeat_last(int);
-void twrite(char*, int);
-void linsert_blank(int);
-void ldelete_char(int);
-void lcursor(int);
-void ldirty_all(void);
 int utf8_decode(unsigned char*, int,
     MyRune*, int*);
 

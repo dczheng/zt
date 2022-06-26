@@ -16,7 +16,6 @@
 struct MyColor c8_to_rgb(unsigned char);
 void twrite(char*, int);
 void tresize(void);
-void lresize(void);
 
 Display *display;
 Window root, window;
