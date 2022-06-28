@@ -1,6 +1,7 @@
 #ifndef __LINE_H__
 #define __LINE_H__
 
+#include "stdint.h"
 #include "color.h"
 
 typedef uint32_t MyRune;

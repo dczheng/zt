@@ -22,9 +22,10 @@ struct Esc esc;
 
 #define RETRY_MAX 3
 
-//#define CTRL_DEBUG
-//#define TERM_DEBUG
-//#define NOUTF_DEBUG
+// for debug
+//#define CTRL_DUMP
+//#define CTRL_TERM_DUMP
+//#define NOUTF8
 
 void tdump(void);
 
@@ -575,7 +576,7 @@ parse(unsigned char *buf, int len, int force) {
     if (!len)
         return 0;
 
-#ifdef CTRL_DEBUG
+#ifdef CTRL_DUMP
     unsigned char last_c = 0;
     static int count = 0;
     printf("\n-------CTRL--------\n");
@@ -606,13 +607,13 @@ parse(unsigned char *buf, int len, int force) {
     for (; nread < len; nread += n) {
 
         if (ISCTRL(buf[nread])) {
-#ifdef CTRL_DEBUG
+#ifdef CTRL_DUMP
             cdump(last_c, char_bytes);
             last_c = buf[nread];
 #endif
 
-#ifdef TERM_DEBUG
-            //tdump();
+#ifdef CTRL_TERM_DUMP
+            tdump();
 #endif
 
             total_char_bytes += char_bytes;
@@ -641,7 +642,7 @@ parse(unsigned char *buf, int len, int force) {
             continue;
         }
 
-#ifndef NOUTF_DEBUG
+#ifndef NOUTF8
         if (utf8_decode(buf+nread, len-nread, &u, &ulen)) {
             if (!force) {
                 if (retries < RETRY_MAX) {
@@ -667,13 +668,13 @@ retry:
     total_char_bytes += char_bytes;
     total_ctrl_bytes += ctrl_bytes;
 
-#ifdef CTRL_DEBUG
+#ifdef CTRL_DUMP
     cdump(last_c, char_bytes);
     printf("TOTAL: %d, READ: %d, CTRL: %d, CHAR: %d\n",
         len, nread, total_ctrl_bytes, total_char_bytes);
 #endif
 
-#ifdef TERM_DEBUG
+#ifdef CTRL_DUMP
     tdump();
 #endif
 

@@ -6,7 +6,6 @@
 
 #include "zt.h"
 #include "tool.h"
-#include "config.h"
 
 char *norm_line_buffer, *alt_line_buffer;
 
@@ -202,11 +201,8 @@ ltab_clear(void) {
 
 void
 ltab_reset(void)  {
-    int ts, i;
-
     ltab_clear();
-    ts = MAX(4, TABSPACE);
-    for (i = ts; i < zt.col; i += ts)
+    for (int i = 8; i < zt.col; i += 8)
         zt.tabs[i] = 1;
 }
 
