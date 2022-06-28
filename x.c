@@ -10,12 +10,9 @@
 
 #include "zt.h"
 #include "ctrl.h"
+#include "config.h"
 
 //#define XDEBUG
-
-struct MyColor c8_to_rgb(unsigned char);
-void twrite(char*, int);
-void tresize(void);
 
 Display *display;
 Window root, window;

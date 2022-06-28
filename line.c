@@ -5,6 +5,8 @@
 #include <wchar.h>
 
 #include "zt.h"
+#include "tool.h"
+#include "config.h"
 
 char *norm_line_buffer, *alt_line_buffer;
 

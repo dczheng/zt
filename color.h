@@ -10,6 +10,8 @@ struct MyColor {
 };
 
 int color_equal(struct MyColor, struct MyColor);
+struct MyColor c8_to_rgb(unsigned char);
+
 #define UBUNTU_COLOR    1
 #define XTERM_COLOR     2
 #define COLOR8    8

@@ -1,13 +1,7 @@
 #ifndef __ZT_H__
 #define __ZT_H__
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-#include <unistd.h>
-
 #include "line.h"
-#include "config.h"
 
 // global namespace
 struct ZT {
@@ -21,6 +15,14 @@ struct ZT {
     unsigned long mode;
 };
 extern struct ZT zt;
+
+void twrite(char*, int);
+void tresize(void);
+int parse(unsigned char*, int, int);
+void xinit(void);
+void xclean(void);
+int xevent(void);
+void xdraw(void);
 
 // mode
 #define MODE_TEXT_CURSOR        (1<<0)

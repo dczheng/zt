@@ -1,4 +1,6 @@
-#include "zt.h"
+#include "tool.h"
+#include "color.h"
+#include "config.h"
 
 struct MyColor
 xterm_c8(unsigned char v) {

@@ -1,6 +1,10 @@
 #ifndef __TOOL_H__
 #define __TOOL_H__
 
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+
 long get_time(void);
 void dump_hex(unsigned char*, int);
 void dump(unsigned char*, int);

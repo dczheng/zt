@@ -7,8 +7,8 @@
 #include <sys/select.h>
 #include <errno.h>
 
-#include "zt.h"
 #include "ctrl.h"
+#include "tool.h"
 
 char *
 to_bytes(unsigned long b) {

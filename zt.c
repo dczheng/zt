@@ -21,16 +21,10 @@
 
 #include "zt.h"
 #include "ctrl.h"
+#include "config.h"
 
 struct ZT zt;
-
 pid_t pid;
-
-int parse(unsigned char*, int, int);
-void xinit(void);
-void xclean(void);
-int xevent(void);
-void xdraw(void);
 
 int
 io_wait(int *r, int nr, int *w, int nw, int nano) {

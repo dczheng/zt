@@ -4,16 +4,15 @@
 #include <errno.h>
 
 #include "zt.h"
+#include "tool.h"
 #include "ctrl.h"
-
-#define PRIMARY_DA "\033[?6c" // vt102
-#define SECONDARY_DA "\033[>1;95;0c" // vt220
+#include "utf8.h"
 
 int ctrl_error, esc_error;
 struct Esc esc;
 
-int utf8_decode(unsigned char*, int,
-    MyRune*, int*);
+#define PRIMARY_DA "\033[?6c" // vt102
+#define SECONDARY_DA "\033[>1;95;0c" // vt220
 
 #define ERR_OTHER  -1
 #define ERR_RETRY   1
