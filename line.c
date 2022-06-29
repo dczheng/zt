@@ -14,13 +14,16 @@ char *norm_line_buffer, *alt_line_buffer;
 #define YASSERT(y) \
     ASSERT(y >= 0 && y < zt.row, #y": %d, row: %d", y, zt.row)
 
+#define YLIMIT(y) LIMIT(y, 0, zt.row-1)
+#define XLIMIT(x) LIMIT(x, 0, zt.col-1)
+
 void
 ldirty(int a, int b) {
     PASSERT(a);
     PASSERT(b);
     if (a >= zt.col)
         return;
-    LIMIT(b, 0, zt.col-1);
+    XLIMIT(b);
     for (; a <= b; a++)
         zt.dirty[a] = 1;
 }
@@ -53,7 +56,7 @@ lerase(int y, int a, int b) {
     PASSERT(b);
     if (a >= zt.col)
         return;
-    LIMIT(b, 0, zt.col-1);
+    XLIMIT(b);
     for (; a <= b && a < zt.col; a++)
         zt.line[y][a] = zt.c;
     ldirty(y, y);
@@ -92,8 +95,8 @@ void
 lmoveto(int y, int x) {
     zt.y = y;
     zt.x = x;
-    LIMIT(zt.y, 0, zt.row-1);
-    LIMIT(zt.x, 0, zt.col-1);
+    XLIMIT(zt.x);
+    YLIMIT(zt.y);
 }
 
 void
@@ -101,8 +104,8 @@ lsettb(int t, int b) {
     zt.top = t;
     zt.bot = b;
     lmoveto(0, 0);
-    LIMIT(zt.top, 0, zt.row-1);
-    LIMIT(zt.bot, 0, zt.row-1);
+    YLIMIT(zt.top);
+    YLIMIT(zt.bot);
     ASSERT(zt.top < zt.bot, "top: %d, bot: %d", zt.top, zt.bot);
 }
 
@@ -144,7 +147,7 @@ lnew(void) {
         return;
     }
     zt.y++;
-    YASSERT(zt.y);
+    YLIMIT(zt.y);
 }
 
 void
@@ -153,7 +156,7 @@ ltab(int n) {
         for (zt.x++; zt.x < zt.col && !zt.tabs[zt.x]; zt.x++);
     for (; zt.x > 0 && n < 0; n++)
         for (zt.x--; zt.x > 0 && !zt.tabs[zt.x]; zt.x--);
-    LIMIT(zt.x, 0, zt.col-1);
+    XLIMIT(zt.x);
 }
 
 void
@@ -295,10 +298,10 @@ lresize(void) {
         zt.tabs[i] = tabs_old[i];
     free(tabs_old);
 
-    LIMIT(zt.x, 0, zt.col-1);
-    LIMIT(zt.y, 0, zt.row-1);
+    XLIMIT(zt.x);
+    YLIMIT(zt.y);
     zt.bot = zt.row_old - zt.bot + zt.row;
-    LIMIT(zt.top, 0, zt.row-1);
-    LIMIT(zt.bot, 0, zt.row-1);
+    YLIMIT(zt.top);
+    YLIMIT(zt.bot);
 }
 
