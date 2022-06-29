@@ -407,8 +407,8 @@ escnf:
 //TODO
 escfp:
     switch (esc.esc) {
-        CASE(FP_DECSC, lcursor(0))
-        CASE(FP_DECRC, lcursor(1))
+        CASE(FP_DECSC, lcursor(SET))
+        CASE(FP_DECRC, lcursor(RESET))
         case FP_DECPAM:
         case FP_DECPNM:
             break;

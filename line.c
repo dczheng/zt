@@ -147,7 +147,8 @@ lnew(void) {
         return;
     }
     zt.y++;
-    YLIMIT(zt.y);
+    YASSERT(zt.y);
+    //YLIMIT(zt.y);
 }
 
 void
