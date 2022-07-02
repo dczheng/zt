@@ -27,11 +27,6 @@ char *to_bytes(unsigned long);
     b = _t;\
 } while(0);
 
-#define CASE(value, doing) \
-    case value: \
-    doing;\
-    break;
-
 #define LIMIT(x, a, b) \
     x = (x) < (a) ? (a) : ((x) > (b) ? (b) : (x))
 

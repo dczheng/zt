@@ -29,7 +29,7 @@ struct Esc esc;
 
 void tdump(void);
 
-void 
+void
 sgr_handle(void) {
     int n, m, v, r, g, b, i, npar;
 
@@ -64,21 +64,20 @@ sgr_handle(void) {
 
         switch (n) {
 
-            CASE(0,  ATTR_RESET())
-            CASE(1,  ATTR_SET(ATTR_BOLD))
-            CASE(2,  ATTR_SET(ATTR_FAINT))
-            CASE(3,  ATTR_SET(ATTR_ITALIC))
-            CASE(4,  ATTR_SET(ATTR_UNDERLINE))
-            CASE(7,  ATTR_SET(ATTR_COLOR_REVERSE))
-            CASE(9,  ATTR_SET(ATTR_CROSSED_OUT))
-            CASE(22, ATTR_UNSET(ATTR_BOLD|ATTR_FAINT))
-            CASE(23, ATTR_UNSET(ATTR_ITALIC))
-            CASE(24, ATTR_UNSET(ATTR_UNDERLINE))
-            CASE(27, ATTR_UNSET(ATTR_COLOR_REVERSE))
-            CASE(29, ATTR_UNSET(ATTR_CROSSED_OUT))
-            CASE(39, ATTR_SET(ATTR_DEFAULT_FG))
-            CASE(49, ATTR_SET(ATTR_DEFAULT_BG))
-                
+            case 0 : ATTR_RESET()                    ; break;
+            case 1 : ATTR_SET(ATTR_BOLD)             ; break;
+            case 2 : ATTR_SET(ATTR_FAINT)            ; break;
+            case 3 : ATTR_SET(ATTR_ITALIC)           ; break;
+            case 4 : ATTR_SET(ATTR_UNDERLINE)        ; break;
+            case 7 : ATTR_SET(ATTR_COLOR_REVERSE)    ; break;
+            case 9 : ATTR_SET(ATTR_CROSSED_OUT)      ; break;
+            case 22: ATTR_UNSET(ATTR_BOLD|ATTR_FAINT); break;
+            case 23: ATTR_UNSET(ATTR_ITALIC)         ; break;
+            case 24: ATTR_UNSET(ATTR_UNDERLINE)      ; break;
+            case 27: ATTR_UNSET(ATTR_COLOR_REVERSE)  ; break;
+            case 29: ATTR_UNSET(ATTR_CROSSED_OUT)    ; break;
+            case 39: ATTR_SET(ATTR_DEFAULT_FG)       ; break;
+            case 49: ATTR_SET(ATTR_DEFAULT_BG)       ; break;
             case 38:
             case 48:
                 SGR_PAR(i++, m, 0);
@@ -93,7 +92,7 @@ sgr_handle(void) {
                         ctrl_error = ERR_PAR;
                         return;
                     }
-                    if (n == 38) 
+                    if (n == 38)
                         ATTR_FG8(v);
                     else
                         ATTR_BG8(v);
@@ -115,7 +114,7 @@ sgr_handle(void) {
                         ctrl_error = ERR_PAR;
                         return;
                     }
-                    
+
                     if (n == 38)
                         ATTR_FG24(r, g, b);
                     else
@@ -158,28 +157,41 @@ mode_handle(void) {
             continue;
         }
         switch (n) {
-            CASE(M_SF,      MODE_SET(s, MODE_SEND_FOCUS))
-            CASE(DECTCEM,   MODE_SET(s, MODE_TEXT_CURSOR))
-            CASE(M_BP,      MODE_SET(s, MODE_BRACKETED_PASTE))
-            CASE(M_MP,
-                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_PRESS))
-            CASE(M_MMP,
-                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS))
-            CASE(M_MMA,
-                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_MOTION_ANY))
-            CASE(M_ME,
-                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT))
-            CASE(M_SC,   lcursor(s))
-            CASE(M_ALTS, 
+            case M_SF:
+                MODE_SET(s, MODE_SEND_FOCUS);
+                break;
+            case DECTCEM:
+                MODE_SET(s, MODE_TEXT_CURSOR);
+                break;
+            case M_BP:
+                MODE_SET(s, MODE_BRACKETED_PASTE);
+                break;
+            case M_MP:
+                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_PRESS);
+                break;
+            case M_MMP:
+                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS);
+                break;
+            case M_MMA:
+                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_MOTION_ANY);
+                break;
+            case M_ME:
+                MODE_SET(s, MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT);
+                break;
+            case M_SC:
+                lcursor(s);
+                break;
+            case M_ALTS:
                 zt.line = (s ? zt.alt_line : zt.norm_line);
-                ldirty_all())
-            CASE(M_SC_ALTS,
+                ldirty_all();
+                break;
+            case M_SC_ALTS:
                 lcursor(s);
                 zt.line = (s ? zt.alt_line : zt.norm_line);
                 if (s == SET)
                     lclear_all();
-                ldirty_all())
-
+                ldirty_all();
+                break;
             case DECAWM:
             case DECCKM:
             case M_SBC:
@@ -210,10 +222,13 @@ dsr_handle(void) {
 
     ctrl_error = ERR_UNSUPP;
     switch (n) {
-        CASE(5, nw = snprintf(wbuf, sizeof(wbuf), "\0330n"))
-        CASE(6,
+        case 5: 
+            nw = snprintf(wbuf, sizeof(wbuf), "\0330n");
+            break;
+        case 6:
             nw = snprintf(wbuf, sizeof(wbuf), "\033[%d;%dR",
-                zt.y+1, zt.x+1))
+                zt.y+1, zt.x+1);
+            break;
         default:
             return;
     }
@@ -231,34 +246,40 @@ csi_handle(void) {
             return;\
         }
     switch (esc.csi) {
-        CASE(CUF,        CSI_PAR(0, n, 1))
-        CASE(CUB,        CSI_PAR(0, n, 1))
-        CASE(CUU,        CSI_PAR(0, n, 1))
-        CASE(CUD,        CSI_PAR(0, n, 1))
-        CASE(CPL,        CSI_PAR(0, n, 1))
-        CASE(CNL,        CSI_PAR(0, n, 1))
-        CASE(IL,         CSI_PAR(0, n, 1))
-        CASE(DL,         CSI_PAR(0, n, 1))
-        CASE(DCH,        CSI_PAR(0, n, 1))
-        CASE(CHA,        CSI_PAR(0, n, 1))
-        CASE(HPA,        CSI_PAR(0, n, 1))
-        CASE(VPA,        CSI_PAR(0, n, 1))
-        CASE(VPR,        CSI_PAR(0, n, 1))
-        CASE(HPR,        CSI_PAR(0, n, 1))
-        CASE(SU,         CSI_PAR(0, n, 1))
-        CASE(SD,         CSI_PAR(0, n, 1))
-        CASE(ECH,        CSI_PAR(0, n, 1))
-        CASE(CHT,        CSI_PAR(0, n, 1))
-        CASE(CBT,        CSI_PAR(0, n, 1))
-        CASE(ICH,        CSI_PAR(0, n, 1))
-        CASE(REP,        CSI_PAR(0, n, 1))
+        case CUF:
+        case CUB:
+        case CUU:
+        case CUD:
+        case CPL:
+        case CNL:
+        case IL: 
+        case DL: 
+        case DCH:
+        case CHA:
+        case HPA:
+        case VPA:
+        case VPR:
+        case HPR:
+        case SU: 
+        case SD: 
+        case ECH:
+        case CHT:
+        case CBT:
+        case ICH:
+        case REP:
+            CSI_PAR(0, n, 1);
+            break;
 
-        CASE(ED,         CSI_PAR(0, n, 0))
-        CASE(EL,         CSI_PAR(0, n, 0))
-        CASE(TBC,        CSI_PAR(0, n, 0))
+        case ED:
+        case EL:
+        case TBC:
+            CSI_PAR(0, n, 0);
+            break;
 
-        CASE(DECSTBM,    CSI_PAR(0, n, 1);
-                         CSI_PAR(1, m, zt.row))
+        case DECSTBM:
+            CSI_PAR(0, n, 1);
+            CSI_PAR(1, m, zt.row);
+            break;
 
         case CUP:
         case HVP:
@@ -275,64 +296,64 @@ csi_handle(void) {
 
     switch (esc.csi) {
 
-        CASE(CUF,       lmoveto(zt.y  , zt.x+n ))
-        CASE(CUB,       lmoveto(zt.y  , zt.x-n ))
-        CASE(CUU,       lmoveto(zt.y-n, zt.x   ))
-        CASE(CUD,       lmoveto(zt.y+n, zt.x   ))
-        CASE(CPL,       lmoveto(zt.y-n, 0      ))
-        CASE(CNL,       lmoveto(zt.y+n, 0      ))
-        CASE(CUP,       lmoveto(n-1   , m-1    ))
-        CASE(HVP,       lmoveto(n-1   , m-1    ))
-        CASE(CHA,       lmoveto(zt.y  , n-1    ))
-        CASE(HPA,       lmoveto(zt.y  , n-1    ))
-        CASE(VPA,       lmoveto(n-1   , zt.x   ))
-        CASE(HPR,       lmoveto(zt.y  , zt.x+n ))
-        CASE(VPR,       lmoveto(zt.y+n, zt.y    ))
-        CASE(IL,        linsert(n))
-        CASE(DL,        ldelete(n))
-        CASE(SGR,       sgr_handle())
-        CASE(SU,        lscroll_up(zt.top, n))
-        CASE(SD,        lscroll_down(zt.top, n))
-        CASE(ECH,       lerase(zt.y, zt.x, zt.x+n-1));
-        CASE(SM,        mode_handle())
-        CASE(RM,        mode_handle())
-        CASE(DECSTBM,   lsettb(n-1, m-1))
-        CASE(CHT,       ltab(n))
-        CASE(CBT,       ltab(-n))
-        CASE(ICH,       linsert_blank(n))
-        CASE(DCH,       ldelete_char(n))
-        CASE(REP,       lrepeat_last(n))
-        CASE(DECSC,     lcursor(SET))
-        CASE(DECRC,     lcursor(RESET))
-        CASE(DSR,       dsr_handle())
+        case CUF    : lmoveto(zt.y  , zt.x+n )    ; break;
+        case CUB    : lmoveto(zt.y  , zt.x-n )    ; break;
+        case CUU    : lmoveto(zt.y-n, zt.x   )    ; break;
+        case CUD    : lmoveto(zt.y+n, zt.x   )    ; break;
+        case CPL    : lmoveto(zt.y-n, 0      )    ; break;
+        case CNL    : lmoveto(zt.y+n, 0      )    ; break;
+        case CUP    : lmoveto(n-1   , m-1    )    ; break;
+        case HVP    : lmoveto(n-1   , m-1    )    ; break;
+        case CHA    : lmoveto(zt.y  , n-1    )    ; break;
+        case HPA    : lmoveto(zt.y  , n-1    )    ; break;
+        case VPA    : lmoveto(n-1   , zt.x   )    ; break;
+        case HPR    : lmoveto(zt.y  , zt.x+n )    ; break;
+        case VPR    : lmoveto(zt.y+n, zt.y   )    ; break;
+        case IL     : linsert(n)                  ; break;
+        case DL     : ldelete(n)                  ; break;
+        case SGR    : sgr_handle()                ; break;
+        case SU     : lscroll_up(zt.top, n)       ; break;
+        case SD     : lscroll_down(zt.top, n)     ; break;
+        case ECH    : lerase(zt.y, zt.x, zt.x+n-1); break;
+        case SM     : mode_handle()               ; break;
+        case RM     : mode_handle()               ; break;
+        case DECSTBM: lsettb(n-1, m-1)            ; break;
+        case CHT    : ltab(n)                     ; break;
+        case CBT    : ltab(-n)                    ; break;
+        case ICH    : linsert_blank(n)            ; break;
+        case DCH    : ldelete_char(n)             ; break;
+        case REP    : lrepeat_last(n)             ; break;
+        case DECSC  : lcursor(SET)                ; break;
+        case DECRC  : lcursor(RESET)              ; break;
+        case DSR    : dsr_handle()                ; break;
         case DA:
-            if (get_par_num(&esc) == 0 || esc.seq[1] != '>') 
+            if (get_par_num(&esc) == 0 || esc.seq[1] != '>')
                 twrite(PRIMARY_DA, strlen(PRIMARY_DA));
             break;
 
         case EL:
             switch (n) {
-                CASE(0, lerase(zt.y, zt.x, zt.col-1))
-                CASE(1, lerase(zt.y, 0, zt.x))
-                CASE(2, lerase(zt.y, 0, zt.col-1))
+                case 0: lerase(zt.y, zt.x, zt.col-1); break;
+                case 1: lerase(zt.y, 0, zt.x)       ; break;
+                case 2: lerase(zt.y, 0, zt.col-1)   ; break;
                 default: ctrl_error = ERR_UNSUPP;
             }
             break;
 
         case ED:
             switch (n) {
-                CASE(0, lclear(zt.y, zt.x, zt.row-1, zt.col-1))
-                CASE(1, lclear(0, 0, zt.y , zt.x ))
-                CASE(2, lclear_all(); lmoveto(0,0))
-                CASE(3, lclear_all(); lmoveto(0,0))
+                case 0: lclear(zt.y, zt.x, zt.row-1, zt.col-1); break;
+                case 1: lclear(0, 0, zt.y , zt.x )            ; break;
+                case 2: lclear_all(); lmoveto(0,0)            ; break;
+                case 3: lclear_all(); lmoveto(0,0)            ; break;
                 default: ctrl_error = ERR_UNSUPP;
             }
             break;
 
         case TBC:
             switch (n) {
-                CASE(0, zt.tabs[zt.x] = 0)
-                CASE(3, ltab_clear())
+                case 0: zt.tabs[zt.x] = 0; break;
+                case 3: ltab_clear()     ; break;
                 default: ctrl_error = ERR_UNSUPP;
             }
             break;
@@ -369,8 +390,12 @@ esc_handle(unsigned char *buf, int len) {
 
 escfe:
     switch (esc.esc) {
-        CASE(CSI, csi_handle())
-        CASE(HTS, zt.tabs[zt.x] = 1)
+        case CSI: 
+            csi_handle();
+            break;
+        case HTS:
+            zt.tabs[zt.x] = 1;
+            break;
         case RI:
             if (zt.y == zt.top) {
                 lscroll_down(zt.top, 1);
@@ -407,8 +432,12 @@ escnf:
 //TODO
 escfp:
     switch (esc.esc) {
-        CASE(FP_DECSC, lcursor(SET))
-        CASE(FP_DECRC, lcursor(RESET))
+        case FP_DECSC:
+            lcursor(SET);
+            break;
+        case FP_DECRC:
+            lcursor(RESET);
+            break;
         case FP_DECPAM:
         case FP_DECPNM:
             break;
@@ -433,16 +462,15 @@ ctrl_handle(unsigned char *buf, int len) {
     zt.lastc = 0;
     esc_reset(&esc);
     switch (c) {
-        CASE(ESC, esc_handle(buf+1, len-1))
-        CASE(LF,  lnew())
-        CASE(CR,  lmoveto(zt.y, 0))
-        CASE(HT,  ltab(1))
-        CASE(HTS, zt.tabs[zt.x] = 1)
-        CASE(BS,  lmoveto(zt.y, zt.x-1))
-        CASE(CCH, lmoveto(zt.y, zt.x-1))
-        // CCH: Cancel character,
-        // intended to eliminate ambiguity about meaning of BS.
-
+        case ESC: esc_handle(buf+1, len-1); break;
+        case LF : lnew()                  ; break;
+        case CR : lmoveto(zt.y, 0)        ; break;
+        case HT : ltab(1)                 ; break;
+        case HTS: zt.tabs[zt.x] = 1       ; break;
+        case BS:
+        case CCH:     // CCH: Cancel character, intended to eliminate ambiguity about meaning of BS.
+            lmoveto(zt.y, zt.x-1);
+            break;
         case BEL:     // bell, allert
         case SS2:
         case SS3:
@@ -452,7 +480,7 @@ ctrl_handle(unsigned char *buf, int len) {
         case ST:
         case SO:      // Switch to an alternative character set.
         case SI:      // Return to regular character set after Shift Out.
-            break; // TODO
+            break;    // TODO
         default:
             ctrl_error = ERR_UNSUPP;
     }
@@ -460,8 +488,12 @@ ctrl_handle(unsigned char *buf, int len) {
         return;
 
     switch (ctrl_error) {
-        CASE(ERR_ESC, printf("can not find esc\n"))
-        CASE(ERR_PAR, printf("error parameter: %s\n", get_esc_str(&esc, 1)))
+        case ERR_ESC:
+            printf("can not find esc\n");
+            break;
+        case ERR_PAR:
+            printf("error parameter: %s\n", get_esc_str(&esc, 1));
+            break;
         case ERR_UNSUPP:
             printf("unsupported: ");
             if (c != ESC) {
@@ -480,7 +512,7 @@ tdump(void) {
     struct MyChar c;
     char buf[10];
     char *space = "         ";
-    
+
     printf("frame: %d, size: %dx%d, margin: %d-%d, cur: %dx%d\n",
         frame, zt.row, zt.col, zt.top, zt.bot, zt.y, zt.x);
     frame++;
@@ -679,7 +711,7 @@ retry:
 #endif
 
     ASSERT(retries <= RETRY_MAX && retries >= 0, "");
-    if (force) 
+    if (force)
         ASSERT(nread == len,
             "force read error: nread:%d, len: %d, ctrl: %d, char: %d",
             nread, len, total_ctrl_bytes, total_char_bytes);

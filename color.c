@@ -1,4 +1,3 @@
-#include "tool.h"
 #include "color.h"
 #include "config.h"
 
@@ -11,28 +10,28 @@ xterm_c8(unsigned char v) {
     /* standard colors */
     if (v <= 7) {
         switch (v) {
-            CASE(  0, r =   0; g =   0; b =   0) // black
-            CASE(  1, r = 205; g =   0; b =   0) // red
-            CASE(  2, r =   0; g = 205; b =   0) // green
-            CASE(  3, r = 205; g = 205; b =   0) // yellow
-            CASE(  4, r =   0; g =   0; b = 238) // blue
-            CASE(  5, r = 205; g =   0; b = 205) // magenta
-            CASE(  6, r =   0; g = 205; b = 205) // cyan
-            CASE(  7, r = 229; g = 229; b = 229) // white
+            case  0: r =   0; g =   0; b =   0; break; // black
+            case  1: r = 205; g =   0; b =   0; break; // red
+            case  2: r =   0; g = 205; b =   0; break; // green
+            case  3: r = 205; g = 205; b =   0; break; // yellow
+            case  4: r =   0; g =   0; b = 238; break; // blue
+            case  5: r = 205; g =   0; b = 205; break; // magenta
+            case  6: r =   0; g = 205; b = 205; break; // cyan
+            case  7: r = 229; g = 229; b = 229; break; // white
         }
     }
 
     /* high intensity colors */
     if (v >= 8 && v <= 15) {
         switch (v) {
-            CASE(  8, r = 127; g = 127; b = 127) // black (gray)
-            CASE(  9, r = 255; g =   0; b =   0) // red
-            CASE( 10, r =   0; g = 255; b =   0) // green
-            CASE( 11, r = 255; g = 255; b =   0) // yellow
-            CASE( 12, r =  92; g =  92; b = 255) // blue
-            CASE( 13, r = 255; g =   0; b = 255) // magenta
-            CASE( 14, r =   0; g = 255; b = 255) // cyan
-            CASE( 15, r = 255; g = 255; b = 255) // white
+            case  8: r = 127; g = 127; b = 127; break; // black (gray)
+            case  9: r = 255; g =   0; b =   0; break; // red
+            case 10: r =   0; g = 255; b =   0; break; // green
+            case 11: r = 255; g = 255; b =   0; break; // yellow
+            case 12: r =  92; g =  92; b = 255; break; // blue
+            case 13: r = 255; g =   0; b = 255; break; // magenta
+            case 14: r =   0; g = 255; b = 255; break; // cyan
+            case 15: r = 255; g = 255; b = 255; break; // white
         }
     }
 
@@ -52,28 +51,28 @@ ubuntu_c8(unsigned char v) {
     /* standard colors */
     if (v <= 7) {
         switch (v) {
-            CASE(  0, r =   1; g =   1; b =   1) // black
-            CASE(  1, r = 222; g =  56; b =  43) // red
-            CASE(  2, r =  57; g = 181; b =  74) // green
-            CASE(  3, r = 255; g = 199; b =   6) // yellow
-            CASE(  4, r =   0; g = 111; b = 184) // blue
-            CASE(  5, r = 118; g =  38; b = 113) // magenta
-            CASE(  6, r =  44; g = 181; b = 233) // cyan
-            CASE(  7, r = 204; g = 204; b = 204) // white
+            case  0: r =   1; g =   1; b =   1; break; // black
+            case  1: r = 222; g =  56; b =  43; break; // red
+            case  2: r =  57; g = 181; b =  74; break; // green
+            case  3: r = 255; g = 199; b =   6; break; // yellow
+            case  4: r =   0; g = 111; b = 184; break; // blue
+            case  5: r = 118; g =  38; b = 113; break; // magenta
+            case  6: r =  44; g = 181; b = 233; break; // cyan
+            case  7: r = 204; g = 204; b = 204; break; // white
         }
     }
 
     /* high intensity colors */
     if (v >= 8 && v <=15) {
         switch (v) {
-            CASE(  8, r = 128; g = 128; b = 128) // black (gray)
-            CASE(  9, r = 255; g =   0; b =   0) // red
-            CASE( 10, r =   0; g = 255; b =   0) // green
-            CASE( 11, r = 255; g = 255; b =   0) // yellow
-            CASE( 12, r =   0; g =   0; b = 255) // blue
-            CASE( 13, r = 255; g =   0; b = 255) // magenta
-            CASE( 14, r =   0; g = 255; b = 255) // cyan
-            CASE( 15, r = 255; g = 255; b = 255) // white
+            case  8: r = 128; g = 128; b = 128; break; // black (gray)
+            case  9: r = 255; g =   0; b =   0; break; // red
+            case 10: r =   0; g = 255; b =   0; break; // green
+            case 11: r = 255; g = 255; b =   0; break; // yellow
+            case 12: r =   0; g =   0; b = 255; break; // blue
+            case 13: r = 255; g =   0; b = 255; break; // magenta
+            case 14: r =   0; g = 255; b = 255; break; // cyan
+            case 15: r = 255; g = 255; b = 255; break; // white
         }
     }
 

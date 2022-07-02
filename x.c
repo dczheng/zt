@@ -89,17 +89,23 @@ xdraw_specs(struct MyChar c) {
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_FG))) {
         switch (c.fg.type) {
-            CASE(COLOR8, fg = color8[c.fg.c8])
-            CASE(COLOR24,
-                rf = xcolor_alloc(&fg, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2]))
+            case COLOR8:
+                fg = color8[c.fg.c8];
+                break;
+            case COLOR24:
+                rf = xcolor_alloc(&fg, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2]);
+                break;
         }
     }
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_BG))) {
         switch (c.bg.type) {
-            CASE(COLOR8, bg = color8[c.bg.c8])
-            CASE(COLOR24,
-                rb = xcolor_alloc(&bg, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2]))
+            case COLOR8: 
+                bg = color8[c.bg.c8];
+                break;
+            case COLOR24:
+                rb = xcolor_alloc(&bg, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2]);
+                break;
         }
     }
 
