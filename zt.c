@@ -257,7 +257,7 @@ main(void) {
             break;
 
         if (ret == -2)
-             ASSERT(tread(-1) == 0, "can't, be");
+             ASSERT(tread(-1) == 0, "can't be");
 
         now = get_time();
         latency -= now-last;
