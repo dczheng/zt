@@ -11,7 +11,7 @@
 #include "tool.h"
 
 char *
-to_bytes(unsigned long b) {
+parse_bytes(unsigned long b) {
 	static char buf[64];
 	char *p = "KMGT";
 	int i;

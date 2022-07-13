@@ -8,7 +8,7 @@
 long get_time(void);
 void dump_hex(unsigned char*, int);
 void dump(unsigned char*, int);
-char *to_bytes(unsigned long);
+char *parse_bytes(unsigned long);
 
 #define UNUSED      __attribute__((unused))
 #define NANOSEC     1000000000

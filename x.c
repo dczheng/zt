@@ -562,7 +562,7 @@ xcolor_init(void) {
     n = sizeof(XftGlyphFontSpec) * zt.col;
     specs = malloc(n);
     ASSERT(specs != NULL, "");
-    printf("allocate %s for specs\n", to_bytes(n));
+    printf("allocate %s for specs\n", parse_bytes(n));
 
     for (n = 0; n < 256; n++) {
         mc = c8_to_rgb(n);
