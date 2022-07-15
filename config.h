@@ -1,7 +1,7 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#include "tool.h"
+#include "tools.h"
 
 #define TERM "xterm-256color"
 #define BACKGROUND "gray20"

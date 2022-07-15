@@ -4,7 +4,7 @@
 #include <errno.h>
 
 #include "zt.h"
-#include "tool.h"
+#include "tools.h"
 #include "ctrl.h"
 #include "utf8.h"
 

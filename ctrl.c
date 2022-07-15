@@ -7,7 +7,7 @@
 #include <stdarg.h>
 
 #include "ctrl.h"
-#include "tool.h"
+#include "tools.h"
 
 int
 get_fp_esc_info(int type, struct CtrlInfo **info) {

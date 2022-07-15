@@ -4,11 +4,10 @@
 #include <unistd.h>
 #include <time.h>
 #include <stdint.h>
-#include <sys/select.h>
 #include <errno.h>
 
 #include "ctrl.h"
-#include "tool.h"
+#include "tools.h"
 
 char *
 parse_bytes(unsigned long b) {

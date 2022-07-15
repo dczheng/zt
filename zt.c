@@ -27,7 +27,7 @@ struct ZT zt;
 pid_t pid;
 
 int
-io_wait(int *r, int nr, int *w, int nw, int nano) {
+io_wait(int *r, int nr, int *w, int nw, long nano) {
     fd_set rfd, wfd, *prfd=NULL, *pwfd=NULL;
     int  m=-1, ret=0, i;
     struct timespec tv, *ptv;
