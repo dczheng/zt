@@ -106,7 +106,7 @@ lsettb(int t, int b) {
     lmoveto(0, 0);
     YLIMIT(zt.top);
     YLIMIT(zt.bot);
-    ASSERT(zt.top < zt.bot, "top: %d, bot: %d", zt.top, zt.bot);
+    ASSERT(zt.top <= zt.bot, "top: %d, bot: %d", zt.top, zt.bot);
 }
 
 void
