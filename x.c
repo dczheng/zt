@@ -30,6 +30,7 @@ int screen, depth, nspec;
 struct MyFont {
     XftFont *font;
     int weight, slant;
+    FcChar8 *family;
 } *fonts;
 int font_width, font_height, font_base, nfont;
 
@@ -507,6 +508,7 @@ xfont_load(char *str, struct MyFont *f) {
 
     m = FcFontMatch(NULL, p, &r);
     ASSERT(f->font = XftFontOpenPattern(display, m), "");
+    f->family = FcPatternFormat(m, (FcChar8*)"%{family}");
 
     FcPatternDestroy(m);
     FcPatternDestroy(p);
@@ -536,7 +538,8 @@ xfont_init(void) {
 
         if (i % 4 != 0)
             continue;
-        printf("%s: (%d %d %d)\n", font_list[i/4],
+        printf("%s: %s (%d %d %d)\n", font_list[i/4],
+            f->family,
             f->font->max_advance_width,
             f->font->height,
             f->font->height - f->font->descent);
