@@ -130,8 +130,8 @@ twrite(char *s, int n) {
     int ret, ntry=0, wait=100 * MICROSEC;
 
     for (;;) {
-        if (n<=0)
-            break;
+        if (n <= 0) break;
+
         ntry++;
         ASSERT(ntry <= 100, "can't write tty");
 
@@ -142,10 +142,6 @@ twrite(char *s, int n) {
             printf("failed to read tty: %s\n", strerror(errno));
             return;
         }
-
-        if (ret == n || !tread(wait))
-            ntry = 0;
-
         n -= ret;
         s += ret;
     }
@@ -257,7 +253,7 @@ main(void) {
             break;
 
         if (ret == -2)
-             ASSERT(tread(-1) == 0, "can't be");
+            ASSERT(tread(-1) == 0, "can't be");
 
         now = get_time();
         latency -= now-last;
