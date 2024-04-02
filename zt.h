@@ -13,6 +13,7 @@ struct ZT {
     struct MyChar **line, **alt_line, **norm_line, c;
     MyRune lastc;
     unsigned long mode;
+    double fontsize;
 };
 extern struct ZT zt;
 

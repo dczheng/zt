@@ -413,12 +413,12 @@ _ConfigureNotify(XEvent *ev) {
     zt.row = r;
     zt.col = c;
 
-    //printf("resize: %dx%d -> %dx%d\n",
-    //    zt.row_old, zt.col_old, zt.row, zt.col);
+    //printf("resize: %dx%d -> %dx%d\n", zt.row_old, zt.col_old, zt.row, zt.col);
 
     xresize();
     tresize();
-    lresize(); }
+    lresize();
+}
 
 #define H(type) \
     case type: \
@@ -516,10 +516,10 @@ xfont_load(char *str, struct MyFont *f) {
 
 void
 xfont_init(void) {
-    int i;
+    int i, size;
     struct MyFont *f;
     XGlyphInfo exts;
-    char printable[PRINTABLE_END-PRINTABLE_START+2];
+    char printable[PRINTABLE_END-PRINTABLE_START+2], buf[128];
 
     for (i = 0; i <= PRINTABLE_END-PRINTABLE_START; i++)
         printable[i] = i + PRINTABLE_START;
@@ -534,11 +534,16 @@ xfont_init(void) {
         f = &fonts[i];
         f->weight = ((i%4) / 2 == 0 ? FC_WEIGHT_REGULAR : FC_WEIGHT_BOLD);
         f->slant = ((i%4) % 2 == 0 ? FC_SLANT_ROMAN : FC_SLANT_ITALIC);
-            xfont_load(font_list[i/4], f);
+
+        size = font_list[i/4].pixelsize * zt.fontsize;
+        size = MAX(size, 1);
+
+        snprintf(buf, sizeof(buf), "%s:pixelsize=%d", font_list[i/4].name, size);
+        xfont_load(buf, f);
 
         if (i % 4 != 0)
             continue;
-        printf("%s: %s (%d %d %d)\n", font_list[i/4],
+        printf("%s: %s (%d %d %d)\n", font_list[i/4].name,
             f->family,
             f->font->max_advance_width,
             f->font->height,

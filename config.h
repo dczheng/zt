@@ -11,10 +11,13 @@
 #define COL 80 
 #define USED_COLOR UBUNTU_COLOR // UTUNBU_COLOR or XTERM_COLOR
 
-static char *font_list[] UNUSED = {
-    "Sarasa Mono CL:pixelsize=24",
-    "Noto Emoji:pixelsize=8",
-    "Unifont:pixelsize=16",
+static struct {
+    char *name;
+    int pixelsize;
+} font_list[] UNUSED = {
+    {"Sarasa Mono CL", 26},
+    {"Noto Emoji", 8},
+    {"Unifont", 18},
 };
 
 #endif

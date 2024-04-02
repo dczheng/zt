@@ -224,9 +224,18 @@ tinit(void) {
 }
 
 int
-main(void) {
+main(int argc, char **argv) {
     int fd[2], ret;
+    char *e = NULL;
     long now, last, latency, timeout;
+
+    if (argc > 1) {
+        zt.fontsize = strtod(argv[1], &e);
+        if (strlen(e))
+            zt.fontsize = 1;
+    } else {
+        zt.fontsize = 1;
+    }
 
     zt.row = MAX(ROW, 8);
     zt.col = MAX(COL, 8);
