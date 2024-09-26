@@ -8,7 +8,7 @@
 #define FOREGROUND "white"
 #define LATENCY 1
 #define ROW 24
-#define COL 80 
+#define COL 80
 #define USED_COLOR UBUNTU_COLOR // UTUNBU_COLOR or XTERM_COLOR
 
 static struct {

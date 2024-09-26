@@ -163,7 +163,7 @@
 #define M_ALTS      1047
 #define M_SC        1048
 #define M_SC_ALTS   1049
-#define M_ME        1006 
+#define M_ME        1006
 
 // nf esc
 #define NF_GZD4        '('
@@ -208,7 +208,7 @@ int get_par_num(struct Esc*);
 int get_int_par(struct Esc*, int, int*, int);
 int get_str_par(struct Esc*, int, char**);
 int find_osc_end(unsigned char*, int, int*);
-int get_fp_esc_info(int, struct CtrlInfo**); 
+int get_fp_esc_info(int, struct CtrlInfo**);
 int get_nf_esc_info(int, struct CtrlInfo**);
 int get_mode_info(int, struct CtrlInfo**);
 int get_ctrl_info(unsigned char, struct CtrlInfo**);

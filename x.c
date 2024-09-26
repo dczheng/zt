@@ -42,7 +42,7 @@ int font_width, font_height, font_base, nfont;
 
 static inline void
 xflush(void) {
-    XCopyArea(display, pixmap, window, gc, 
+    XCopyArea(display, pixmap, window, gc,
         0, 0, zt.width, zt.height, 0, 0);
     XFlush(display);
 }
@@ -107,7 +107,7 @@ xdraw_specs(struct MyChar c) {
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_BG))) {
         switch (c.bg.type) {
-            case COLOR8: 
+            case COLOR8:
                 bg = color8[c.bg.c8];
                 break;
             case COLOR24:
@@ -120,7 +120,7 @@ xdraw_specs(struct MyChar c) {
         SWAP(fg, bg);
 
     XftDrawRect(drawable, &bg, x, y, w, font_height);
-    if (ATTR_HAS(c, ATTR_UNDERLINE)) 
+    if (ATTR_HAS(c, ATTR_UNDERLINE))
         XftDrawRect(drawable, &fg, x, y + font_base + 1, w, 1);
     if (ATTR_HAS(c, ATTR_CROSSED_OUT))
         XftDrawRect(drawable, &fg, x, y + font_height / 2, w, 1);
@@ -313,9 +313,9 @@ _Mouse(XEvent *ev) {
             t = '-';
     }
     printf("%c (%d %d): %d, %d, %d, %d, %d, %d\n", t, r, c,
-        MODE_HAS(MODE_MOUSE), 
-        MODE_HAS(MODE_MOUSE_PRESS), 
-        MODE_HAS(MODE_MOUSE_RELEASE), 
+        MODE_HAS(MODE_MOUSE),
+        MODE_HAS(MODE_MOUSE_PRESS),
+        MODE_HAS(MODE_MOUSE_RELEASE),
         MODE_HAS(MODE_MOUSE_MOTION_PRESS),
         MODE_HAS(MODE_MOUSE_MOTION_ANY),
         MODE_HAS(MODE_MOUSE_EXT)
@@ -365,7 +365,7 @@ _Mouse(XEvent *ev) {
     } else {
         n = snprintf(buf, sizeof(buf),
             "\033[M%c%c%c", 32+b, 32+c, 32+r);
-    } 
+    }
     twrite(buf, n);
 }
 
@@ -418,7 +418,7 @@ _ConfigureNotify(XEvent *ev) {
     c = w / font_width;
     r = MAX(r, 8);
     c = MAX(c, 8);
-        
+
     zt.row_old = zt.row;
     zt.col_old = zt.col;
     zt.width = w;
@@ -436,15 +436,15 @@ _ConfigureNotify(XEvent *ev) {
 #define H(type) \
     case type: \
         _##type(&e); \
-        break; 
+        break;
 #define H2(type, f) \
     case type: \
         _##f(&e); \
-        break; 
+        break;
 int
 xevent(void) {
     XEvent e;
-    
+
     for (;XPending(display);) {
         XNextEvent(display, &e);
         if (XFilterEvent(&e, None))
@@ -480,7 +480,7 @@ xerror(Display *display, XErrorEvent *e) {
     return 0;
 }
 
-void 
+void
 xclean(void) {
     int i;
 
@@ -498,7 +498,7 @@ xclean(void) {
     printf("free colors\n");
     xcolor_free(&background);
     xcolor_free(&foreground);
-    for (i = 0; i < 256; i++) 
+    for (i = 0; i < 256; i++)
         xcolor_free(&color8[i]);
 
     printf("free specs\n");
@@ -650,7 +650,7 @@ xinit(void) {
 
     window = XCreateWindow(display, root, 0, 0, zt.width,
              zt.height, 0, depth, InputOutput, visual,
-             CWBackPixel | CWBorderPixel 
+             CWBackPixel | CWBorderPixel
            | CWBitGravity | CWEventMask
            | CWColormap | CWCursor
            , &wa);

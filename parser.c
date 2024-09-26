@@ -222,7 +222,7 @@ dsr_handle(void) {
 
     ctrl_error = ERR_UNSUPP;
     switch (n) {
-        case 5: 
+        case 5:
             nw = snprintf(wbuf, sizeof(wbuf), "\0330n");
             break;
         case 6:
@@ -252,16 +252,16 @@ csi_handle(void) {
         case CUD:
         case CPL:
         case CNL:
-        case IL: 
-        case DL: 
+        case IL:
+        case DL:
         case DCH:
         case CHA:
         case HPA:
         case VPA:
         case VPR:
         case HPR:
-        case SU: 
-        case SD: 
+        case SU:
+        case SD:
         case ECH:
         case CHT:
         case CBT:
@@ -296,19 +296,19 @@ csi_handle(void) {
 
     switch (esc.csi) {
 
-        case CUF    : lmoveto(zt.y  , zt.x+n )    ; break;
-        case CUB    : lmoveto(zt.y  , zt.x-n )    ; break;
-        case CUU    : lmoveto(zt.y-n, zt.x   )    ; break;
-        case CUD    : lmoveto(zt.y+n, zt.x   )    ; break;
-        case CPL    : lmoveto(zt.y-n, 0      )    ; break;
-        case CNL    : lmoveto(zt.y+n, 0      )    ; break;
-        case CUP    : lmoveto(n-1   , m-1    )    ; break;
-        case HVP    : lmoveto(n-1   , m-1    )    ; break;
-        case CHA    : lmoveto(zt.y  , n-1    )    ; break;
-        case HPA    : lmoveto(zt.y  , n-1    )    ; break;
-        case VPA    : lmoveto(n-1   , zt.x   )    ; break;
-        case HPR    : lmoveto(zt.y  , zt.x+n )    ; break;
-        case VPR    : lmoveto(zt.y+n, zt.y   )    ; break;
+        case CUF    : lmoveto(zt.y  , zt.x+n)     ; break;
+        case CUB    : lmoveto(zt.y  , zt.x-n)     ; break;
+        case CUU    : lmoveto(zt.y-n, zt.x)       ; break;
+        case CUD    : lmoveto(zt.y+n, zt.x)       ; break;
+        case CPL    : lmoveto(zt.y-n, 0)          ; break;
+        case CNL    : lmoveto(zt.y+n, 0)          ; break;
+        case CUP    : lmoveto(n-1   , m-1)        ; break;
+        case HVP    : lmoveto(n-1   , m-1)        ; break;
+        case CHA    : lmoveto(zt.y  , n-1)        ; break;
+        case HPA    : lmoveto(zt.y  , n-1)        ; break;
+        case VPA    : lmoveto(n-1   , zt.x)       ; break;
+        case HPR    : lmoveto(zt.y  , zt.x+n)     ; break;
+        case VPR    : lmoveto(zt.y+n, zt.y)       ; break;
         case IL     : linsert(n)                  ; break;
         case DL     : ldelete(n)                  ; break;
         case SGR    : sgr_handle()                ; break;
@@ -343,7 +343,7 @@ csi_handle(void) {
         case ED:
             switch (n) {
                 case 0: lclear(zt.y, zt.x, zt.row-1, zt.col-1); break;
-                case 1: lclear(0, 0, zt.y , zt.x )            ; break;
+                case 1: lclear(0, 0, zt.y , zt.x)             ; break;
                 case 2: lclear_all(); lmoveto(0,0)            ; break;
                 case 3: lclear_all(); lmoveto(0,0)            ; break;
                 default: ctrl_error = ERR_UNSUPP;
@@ -390,7 +390,7 @@ esc_handle(unsigned char *buf, int len) {
 
 escfe:
     switch (esc.esc) {
-        case CSI: 
+        case CSI:
             csi_handle();
             break;
         case HTS:

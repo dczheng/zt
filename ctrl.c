@@ -47,7 +47,7 @@ get_nf_esc_info(int type, struct CtrlInfo **info) {
     return 1;
 }
 
-int 
+int
 get_mode_info(int type, struct CtrlInfo **info) {
     static struct {
         int type;
@@ -113,9 +113,9 @@ get_mode_info(int type, struct CtrlInfo **info) {
 int
 get_ctrl_info(unsigned char type, struct CtrlInfo **info) {
     static struct {
-        unsigned char type; 
+        unsigned char type;
         struct CtrlInfo info;
-    } infos [] = { 
+    } infos [] = {
         {NUL , {"NUL" , "Null"                                       }},
         {SOH , {"SOH" , "Start of Heading"                           }},
         {STX , {"STX" , "Start of Text"                              }},
@@ -191,7 +191,7 @@ get_ctrl_info(unsigned char type, struct CtrlInfo **info) {
     return 1;
 }
 
-int 
+int
 get_csi_info(unsigned char type, struct CtrlInfo **info) {
     static struct {
         unsigned char type;
@@ -508,7 +508,7 @@ get_int_par(struct Esc *esc, int idx, int *v, int v0) {
 void // debug
 csi_dump(struct Esc *esc) {
     int i, r, rr, a, b;
-    
+
      if (esc->csi != SGR)
         return;
      dump(esc->seq, esc->len);
@@ -646,7 +646,7 @@ get_esc_str(struct Esc *esc, int desc) {
         MYPRINT("Unknown esc type");
         return buf;
     }
-    
+
     MYPRINT("ESC %s ", info->name);
     switch (esc->type) {
         case ESCFE: goto escfe;

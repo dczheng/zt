@@ -163,7 +163,7 @@ ltab(int n) {
 void
 lwrite(MyRune c) {
     int w;
-    
+
     if ((w = wcwidth(c)) <= 0) {
         //printf("can't find character width for %u\n", c);
         w = 1;
@@ -272,7 +272,7 @@ linit(void) {
     zt.lastc = 0;
 }
 
-void 
+void
 lresize(void) {
     int i, j, mr, mc;
     char *norm_line_buffer_old = norm_line_buffer;
@@ -295,7 +295,7 @@ lresize(void) {
     free(norm_line_buffer_old);
     free(alt_line_buffer_old);
 
-    for (i = 0; i < mc; i++) 
+    for (i = 0; i < mc; i++)
         zt.tabs[i] = tabs_old[i];
     free(tabs_old);
 

@@ -58,7 +58,7 @@ dump(unsigned char *buf, int n) {
 long
 get_time(void) {
     struct timespec tv;
-    
+
     clock_gettime(CLOCK_MONOTONIC, &tv);
     return tv.tv_sec * NANOSEC + tv.tv_nsec;
 }

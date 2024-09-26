@@ -40,7 +40,7 @@ io_wait(int *r, int nr, int *w, int nw, long nano) {
         tv.tv_sec = nano / NANOSEC;
         tv.tv_nsec = nano % NANOSEC;
         ptv = &tv;
-    } 
+    }
     if (nr > 0)
         prfd = &rfd;
     if (nw > 0)
@@ -195,7 +195,7 @@ tinit(void) {
         close(slave);
         signal(SIGCHLD, sigchld);
         return;
-    } 
+    }
 
     setsid();
     dup2(slave, 0);
@@ -272,7 +272,7 @@ main(int argc, char **argv) {
 	    if (latency >= 0) {
             timeout = latency;
             continue;
-	    } 
+	    }
 
         latency = LATENCY * MICROSEC;
         timeout = -1;

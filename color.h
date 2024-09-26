@@ -15,7 +15,7 @@ struct MyColor c8_to_rgb(unsigned char);
 #define UBUNTU_COLOR    1
 #define XTERM_COLOR     2
 #define COLOR8    8
-#define COLOR24  24 
+#define COLOR24  24
 
 #define COLOR_RESET(c)  bzero(&c, sizeof(struct MyColor))
 #define SET_COLOR8(c, v) do { \
