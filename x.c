@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <locale.h>
 
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
@@ -26,6 +27,11 @@ XftDraw *drawable;
 Pixmap pixmap;
 XftGlyphFontSpec *specs;
 int screen, depth, nspec;
+
+struct {
+    XIM im;
+    XIC ic;
+} xim = {0};
 
 struct MyFont {
     XftFont *font;
@@ -367,10 +373,13 @@ void
 _Focus(XEvent *ev) {
     if (!MODE_HAS(MODE_SEND_FOCUS))
         return;
-    if (ev->type == FocusIn)
+    if (ev->type == FocusIn) {
+        XSetICFocus(xim.ic);
         twrite("\033[I", 3);
-    else
+    } else {
+        XUnsetICFocus(xim.ic);
         twrite("\033[O", 3);
+    }
 }
 
 void
@@ -381,11 +390,15 @@ _Expose(XEvent *ev UNUSED) {
 void
 _KeyPress(XEvent *ev) {
     int n;
-    char buf[64];
+    char buf[128];
     KeySym ksym;
     XKeyEvent *e = &ev->xkey;
+    Status status;
 
-    n = XLookupString(e, buf, sizeof(buf), &ksym, NULL);
+    n = XmbLookupString(xim.ic, e, buf, sizeof(buf), &ksym, &status);
+    if (status == XBufferOverflow)
+        return;
+
     xkeymap(ksym, e->state, buf, &n);
     //dump((unsigned char*)buf, n);
     twrite(buf, n);
@@ -432,8 +445,10 @@ int
 xevent(void) {
     XEvent e;
     
-    for (;XPending(display);){
+    for (;XPending(display);) {
         XNextEvent(display, &e);
+        if (XFilterEvent(&e, None))
+            continue;
         switch(e.type) {
             H(Expose)
             H(KeyPress)
@@ -469,6 +484,8 @@ void
 xclean(void) {
     int i;
 
+    XDestroyIC(xim.ic);
+    XCloseIM(xim.im);
     XFreePixmap(display, pixmap);
     XFreeCursor(display, cursor);
     XftDrawDestroy(drawable);
@@ -580,6 +597,17 @@ xcolor_init(void) {
 }
 
 void
+xim_init(void) {
+    setlocale(LC_CTYPE, "");
+    XSetLocaleModifiers("");
+    ASSERT(xim.im = XOpenIM(display, NULL, NULL, NULL),);
+    ASSERT(xim.ic = XCreateIC(xim.im,
+        XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
+        XNClientWindow, window, NULL),);
+    XSetICFocus(xim.ic);
+}
+
+void
 xinit(void) {
     XSetWindowAttributes wa;
     XGCValues gcvalues;
@@ -626,6 +654,7 @@ xinit(void) {
            | CWBitGravity | CWEventMask
            | CWColormap | CWCursor
            , &wa);
+    xim_init();
 
     bzero(&gcvalues, sizeof(gcvalues));
     gcvalues.graphics_exposures = False;
@@ -635,9 +664,11 @@ xinit(void) {
     pixmap = XCreatePixmap(display, window, zt.width, zt.height, depth);
     drawable = XftDrawCreate(display, pixmap, visual, colormap);
     XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
+
     XMapWindow(display, window);
     XSync(display, False);
-    for (;;){
+
+    for (;;) {
         XNextEvent(display, &e);
         if (e.type == MapNotify)
             break;

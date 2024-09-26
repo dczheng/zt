@@ -38,17 +38,18 @@ dump(unsigned char *buf, int n) {
     struct CtrlInfo *ctrl_info = NULL;
     int i;
 
+    if (n == 0) return;
     for (i = 0; i < n; i++) {
         if (ISPRINTABLE(buf[i])) {
-            printf("%c", buf[i]);
+            printf("%c(%02X)", buf[i], buf[i]);
             continue;
         }
         if (ISCTRL(buf[i])) {
             get_ctrl_info(buf[i], &ctrl_info);
-            printf(" %s ", ctrl_info->name);
+            printf("%s(%02X)", ctrl_info->name, buf[i]);
             continue;
         }
-        printf(" 0x%X ", buf[i]);
+        printf("(%02X)", buf[i]);
     }
     printf("\n");
     fflush(stdout);

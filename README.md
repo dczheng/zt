@@ -3,6 +3,7 @@ A simple terminal for X.
 
 ### Features
 
+- XIM
 - UTF8
 - Mouse
 - Resize
