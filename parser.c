@@ -11,6 +11,15 @@
 int ctrl_error, esc_error;
 struct Esc esc;
 
+/*
+  References
+  https://en.wikipedia.org/wiki/ANSI_escape_code
+  https://en.wikipedia.org/wiki/C0_and_C1_control_codes
+  https://vt100.net/docs
+  https://vt100.net/docs/vt102-ug/contents.html
+  https://vt100.net/docs/vt220-rm/contents.html
+*/
+
 #define PRIMARY_DA "\033[?6c" // vt102
 #define SECONDARY_DA "\033[>1;95;0c" // vt220
 
@@ -24,7 +33,7 @@ struct Esc esc;
 
 // for debug
 //#define CTRL_DUMP
-//#define CTRL_TERM_DUMP
+//#define TERM_DUMP
 //#define NOUTF8
 
 void tdump(void);
@@ -36,9 +45,15 @@ sgr_handle(void) {
 #define SGR_PAR(idx, v, v0) \
         if (get_int_par(&esc, idx, &v, v0)) { \
             ctrl_error = ERR_PAR; \
-            return;\
+            return; \
         }
+
     npar = get_par_num(&esc);
+    if (npar == 0) {
+        ATTR_RESET();
+        return;
+    }
+
     for (i = 0; i < npar;) {
         SGR_PAR(i++, n, 0);
 
@@ -243,7 +258,7 @@ csi_handle(void) {
 #define CSI_PAR(idx, v, v0) \
         if (get_int_par(&esc, idx, &v, v0)) { \
             ctrl_error = ERR_PAR; \
-            return;\
+            return; \
         }
     switch (esc.csi) {
         case CUF:
@@ -324,7 +339,12 @@ csi_handle(void) {
         case DCH    : ldelete_char(n)             ; break;
         case REP    : lrepeat_last(n)             ; break;
         case DECSC  : lcursor(SET)                ; break;
-        case DECRC  : lcursor(RESET)              ; break;
+        case DECRC  :
+            if (get_par_num(&esc))
+                ctrl_error = ERR_PAR;
+            else
+                lcursor(RESET);
+            break;
         case DSR    : dsr_handle()                ; break;
         case DA:
             if (get_par_num(&esc) == 0 || esc.seq[1] != '>')
@@ -644,7 +664,7 @@ parse(unsigned char *buf, int len, int force) {
             last_c = buf[nread];
 #endif
 
-#ifdef CTRL_TERM_DUMP
+#ifdef TERM_DUMP
             tdump();
 #endif
 
@@ -704,9 +724,6 @@ retry:
     cdump(last_c, char_bytes);
     printf("TOTAL: %d, READ: %d, CTRL: %d, CHAR: %d\n",
         len, nread, total_ctrl_bytes, total_char_bytes);
-#endif
-
-#ifdef CTRL_DUMP
     tdump();
 #endif
 

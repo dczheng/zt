@@ -41,15 +41,15 @@ dump(unsigned char *buf, int n) {
     if (n == 0) return;
     for (i = 0; i < n; i++) {
         if (ISPRINTABLE(buf[i])) {
-            printf("%c(%02X)", buf[i], buf[i]);
+            printf("%c", buf[i]);
             continue;
         }
         if (ISCTRL(buf[i])) {
             get_ctrl_info(buf[i], &ctrl_info);
-            printf("%s(%02X)", ctrl_info->name, buf[i]);
+            printf("%s", ctrl_info->name);
             continue;
         }
-        printf("(%02X)", buf[i]);
+        printf("%0x02X", buf[i]);
     }
     printf("\n");
     fflush(stdout);
