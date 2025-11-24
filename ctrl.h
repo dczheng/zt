@@ -180,9 +180,6 @@
 #define ISCTRLC0(c)     ((c) <= 0x1F || (c) == 0x7F)
 #define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9F)
 #define ISCTRL(c)       (ISCTRLC0(c) || ISCTRLC1(c))
-#define PRINTABLE_START  (0x20)
-#define PRINTABLE_END    (0x7E)
-#define ISPRINTABLE(c)  ((c) >= PRINTABLE_START && (c) <= PRINTABLE_END)
 
 #define ESCERR            1000
 #define ESCNOEND          1001

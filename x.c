@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <locale.h>
+#include <ctype.h>
 
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
@@ -533,14 +534,16 @@ xfont_load(char *str, struct MyFont *f) {
 
 void
 xfont_init(void) {
-    int i, size;
+    int i, j, size;
     struct MyFont *f;
     XGlyphInfo exts;
-    char printable[PRINTABLE_END-PRINTABLE_START+2], buf[128];
+    char printable[257], buf[128];
 
-    for (i = 0; i <= PRINTABLE_END-PRINTABLE_START; i++)
-        printable[i] = i + PRINTABLE_START;
-    printable[i] = '\0';
+    for (i = 0, j = 0; i < (int)sizeof(printable); i++) {
+        if (isprint(i))
+            printable[j++] = i;
+    }
+    printable[j] = '\0';
 
     ASSERT(FcInit(), "can't init fontconfig");
     nfont = LEN(font_list) * 4;

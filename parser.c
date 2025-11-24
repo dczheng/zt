@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "zt.h"
 #include "tools.h"
@@ -558,7 +559,7 @@ tdump(void) {
         for (j = 0; j < zt.col; j++) {
             c = zt.line[i][j];
             //printf("%d", c.width);
-            if (ISPRINTABLE(c.c))
+            if (isprint(c.c))
                 printf("%c", c.c);
             else
                 printf("%X ", c.c);
@@ -585,7 +586,7 @@ ldump(int y, int x1, int x2) {
     for (i = x1; i <= x2; i++) {
         printf("[");
         c = zt.line[y][i];
-        if (ISPRINTABLE(c.c))
+        if (isprint(c.c))
             printf("%c,", c.c);
         else
             printf("%X,", c.c);

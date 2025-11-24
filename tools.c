@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <errno.h>
+#include <ctype.h>
 
 #include "ctrl.h"
 #include "tools.h"
@@ -40,7 +41,7 @@ dump(unsigned char *buf, int n) {
 
     if (n == 0) return;
     for (i = 0; i < n; i++) {
-        if (ISPRINTABLE(buf[i])) {
+        if (isprint(buf[i])) {
             printf("%c", buf[i]);
             continue;
         }
