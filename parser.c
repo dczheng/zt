@@ -17,11 +17,9 @@ struct Esc esc;
   https://en.wikipedia.org/wiki/C0_and_C1_control_codes
   https://vt100.net/docs
   https://vt100.net/docs/vt102-ug/contents.html
-  https://vt100.net/docs/vt220-rm/contents.html
 */
 
-#define PRIMARY_DA "\033[?6c" // vt102
-#define SECONDARY_DA "\033[>1;95;0c" // vt220
+#define VT102 "\033[?6c"
 
 #define ERR_OTHER  -1
 #define ERR_RETRY   1
@@ -31,10 +29,10 @@ struct Esc esc;
 
 #define RETRY_MAX 3
 
-// for debug
-//#define CTRL_DUMP
-//#define TERM_DUMP
-//#define NOUTF8
+//#define DEBUG_CTRL
+//#define DEBUG_TERM1
+//#define DEBUG_TERM2
+//#define DEBUG_NOUTF8
 
 void tdump(void);
 
@@ -78,7 +76,6 @@ sgr_handle(void) {
         }
 
         switch (n) {
-
             case 0 : ATTR_RESET()                    ; break;
             case 1 : ATTR_SET(ATTR_BOLD)             ; break;
             case 2 : ATTR_SET(ATTR_FAINT)            ; break;
@@ -306,11 +303,22 @@ csi_handle(void) {
             CSI_PAR(0, n, 1);
             CSI_PAR(1, m, 1);
             break;
+        case DA:
+            if (get_par_num(&esc) == 0)
+                n = 0;
+            else
+                CSI_PAR(0, n, 0);
+            break;
+        case DECRC  :
+            if (get_par_num(&esc)) {
+                ctrl_error = ERR_PAR;
+                return;
+            }
+            break;
     }
 #undef CSI_PAR
 
     switch (esc.csi) {
-
         case CUF    : lmoveto(zt.y  , zt.x+n)     ; break;
         case CUB    : lmoveto(zt.y  , zt.x-n)     ; break;
         case CUU    : lmoveto(zt.y-n, zt.x)       ; break;
@@ -339,16 +347,12 @@ csi_handle(void) {
         case DCH    : ldelete_char(n)             ; break;
         case REP    : lrepeat_last(n)             ; break;
         case DECSC  : lcursor(SET)                ; break;
-        case DECRC  :
-            if (get_par_num(&esc))
-                ctrl_error = ERR_PAR;
-            else
-                lcursor(RESET);
-            break;
+        case DECRC  : lcursor(RESET)              ; break;
         case DSR    : dsr_handle()                ; break;
+
         case DA:
-            if (get_par_num(&esc) == 0 || esc.seq[1] != '>')
-                twrite(PRIMARY_DA, strlen(PRIMARY_DA));
+            if (n == 0)
+                twrite(VT102, strlen(VT102));
             break;
 
         case EL:
@@ -389,7 +393,6 @@ csi_handle(void) {
 
 void
 esc_handle(unsigned char *buf, int len) {
-
     esc_error = esc_parse(buf, len, &esc);
     ASSERT(len >= 0, "");
     if (esc_error) {
@@ -607,10 +610,10 @@ cdump(unsigned char c, int n) {
     struct CtrlInfo *info = NULL;
 
     if (c == ESC)
-        printf("[%3d] %-30s", esc.len, get_esc_str(&esc, 0));
+        printf("[%3d] %-35s", esc.len, get_esc_str(&esc, 0));
     else {
         ASSERT(get_ctrl_info(c, &info) == 0, "");
-        printf("[%3d] %-30s", 1, info->name);
+        printf("[%3d] %-35s", 1, info->name);
     }
     printf("%5d %dx%d\n", n, zt.y, zt.x);
     //ldump(11, -1, -1);
@@ -628,15 +631,17 @@ parse(unsigned char *buf, int len, int force) {
     if (!len)
         return 0;
 
-#ifdef CTRL_DUMP
+#ifdef DEBUG_CTRL
     unsigned char last_c = 0;
     static int count = 0;
     printf("\n-------CTRL--------\n");
-    printf("TTY[%d]: %d\n", count, len);
+    printf("TTY[%d]: %d\n", count++, len);
+#endif
+
+#if defined(DEBUG_TERM1) || defined(DEBUG_TERM2)
     printf("DISPLAY: %dx%d\n", zt.row, zt.col);
     printf("CURSOR: %dx%d\n", zt.y, zt.x);
     printf("MARGIN: %d-%d\n", zt.top, zt.bot);
-    count++;
 #endif
 
     char_bytes = ctrl_bytes =
@@ -659,12 +664,12 @@ parse(unsigned char *buf, int len, int force) {
     for (; nread < len; nread += n) {
 
         if (ISCTRL(buf[nread])) {
-#ifdef CTRL_DUMP
+#ifdef DEBUG_CTRL
             cdump(last_c, char_bytes);
             last_c = buf[nread];
 #endif
 
-#ifdef TERM_DUMP
+#ifdef DEBUG_TERM1
             tdump();
 #endif
 
@@ -694,7 +699,7 @@ parse(unsigned char *buf, int len, int force) {
             continue;
         }
 
-#ifndef NOUTF8
+#ifndef DEBUG_NOUTF8
         if (utf8_decode(buf+nread, len-nread, &u, &ulen)) {
             if (!force) {
                 if (retries < RETRY_MAX) {
@@ -720,10 +725,13 @@ retry:
     total_char_bytes += char_bytes;
     total_ctrl_bytes += ctrl_bytes;
 
-#ifdef CTRL_DUMP
+#ifdef DEBUG_CTRL
     cdump(last_c, char_bytes);
     printf("TOTAL: %d, READ: %d, CTRL: %d, CHAR: %d\n",
         len, nread, total_ctrl_bytes, total_char_bytes);
+#endif
+
+#ifdef DEBUG_TERM2
     tdump();
 #endif
 
