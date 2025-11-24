@@ -18,6 +18,7 @@ struct Esc esc;
   https://en.wikipedia.org/wiki/C0_and_C1_control_codes
   https://vt100.net/docs
   https://vt100.net/docs/vt102-ug/contents.html
+  https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 */
 
 #define VT102 "\033[?6c"
@@ -31,9 +32,11 @@ struct Esc esc;
 #define RETRY_MAX 3
 
 //#define DEBUG_CTRL
-//#define DEBUG_TERM1
-//#define DEBUG_TERM2
+//#define DEBUG_CTRL_TERM
+//#define DEBUG_TERM
 //#define DEBUG_NOUTF8
+//#define DEBUG_WRITE
+//#define DEBUG_BUF
 
 void tdump(void);
 
@@ -310,7 +313,7 @@ csi_handle(void) {
             else
                 CSI_PAR(0, n, 0);
             break;
-        case DECRC  :
+        case DECRC:
             if (get_par_num(&esc)) {
                 ctrl_error = ERR_PAR;
                 return;
@@ -607,51 +610,43 @@ ldump(int y, int x1, int x2) {
 
 
 void // debug
-cdump(unsigned char c, int n) {
+cdump(unsigned char c) {
     struct CtrlInfo *info = NULL;
 
     if (c == ESC)
-        printf("[%3d] %-35s", esc.len, get_esc_str(&esc, 0));
+        printf("[%3d] %-s\n", esc.len, get_esc_str(&esc, 0));
     else {
         ASSERT(get_ctrl_info(c, &info) == 0, "");
-        printf("[%3d] %-35s", 1, info->name);
+        printf("[%3d] %-s\n", 1, info->name);
     }
-    printf("%5d %dx%d\n", n, zt.y, zt.x);
-    //ldump(11, -1, -1);
-    //ldump(zt.row-2, -1, -1);
     fflush(stdout);
 }
 
 int
 parse(unsigned char *buf, int len, int force) {
     MyRune u;
-    int nread, n, ulen, char_bytes, ctrl_bytes,
-    total_char_bytes, total_ctrl_bytes;
+    int nread = 0, n = 0, ulen = 0,
+        char_bytes = 0, ctrl_bytes = 0,
+        total_char_bytes = 0, total_ctrl_bytes = 0;
     static int retries = 0, osc_no_end = 0;
 
     if (!len)
         return 0;
 
 #ifdef DEBUG_CTRL
-    unsigned char last_c = 0;
     static int count = 0;
-    printf("\n-------CTRL--------\n");
-    printf("TTY[%d]: %d\n", count++, len);
+    unsigned char last_c = 0;
 #endif
 
-#if defined(DEBUG_TERM1) || defined(DEBUG_TERM2)
+#if defined(DEBUG_CTRL_TERM) || defined(DEBUG_TERM)
     printf("DISPLAY: %dx%d\n", zt.row, zt.col);
     printf("CURSOR: %dx%d\n", zt.y, zt.x);
     printf("MARGIN: %d-%d\n", zt.top, zt.bot);
 #endif
 
-    char_bytes = ctrl_bytes =
-    total_char_bytes = total_ctrl_bytes = 0;
-
     if (force)
         printf("force read\n");
 
-    nread = 0;
     if (osc_no_end) {
         if (find_osc_end(buf, len, &nread)) {
             nread = len;
@@ -660,17 +655,20 @@ parse(unsigned char *buf, int len, int force) {
         osc_no_end = 0;
         nread++;
     }
-    //dump(buf, len);
 
-    for (; nread < len; nread += n) {
+#ifdef DEBUG_BUF
+    printf("nread: %d\n", nread);
+    dump(buf, len);
+#endif
 
+    for (n = 0; nread < len; nread += n) {
         if (ISCTRL(buf[nread])) {
 #ifdef DEBUG_CTRL
-            cdump(last_c, char_bytes);
+            cdump(last_c);
             last_c = buf[nread];
 #endif
 
-#ifdef DEBUG_TERM1
+#ifdef DEBUG_CTRL_TERM
             tdump();
 #endif
 
@@ -717,22 +715,30 @@ parse(unsigned char *buf, int len, int force) {
         u = buf[nread];
         ulen = 1;
 #endif
+
+#ifdef DEBUG_WRITE
+    if (isprint(u))
+        printf("%c", u);
+#endif
         lwrite(u);
         n = ulen;
         char_bytes += n;
     }
+#ifdef DEBUG_WRITE
+    printf("\n");
+#endif
 
 retry:
     total_char_bytes += char_bytes;
     total_ctrl_bytes += ctrl_bytes;
 
 #ifdef DEBUG_CTRL
-    cdump(last_c, char_bytes);
-    printf("TOTAL: %d, READ: %d, CTRL: %d, CHAR: %d\n",
+    cdump(last_c);
+    printf("[%05d] TOTAL: %d, READ: %d, CTRL: %d, CHAR: %d\n", count++,
         len, nread, total_ctrl_bytes, total_char_bytes);
 #endif
 
-#ifdef DEBUG_TERM2
+#ifdef DEBUG_TERM
     tdump();
 #endif
 

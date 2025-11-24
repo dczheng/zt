@@ -406,19 +406,14 @@ range_search(unsigned char *seq, int len,
 }
 
 int
-search(unsigned char *seq, int len, int n, ...) {
+search(unsigned char *seq, int len, int n, unsigned char *c) {
     int i, j;
-    va_list ap;
-    unsigned char c;
-
-    va_start(ap, n);
-    for (i = 0; i < n; i++) {
-        c = va_arg(ap, int);
-        for (j = 0; j < len; j++)
-            if (seq[j] == c)
+    for (j = 0; j < len; j++) {
+        for (i = 0; i < n; i++) {
+            if (seq[j] == c[i])
                 return j;
+        }
     }
-    va_end(ap);
     return -1;
 }
 
@@ -529,7 +524,8 @@ csi_dump(struct Esc *esc) {
 
 int
 find_osc_end(unsigned char *seq, int len, int *n) {
-    if ((*n = search(seq, len, 2, BEL, ST)) < 0)
+    unsigned char c[] = {BEL, ST, C1ALT(ST), ESC};
+    if ((*n = search(seq, len, sizeof(c), c)) < 0)
         return ESCOSCNOEND;
     return 0;
 }
@@ -543,7 +539,8 @@ find_csi_end(unsigned char *seq, int len, int *n) {
 
 int
 find_dcs_end(unsigned char *seq, int len, int *n) {
-    if ((*n = search(seq, len, 1, ST-0x80+0x40)) < 0)
+    unsigned char c[] = {C1ALT(ST), ESC};
+    if ((*n = search(seq, len, sizeof(c), c)) < 0)
         return ESCDCSNOEND;
     return 0;
 }
@@ -597,12 +594,13 @@ esc_parse(unsigned char *seq, int len, struct Esc *esc) {
                 if ((ret = find_osc_end(seq+1, len-1, &n)))
                     return ret;
                 esc->len += n+1;
-                //dump(esc->seq, esc->len-1);
+                //dump(esc->seq, esc->len);
                 break;
             case DCS:
                 if ((ret = find_dcs_end(seq+1, len-1, &n)))
                     return ret;
                 esc->len += n+1;
+                //dump(esc->seq, esc->len);
                 break;
         }
     }
@@ -647,7 +645,7 @@ get_esc_str(struct Esc *esc, int desc) {
         return buf;
     }
 
-    MYPRINT("ESC %s ", info->name);
+    MYPRINT("ESC.%s ", info->name);
     switch (esc->type) {
         case ESCFE: goto escfe;
         case ESCNF: goto escnf;

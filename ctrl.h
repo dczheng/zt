@@ -180,6 +180,7 @@
 #define ISCTRLC0(c)     ((c) <= 0x1F || (c) == 0x7F)
 #define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9F)
 #define ISCTRL(c)       (ISCTRLC0(c) || ISCTRLC1(c))
+#define C1ALT(c)        ((c) & 0xEF)
 
 #define ESCERR            1000
 #define ESCNOEND          1001
