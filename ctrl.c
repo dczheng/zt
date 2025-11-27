@@ -189,14 +189,6 @@ find_osc_end(unsigned char *seq, int len, int *n) {
 }
 
 int
-find_dcs_end(unsigned char *seq, int len, int *n) {
-    unsigned char c[] = {C1ALT(ST), ESC};
-    if ((*n = search(seq, len, sizeof(c), c)) < 0)
-        return ESCDCSNOEND;
-    return 0;
-}
-
-int
 find_nfesc_end(unsigned char *seq, int len, int *n) {
     if ((*n = range_search(seq, len, 0x30, 0x7e, 0)) < 0)
         return ESCNFNOEND;
@@ -205,6 +197,7 @@ find_nfesc_end(unsigned char *seq, int len, int *n) {
 
 int
 esc_parse(unsigned char *seq, int len) {
+    unsigned char dcs_end[] = {C1ALT(ST), ESC};
     unsigned char c;
     int i, n, ret;
 
@@ -256,8 +249,8 @@ esc_parse(unsigned char *seq, int len) {
             //dump(esc.seq, esc.len);
             break;
         case DCS:
-            if ((ret = find_dcs_end(seq+1, len-1, &n)))
-                return ret;
+            if ((n = search(seq+1, len-1, sizeof(dcs_end), dcs_end)) < 0)
+                return ESCDCSNOEND;
             esc.len += n+1;
             //dump(esc.seq, esc.len);
             break;
