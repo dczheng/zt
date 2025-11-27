@@ -189,13 +189,6 @@ find_osc_end(unsigned char *seq, int len, int *n) {
 }
 
 int
-find_nfesc_end(unsigned char *seq, int len, int *n) {
-    if ((*n = range_search(seq, len, 0x30, 0x7e, 0)) < 0)
-        return ESCNFNOEND;
-    return 0;
-}
-
-int
 esc_parse(unsigned char *seq, int len) {
     unsigned char dcs_end[] = {C1ALT(ST), ESC};
     unsigned char c;
@@ -225,8 +218,8 @@ esc_parse(unsigned char *seq, int len) {
     if (c >= 0x20 && c <= 0x2f) {
         esc.type = ESCNF;
         esc.esc = c;
-        if ((ret = find_nfesc_end(seq+1, len-1, &n)))
-            return ret;
+        if ((n = range_search(seq+1, len-1, 0x30, 0x7e, 0)) < 0)
+            return ESCNFNOEND;
         esc.len += n+1;
     }
 
