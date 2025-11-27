@@ -189,13 +189,6 @@ find_osc_end(unsigned char *seq, int len, int *n) {
 }
 
 int
-find_csi_end(unsigned char *seq, int len, int *n) {
-    if ((*n = range_search(seq, len, 0x40, 0x7e, 0)) < 0)
-        return ESCCSINOEND;
-    return 0;
-}
-
-int
 find_dcs_end(unsigned char *seq, int len, int *n) {
     unsigned char c[] = {C1ALT(ST), ESC};
     if ((*n = search(seq, len, sizeof(c), c)) < 0)
@@ -249,8 +242,8 @@ esc_parse(unsigned char *seq, int len) {
         esc.esc = c - 0x40 + 0x80;
         switch (esc.esc) {
         case CSI:
-            if ((ret = find_csi_end(seq+1, len-1, &n)))
-                return ret;
+            if ((n = range_search(seq+1, len-1, 0x40, 0x7e, 0)) < 0)
+                return ESCCSINOEND;
             esc.len += n+1;
             esc.csi = seq[esc.len-1];
             _NPAR();
