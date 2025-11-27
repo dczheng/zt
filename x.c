@@ -6,7 +6,7 @@
 #include <X11/Xatom.h>
 
 #include "zt.h"
-#include "ctrl.h"
+#include "code.h"
 
 //#define XDEBUG
 

@@ -16,7 +16,7 @@
 #endif
 
 #include "zt.h"
-#include "ctrl.h"
+#include "code.h"
 
 #define LATENCY 1
 
