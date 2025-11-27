@@ -184,13 +184,6 @@
 #define ISCTRL(c)       (ISCTRLC0(c) || ISCTRLC1(c))
 #define C1ALT(c)        ((c) & 0xEF)
 
-#define ESCERR            1000
-#define ESCNOEND          1001
-#define ESCNFNOEND        1002
-#define ESCCSINOEND       1003
-#define ESCOSCNOEND       1004
-#define ESCDCSNOEND       1005
-
 struct ctrl_desc_t {
     int value;
     char *name, *desc;
@@ -498,7 +491,7 @@ _ctrl_desc(struct ctrl_desc_t *table, int len,
             *item = table[i];
             return 0;
         }
-    return 1;
+    return ENOENT;
 }
 
 #define _CTRL_DESC(table, item, value) \

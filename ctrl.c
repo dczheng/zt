@@ -22,6 +22,13 @@
 #define ERR_ESC     3
 #define ERR_PAR     4
 
+#define ESCERR            1000
+#define ESCNOEND          1001
+#define ESCNFNOEND        1002
+#define ESCCSINOEND       1003
+#define ESCOSCNOEND       1004
+#define ESCDCSNOEND       1005
+
 #define RETRY_MAX 3
 
 //#define DEBUG_CTRL
