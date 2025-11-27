@@ -188,17 +188,8 @@ get_int_par(int idx, int *v, int v0) {
 }
 
 int
-find_osc_end(unsigned char *seq, int len, int *n) {
-    unsigned char c[] = {BEL, ST, C1ALT(ST), ESC};
-    if ((*n = search(seq, len, sizeof(c), c)) < 0)
-        return ESCOSCNOEND;
-    return 0;
-}
-
-int
 esc_parse(unsigned char *seq, int len) {
-    unsigned char dcs_end[] = {C1ALT(ST), ESC};
-    int i, n, ret;
+    int i, n;
 
     esc.seq = seq;
     ASSERT(len >= 0, "");
@@ -225,7 +216,8 @@ esc_parse(unsigned char *seq, int len) {
         return ESCERR;
 
     case ESCNF:
-        if ((n = range_search(seq+1, len-1, 0x30, 0x7e, 0)) < 0)
+        if ((n = range_search(seq+1, len-1,
+            ESCNF_END_MIN, ESCNF_END_MAX, 0)) < 0)
             return ESCNFNOEND;
         esc.len += n+1;
         break;
@@ -238,7 +230,7 @@ esc_parse(unsigned char *seq, int len) {
         esc.c1 = esc.code - 0x40 + 0x80;
         switch (esc.c1) {
         case CSI:
-            if ((n = range_search(seq+1, len-1, 0x40, 0x7e, 0)) < 0)
+            if ((n = range_search(seq+1, len-1, CSI_MIN, CSI_MAX, 0)) < 0)
                 return ESCCSINOEND;
             esc.len += n+1;
             esc.csi = seq[esc.len-1];
@@ -246,13 +238,13 @@ esc_parse(unsigned char *seq, int len) {
             break;
 
         case OSC:
-            if ((ret = find_osc_end(seq+1, len-1, &n)))
-                return ret;
+            if ((n = search(seq, len, sizeof(osc_end_codes), osc_end_codes)) < 0)
+                return ESCOSCNOEND;
             esc.len += n+1;
             //dump(esc.seq, esc.len);
             break;
         case DCS:
-            if ((n = search(seq+1, len-1, sizeof(dcs_end), dcs_end)) < 0)
+            if ((n = search(seq+1, len-1, sizeof(dcs_end_codes), dcs_end_codes)) < 0)
                 return ESCDCSNOEND;
             esc.len += n+1;
             //dump(esc.seq, esc.len);
@@ -975,7 +967,8 @@ parse(unsigned char *buf, int len, int force) {
         printf("force read\n");
 
     if (osc_no_end) {
-        if (find_osc_end(buf, len, &nread)) {
+        if ((nread = search(buf, len,
+            sizeof(osc_end_codes), osc_end_codes)) < 0) {
             nread = len;
             goto retry;
         }

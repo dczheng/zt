@@ -179,19 +179,32 @@
 #define ESCFE 2
 #define ESCFS 3
 
-#define ESCNF_MIN      0x20
-#define ESCNF_MAX      0x2f
-#define ESCFP_MIN      0x30
-#define ESCFP_MAX      0x3f
-#define ESCFE_MIN      0x40
-#define ESCFE_MAX      0x5f
-#define ESCFS_MIN      0x60
-#define ESCFS_MAX      0x7e
+#define ESCNF_MIN   0x20
+#define ESCNF_MAX   0x2f
+#define ESCFP_MIN   0x30
+#define ESCFP_MAX   0x3f
+#define ESCFE_MIN   0x40
+#define ESCFE_MAX   0x5f
+#define ESCFS_MIN   0x60
+#define ESCFS_MAX   0x7e
 
-#define ISCTRLC0(c)     ((c) <= 0x1f || (c) == 0x7f)
-#define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9f)
-#define ISCTRL(c)       (ISCTRLC0(c) || ISCTRLC1(c))
-#define C1ALT(c)        ((c) & 0xEF)
+#define ESCNF_END_MIN  0x30
+#define ESCNF_END_MAX  0x7e
+#define CSI_MIN 0x40
+#define CSI_MAX 0x7e
+
+#define ISCTRLC0(c) ((c) <= 0x1f || (c) == 0x7f)
+#define ISCTRLC1(c) ((c) >= 0x80 && (c) <= 0x9f)
+#define ISCTRL(c)   (ISCTRLC0(c) || ISCTRLC1(c))
+#define C1ALT(c)    ((c) & 0xEF)
+
+static unsigned char osc_end_codes[] __unused = {
+    BEL, ST, C1ALT(ST), ESC
+};
+
+static unsigned char dcs_end_codes[] __unused = {
+    C1ALT(ST), ESC
+};
 
 struct ctrl_desc_t {
     int value;
