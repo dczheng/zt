@@ -159,7 +159,7 @@ xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
             return;
     }
 
-    printf("can't find font for %X\n", c.c);
+    printf("can't find font for %x\n", c.c);
     *f = fonts[0].font;
     *idx = XftCharIndex(display, *f, ' ');
 }

@@ -61,8 +61,8 @@ void twrite(char*, int);
 
 int ctrl_error, esc_error;
 struct {
-    int len, npar;
-    unsigned char *seq, type, esc, csi;
+    int len, npar, type;
+    unsigned char *seq, code, c1, csi;
 } esc;
 
 void
@@ -198,7 +198,6 @@ find_osc_end(unsigned char *seq, int len, int *n) {
 int
 esc_parse(unsigned char *seq, int len) {
     unsigned char dcs_end[] = {C1ALT(ST), ESC};
-    unsigned char c;
     int i, n, ret;
 
     esc.seq = seq;
@@ -215,9 +214,9 @@ esc_parse(unsigned char *seq, int len) {
 }
 
     //dump(seq, len);
-    c = seq[0];
 
-    esc.type = esc_type(c);
+    esc.code = seq[0];
+    esc.type = esc_type(esc.code);
     esc.len = 1;
 
     switch (esc.type) {
@@ -226,23 +225,18 @@ esc_parse(unsigned char *seq, int len) {
         return ESCERR;
 
     case ESCNF:
-        esc.esc = c;
         if ((n = range_search(seq+1, len-1, 0x30, 0x7e, 0)) < 0)
             return ESCNFNOEND;
         esc.len += n+1;
         break;
 
     case ESCFP:
-        esc.esc = c;
-        break;
-
     case ESCFS:
-        esc.esc = c;
         break;
 
     case ESCFE:
-        esc.esc = c - 0x40 + 0x80;
-        switch (esc.esc) {
+        esc.c1 = esc.code - 0x40 + 0x80;
+        switch (esc.c1) {
         case CSI:
             if ((n = range_search(seq+1, len-1, 0x40, 0x7e, 0)) < 0)
                 return ESCCSINOEND;
@@ -289,22 +283,22 @@ get_esc_str(void) {
         return buf;
     }
 
-    _P("ESC.%s ", d.name);
+    _P("%s ESC ", d.name);
     switch (esc.type) {
     case ESCNF:
-        if (nf_esc_desc(&d, esc.esc))
-            _P("0x%X (%c)", esc.esc, esc.esc);
+        if (nf_esc_desc(&d, esc.code))
+            _P("0x%02x", esc.code);
         else
             _P("%s ", d.name);
         break;
 
     case ESCFS:
-        _P("0x%X (%c)", esc.esc, esc.esc);
+        _P("0x%02x", esc.code);
         break;
 
     case ESCFP:
-        if (fp_esc_desc(&d, esc.esc))
-            _P("0x%X (%c)", esc.esc, esc.esc);
+        if (fp_esc_desc(&d, esc.code))
+            _P("0x%02x", esc.code);
         else
             _P("%s ", d.name);
         break;
@@ -314,13 +308,13 @@ get_esc_str(void) {
     default: ASSERT(0, "can't be");
     }
 
-    if (ctrl_desc(&d, esc.esc)) {
+    if (ctrl_desc(&d, esc.c1)) {
         _P("error fe esc type");
         return buf;
     }
-    _P("%s ", d.name);
+    _P("%s(%c) ", d.name, esc.code);
 
-    switch (esc.esc) {
+    switch (esc.c1) {
     case OSC:
         break;
 
@@ -328,7 +322,7 @@ get_esc_str(void) {
         if (csi_desc(&d, esc.csi))
             _P("%c ", esc.csi);
         else
-            _P("%s ", d.name);
+            _P("%s(%c) ", d.name, esc.csi);
 
         _P("[");
         for (i = 0; i < esc.npar; i++) {
@@ -750,7 +744,7 @@ esc_handle(unsigned char *buf, int len) {
 
     switch (esc.type) {
     case ESCNF:
-        switch (esc.esc) {
+        switch (esc.code) {
         case NF_GZD4:
         case NF_G1D4:
         case NF_G2D4:
@@ -762,7 +756,7 @@ esc_handle(unsigned char *buf, int len) {
         break;
 
     case ESCFP:
-        switch (esc.esc) {
+        switch (esc.code) {
         case FP_DECSC:
             lcursor(SET);
             break;
@@ -782,7 +776,7 @@ esc_handle(unsigned char *buf, int len) {
         break;
 
     case ESCFE:
-        switch (esc.esc) {
+        switch (esc.c1) {
         case CSI:
             csi_handle();
             break;
