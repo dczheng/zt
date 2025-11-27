@@ -121,52 +121,40 @@ search(unsigned char *seq, int len, int n, unsigned char *c) {
 }
 
 int
-get_par(int idx, int *a, int *b) {
-    int i, n;
+get_par(int idx, char **p) {
+    static char buf[BUFSIZ];
+    int i, a = 1, b = 1, n;
 
-    *a = *b = 1;
     for (i = 1, n = 0; i < esc.len-1; i++) {
         if (esc.seq[i] != ';')
             continue;
         if (n == idx) {
-            *b = i-1;
+            b = i-1;
             break;
         }
-        *a = i+1;
+        a = i+1;
         n++;
     }
 
     if (i == esc.len-1) {
         if (n == idx)
-            *b = esc.len-2;
+            b = esc.len-2;
         else
-            return 1;
+            return EDOM;
     }
 
-    if (*a > *b) {
-        *a = -1;
-        *b = -1;
+    if (a > b) {
+        a = -1;
+        b = -1;
     }
 
-    return 0;
-}
-
-int
-get_str_par(int idx, char **p) {
-    static char buf[BUFSIZ];
-    int a, b;
-    size_t n;
-
-    if (get_par(idx, &a, &b))
-        return EDOM;
-
-    if (a<0) {
+    if (a < 0) {
         *p = NULL;
         return 0;
     }
 
     n = b-a+1;
-    if (n > sizeof(buf)-1)
+    if (n > (int)sizeof(buf)-1)
         return ENOMEM;
 
     memcpy(buf, esc.seq+a, n);
@@ -181,7 +169,7 @@ get_int_par(int idx, int *v, int v0) {
     int ret;
     char *p;
 
-    ret = get_str_par(idx, &p);
+    ret = get_par(idx, &p);
     if (ret)
         return ret;
 
@@ -345,7 +333,7 @@ escfe:
 
         _P("[");
         for (i = 0; i < esc.npar; i++) {
-            if (get_str_par(i, &p) || p == NULL)
+            if (get_par(i, &p) || p == NULL)
                 _P("%s", "-");
             else
                 _P("%s", p);
@@ -363,7 +351,7 @@ escfe:
                 break;
             }
             for (i = 0; i < esc.npar; i++) {
-                if (get_str_par(i, &p) || p == NULL) {
+                if (get_par(i, &p) || p == NULL) {
                     _P("unknown ");
                     continue;
                 }
@@ -534,7 +522,7 @@ mode_handle(void) {
     //printf("%s\n", get_esc_str(&esc));
     s = (esc.csi == SM ? SET : RESET);
     for (i = 0; i < esc.npar; i++) {
-        if (get_str_par(i, &p) || p == NULL)
+        if (get_par(i, &p) || p == NULL)
             continue;
         if (i==0)
             ret = parse_int(p+1, &n);
@@ -597,7 +585,7 @@ dsr_handle(void) {
     char wbuf[32], *p;
 
     ctrl_error = ERR_PAR;
-    if (esc.npar == 0 || get_str_par(0, &p) || p == NULL)
+    if (esc.npar == 0 || get_par(0, &p) || p == NULL)
         return;
 
     if (p[0] == '?')
