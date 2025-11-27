@@ -214,18 +214,25 @@ tinit(void) {
 
     args[0] = sh;
     args[1] = NULL;
+
+    unsetenv("COLUMNS");
+    unsetenv("LINES");
+    unsetenv("TERMCAP");
+
     setenv("SHELL", sh, 1);
     setenv("TERM", TERM, 1);
     setenv("HOME", pw->pw_dir, 1);
     setenv("USER", pw->pw_name, 1);
     setenv("LONGNAME", pw->pw_name, 1);
-    execvp(sh, args);
+
     signal(SIGCHLD, SIG_DFL);
     signal(SIGHUP, SIG_DFL);
     signal(SIGINT, SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
     signal(SIGTERM, SIG_DFL);
     signal(SIGALRM, SIG_DFL);
+
+    execvp(sh, args);
     _exit(1);
 }
 

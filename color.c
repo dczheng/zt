@@ -99,7 +99,7 @@ c8_to_rgb(unsigned char v) {
     }
 
     /* 6 x 6 x 6 = 216 cube colors */
-#define S(x) (x = (x == 0 ? 0 : 0x3737 + 0x2828 * x)) // copyed from st.
+#define S(x) (x = (x == 0 ? 0 : 0x3737 + 0x2828 * x)) // copied from st.
     if (v >= 16 && v <= 231) {
         v -= 16;
         r = v / 36;

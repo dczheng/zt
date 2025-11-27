@@ -83,11 +83,13 @@ get_time(void) {
     }\
 } while(0)
 
+#define ZERO(a) bzero(&(a), sizeof(a))
+
 #define UBUNTU_COLOR    1
 #define XTERM_COLOR     2
 #define COLOR8    8
 #define COLOR24  24
-#define COLOR_RESET(c)  bzero(&c, sizeof(struct color_t))
+#define COLOR_RESET(c) ZERO(c)
 #define SET_COLOR8(c, v) do { \
     (c).type = COLOR8; \
     (c).c8 = v; \

@@ -479,7 +479,7 @@ xevent(void) {
 int
 xerror(Display *display, XErrorEvent *e) {
     XSync(display, False);
-    fprintf(stderr, "error: %d\n", e->error_code);
+    fprintf(stderr, "xerror: %d\n", e->error_code);
     return 0;
 }
 
@@ -662,7 +662,7 @@ xinit(void) {
            , &wa);
     xim_init();
 
-    bzero(&gcvalues, sizeof(gcvalues));
+    ZERO(gcvalues);
     gcvalues.graphics_exposures = False;
     gc = XCreateGC(display, root, GCGraphicsExposures, &gcvalues);
     XSetBackground(display, gc, background.pixel);

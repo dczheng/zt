@@ -14,12 +14,12 @@
 #define BEL  0x07
 #define BS   0x08
 #define HT   0x09
-#define LF   0x0A
-#define VT   0x0B
-#define FF   0x0C
-#define CR   0x0D
-#define SO   0x0E
-#define SI   0x0F
+#define LF   0x0a
+#define VT   0x0b
+#define FF   0x0c
+#define CR   0x0d
+#define SO   0x0e
+#define SI   0x0f
 #define DLE  0x10
 #define DC1  0x11
 #define DC2  0x12
@@ -30,13 +30,13 @@
 #define ETB  0x17
 #define CAN  0x18
 #define EM   0x19
-#define SUB  0x1A
-#define ESC  0x1B
-#define FS   0x1C
-#define GS   0x1D
-#define RS   0x1E
-#define US   0x1F
-#define DEL  0x7F
+#define SUB  0x1a
+#define ESC  0x1b
+#define FS   0x1c
+#define GS   0x1d
+#define RS   0x1e
+#define US   0x1f
+#define DEL  0x7f
 
 // C1
 #define PAD  0x80
@@ -49,12 +49,12 @@
 #define ESA  0x87
 #define HTS  0x88
 #define HTJ  0x89
-#define VTS  0x8A
-#define PLD  0x8B
-#define PLU  0x8C
-#define RI   0x8D
-#define SS2  0x8E
-#define SS3  0x8F
+#define VTS  0x8a
+#define PLD  0x8b
+#define PLU  0x8c
+#define RI   0x8d
+#define SS2  0x8e
+#define SS3  0x8f
 #define DCS  0x90
 #define PU1  0x91
 #define PU2  0x92
@@ -65,12 +65,12 @@
 #define EPA  0x97
 #define SOS  0x98
 #define SGCI 0x99
-#define SCI  0x9A
-#define CSI  0x9B
-#define ST   0x9C
-#define OSC  0x9D
-#define PM   0x9E
-#define APC  0x9F
+#define SCI  0x9a
+#define CSI  0x9b
+#define ST   0x9c
+#define OSC  0x9d
+#define PM   0x9e
+#define APC  0x9f
 
 // CSI
 #define ICH      '@'
@@ -179,8 +179,8 @@
 #define FP_DECSC       '7'
 #define FP_DECRC       '8'
 
-#define ISCTRLC0(c)     ((c) <= 0x1F || (c) == 0x7F)
-#define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9F)
+#define ISCTRLC0(c)     ((c) <= 0x1f || (c) == 0x7f)
+#define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9f)
 #define ISCTRL(c)       (ISCTRLC0(c) || ISCTRLC1(c))
 #define C1ALT(c)        ((c) & 0xEF)
 
@@ -191,376 +191,325 @@
 #define ESCOSCNOEND       1004
 #define ESCDCSNOEND       1005
 
-struct ctrl_info_t {
+struct ctrl_desc_t {
+    int value;
     char *name, *desc;
 };
 
+#define _ADD(value, desc) {value,  #value, desc}
+static struct ctrl_desc_t fp_esc_desc_table[] __unused = {
+    _ADD(FP_DECPAM, "ApplicationKeypad"),
+    _ADD(FP_DECPNM, "NormalKeypad"),
+    _ADD(FP_DECSC , "SaveCursor"),
+    _ADD(FP_DECRC , "RestoreCursor"),
+};
+
+static struct ctrl_desc_t nf_esc_desc_table[] __unused = {
+    _ADD(NF_GZD4, "CharsetG0"),
+    _ADD(NF_G1D4, "CharsetG1"),
+    _ADD(NF_G2D4, "CharsetG2"),
+    _ADD(NF_G3D4, "CharsetG3"),
+};
+
+static struct ctrl_desc_t mode_desc_table[] __unused = {
+    _ADD(DECCKM   , "Cursorkeys"),
+    _ADD(DECANM   , "ANSI"),
+    _ADD(DECCOLM  , "Column"),
+    _ADD(DECSCLM  , "Scrolling"),
+    _ADD(DECSCNM  , "Screen"),
+    _ADD(DECOM    , "Origin"),
+    _ADD(DECAWM   , "Autowrap"),
+    _ADD(DECARM   , "Autorepeat"),
+    _ADD(DECPFF   , "PrintFormFeed"),
+    _ADD(DECPEX   , "PrinterExtent"),
+    _ADD(DECTCEM  , "TextCursorEnable"),
+    _ADD(DECRLM   , "CursorDirectionRightToLeft"),
+    _ADD(DECHEBM  , "HebrewKeyboardMapping"),
+    _ADD(DECHEM   , "HebrewEncodingMode"),
+    _ADD(DECNRCM  , "NationalReplacementCharacterSet"),
+    _ADD(DECNAKB  , "GreekKeyboardMapping"),
+    _ADD(DECHCCM  , "HorizontalCursorCoupling"),
+    _ADD(DECVCCM  , "VerticalCursorCoupling"),
+    _ADD(DECPCCM  , "PageCursorCoupling"),
+    _ADD(DECNKM   , "NumericKeypad"),
+    _ADD(DECBKM   , "BackarrowKey"),
+    _ADD(DECKBUM  , "KeyboardUsage"),
+    _ADD(DECVSSM  , "VerticalSplitScreen"),
+    _ADD(DECLRMM  , "VerticalSplitScreen"),
+    _ADD(DECXRLM  , "TransmitRateLimiting"),
+    _ADD(DECKPM   , "KeyPosition"),
+    _ADD(DECNCSM  , "NoClearingScreenOnColumnChange"),
+    _ADD(DECRLCM  , "CursorRightToLeft"),
+    _ADD(DECCRTSM , "CRTSave"),
+    _ADD(DECARSM  , "AutoResize"),
+    _ADD(DECMCM   , "ModemControl"),
+    _ADD(DECAAM   , "AutoAnswerBack"),
+    _ADD(DECCANSM , "ConcealAnswerbackMessage"),
+    _ADD(DECNULM  , "IgnoringNull"),
+    _ADD(DECHDPXM , "HalfDuplex"),
+    _ADD(DECESKM  , "SecondaryKeyboardLanguage"),
+    _ADD(DECOSCNM , "Overscan"),
+    _ADD(M_SF     , "SendFocusEventsToTTY"),
+    _ADD(M_BP     , "BracketedPaste"),
+    _ADD(M_SBC    , "StartBlinkingCursor"),
+    _ADD(M_MUTF8  , "UTF8Mouse"),
+    _ADD(M_MP     , "ReportButtonPress"),
+    _ADD(M_MMP    , "ReportMotionOnButtonPress"),
+    _ADD(M_MMA    , "EnalbeAllMouseMotions"),
+    _ADD(M_ME     , "ExtenedReporting"),
+    _ADD(M_ALTS   , "UseAlternateScreenBuffer"),
+    _ADD(M_SC     , "SaveCursor"),
+    _ADD(M_SC_ALTS, "SaveCursorAlt"),
+};
+
+static struct ctrl_desc_t ctrl_desc_table[] __unused = {
+    _ADD(NUL , "Null"),
+    _ADD(SOH , "StartOfHeading"),
+    _ADD(STX , "StartOfText"),
+    _ADD(ETX , "EndOfText"),
+    _ADD(EOT , "EndOfTransmission"),
+    _ADD(ENQ , "Enquiry"),
+    _ADD(ACK , "Acknowledge"),
+    _ADD(BEL , "Bell"),
+    _ADD(BS  , "Backspace"),
+    _ADD(HT  , "HorizontalTabulation"),
+    _ADD(LF  , "LineFeed"),
+    _ADD(VT  , "VerticalTabulation"),
+    _ADD(FF  , "FormFeed"),
+    _ADD(CR  , "CarriageReturn"),
+    _ADD(SO  , "ShiftOut"),
+    _ADD(SI  , "ShiftIn"),
+    _ADD(DLE , "DataLinkEscape"),
+    _ADD(DC1 , "DeviceControlOne"),
+    _ADD(DC2 , "DeviceControlTwo"),
+    _ADD(DC3 , "DeviceControlThree"),
+    _ADD(DC4 , "DeviceControlFour"),
+    _ADD(NAK , "NegativeAcknowledge"),
+    _ADD(SYN , "SynchronousIdle"),
+    _ADD(ETB , "EndOfTransmissionBlock"),
+    _ADD(CAN , "Cancel"),
+    _ADD(EM  , "EndOfmedium"),
+    _ADD(SUB , "Substitute"),
+    _ADD(ESC , "Escape"),
+    _ADD(FS  , "FileSeparator"),
+    _ADD(GS  , "GroupSeparator"),
+    _ADD(RS  , "RecordSeparator"),
+    _ADD(US  , "UnitSeparator"),
+    _ADD(DEL , "Delete"),
+    _ADD(PAD , "PaddingCharacter"),
+    _ADD(HOP , "HighOctetPreset"),
+    _ADD(BPH , "BreakPermittedHere"),
+    _ADD(NBH , "NoBreakHere"),
+    _ADD(IND , "Index"),
+    _ADD(NEL , "NextLine"),
+    _ADD(SSA , "StartOfSelectedArea"),
+    _ADD(ESA , "EndOfSelectedArea"),
+    _ADD(HTS , "HorizontalTabulationSet"),
+    _ADD(HTJ , "HorizontalTabulationWithJustification"),
+    _ADD(VTS , "VerticalTabulationSet"),
+    _ADD(PLD , "PartialLineDown"),
+    _ADD(PLU , "PartialLineUp"),
+    _ADD(RI  , "ReverseIndex"),
+    _ADD(SS2 , "SingleShift2"),
+    _ADD(SS3 , "SingleShift3"),
+    _ADD(DCS , "DeviceControlString"),
+    _ADD(PU1 , "PrivateUse1"),
+    _ADD(PU2 , "PrivateUse2"),
+    _ADD(STS , "TransmitState"),
+    _ADD(CCH , "CancelCharacter"),
+    _ADD(MW  , "MessageWaiting"),
+    _ADD(SPA , "StartOfProtectedArea"),
+    _ADD(EPA , "EndOfProtectedArea"),
+    _ADD(SOS , "StartOfString"),
+    _ADD(SGCI, "SingleGraphicCharacterIntroducer"),
+    _ADD(SCI , "SingleCharacterIntroducer"),
+    _ADD(CSI , "ControlSequenceIntroducer"),
+    _ADD(ST  , "StringTerminator"),
+    _ADD(OSC , "OperatingSystemCommand"),
+    _ADD(PM  , "PrivacyMessage"),
+    _ADD(APC , "ApplicationProgramCommand"),
+};
+
+static struct ctrl_desc_t csi_desc_table[] __unused = {
+    _ADD(ICH    , "InsertBlankChar"),
+    _ADD(CUU    , "CursorUp"),
+    _ADD(CUD    , "CursorDown"),
+    _ADD(CUF    , "CursorForward"),
+    _ADD(CUB    , "CursorBackward"),
+    _ADD(CNL    , "CursorNextLine"),
+    _ADD(CPL    , "CursorPreviousLine"),
+    _ADD(CHA    , "CursorHorizontalAbsolute"),
+    _ADD(CUP    , "CursorPosition"),
+    _ADD(CHT    , "CursorForwardTabulation"),
+    _ADD(ED     , "EraseInDisplay"),
+    _ADD(EL     , "EraseInLine"),
+    _ADD(IL     , "InsertLine"),
+    _ADD(DL     , "DeleteLine"),
+    _ADD(DCH    , "DelectChar"),
+    _ADD(SU     , "ScrollLineUp"),
+    _ADD(SD     , "ScrollLineDown"),
+    _ADD(ECH    , "EraseChar"),
+    _ADD(CBT    , "CursorBackwardTabulation"),
+    _ADD(REP    , "RepeatPrint"),
+    _ADD(DA     , "DeviceAttributes"),
+    _ADD(HVP    , "HorizontalAndVerticalPosition"),
+    _ADD(TBC    , "TabClear"),
+    _ADD(SM     , "SetMode"),
+    _ADD(MC     , "MediaCopy"),
+    _ADD(RM     , "ResetMode"),
+    _ADD(SGR    , "SelectGraphicRendition"),
+    _ADD(DSR    , "DeviceStatusReport"),
+    _ADD(DECLL  , "LoadLEDs"),
+    _ADD(DECSTBM, "SetTopAndBottomMargins"),
+    _ADD(DECSC  , "SaveCursor"),
+    _ADD(DECRC  , "RestoreCursor"),
+    _ADD(VPA    , "VerticalLinePositionAbsolute"),
+    _ADD(VPR    , "VerticalPositionRelative"),
+    _ADD(HPA    , "HorizontalPositionAbsolute"),
+    _ADD(HPR    , "HorizontalPositionRelative"),
+    _ADD(WINMAN , "WindowManipulation"),
+};
+
+static struct ctrl_desc_t sgr_desc_table[] __unused = {
+    _ADD(0  , "Reset"),
+    _ADD(1  , "Bold"),
+    _ADD(2  , "Faint"),
+    _ADD(3  , "Italic"),
+    _ADD(4  , "Underline"),
+    _ADD(5  , "SlowBlink"),
+    _ADD(6  , "RapidBlink"),
+    _ADD(7  , "ReverseVideoorInvert"),
+    _ADD(8  , "Conceal"),
+    _ADD(9  , "CrossedOut"),
+    _ADD(10 , "PrimaryFont"),
+    _ADD(11 , "AltFont1"),
+    _ADD(12 , "AltFont2"),
+    _ADD(13 , "AltFont3"),
+    _ADD(14 , "AltFont4"),
+    _ADD(15 , "AltFont5"),
+    _ADD(16 , "AltFont6"),
+    _ADD(17 , "AltFont7"),
+    _ADD(18 , "AltFont8"),
+    _ADD(19 , "AltFont9"),
+    _ADD(20 , "Fraktur"),
+    _ADD(21 , "DoubleUnderlined"),
+    _ADD(22 , "NormalIntensity"),
+    _ADD(23 , "NeitherItalicNorBlackletter"),
+    _ADD(24 , "NotUnderlined"),
+    _ADD(25 , "NotBlinking"),
+    _ADD(26 , "ProportionalSpacing"),
+    _ADD(27 , "NotReversed"),
+    _ADD(28 , "Reveal"),
+    _ADD(29 , "NotCrossedOut"),
+    _ADD(30 , "FgBlack"),
+    _ADD(31 , "FgRed"),
+    _ADD(32 , "FgGreen"),
+    _ADD(33 , "FgYellow"),
+    _ADD(34 , "FgBlue"),
+    _ADD(35 , "FgMagenta"),
+    _ADD(36 , "FgCyan"),
+    _ADD(37 , "FgWhite"),
+    _ADD(38 , "FgRGB"),
+    _ADD(39 , "FgReset"),
+    _ADD(40 , "BgBlack"),
+    _ADD(41 , "BgRed"),
+    _ADD(42 , "BgGreen"),
+    _ADD(43 , "BgYellow"),
+    _ADD(44 , "BgBlue"),
+    _ADD(45 , "BgMagenta"),
+    _ADD(46 , "BgCyan"),
+    _ADD(47 , "BgWhite"),
+    _ADD(48 , "BgRGB"),
+    _ADD(49 , "BgReset"),
+    _ADD(50 , "DisableProportionalSpacing"),
+    _ADD(51 , "Framed"),
+    _ADD(52 , "Encircled"),
+    _ADD(53 , "Overlined"),
+    _ADD(54 , "NeitherFramedNorEncircled"),
+    _ADD(55 , "NotOverlined"),
+    _ADD(56 , "Unknown"),
+    _ADD(57 , "Unknown"),
+    _ADD(58 , "UnderlineColor"),
+    _ADD(59 , "UnderlineColorReset"),
+    _ADD(60 , "IdeogramUnderline"),
+    _ADD(61 , "IdeogramDoubleUnderline"),
+    _ADD(62 , "IdeogramOverline"),
+    _ADD(63 , "IdeogramDoubleOverline"),
+    _ADD(64 , "IdeogramStressMarking"),
+    _ADD(65 , "NoIdeogramAttributes"),
+    _ADD(66 , "Unknown"),
+    _ADD(67 , "Unknown"),
+    _ADD(68 , "Unknown"),
+    _ADD(69 , "Unknown"),
+    _ADD(70 , "Unknown"),
+    _ADD(71 , "Unknown"),
+    _ADD(72 , "Unknown"),
+    _ADD(73 , "Superscript"),
+    _ADD(74 , "Subscript"),
+    _ADD(75 , "NeitherSuperscriptNorSubscript"),
+    _ADD(76 , "Unknown"),
+    _ADD(77 , "Unknown"),
+    _ADD(78 , "Unknown"),
+    _ADD(79 , "Unknown"),
+    _ADD(80 , "Unknown"),
+    _ADD(81 , "Unknown"),
+    _ADD(82 , "Unknown"),
+    _ADD(83 , "Unknown"),
+    _ADD(84 , "Unknown"),
+    _ADD(85 , "Unknown"),
+    _ADD(86 , "Unknown"),
+    _ADD(87 , "Unknown"),
+    _ADD(88 , "Unknown"),
+    _ADD(89 , "Unknown"),
+    _ADD(90 , "FgBrightBlack"),
+    _ADD(91 , "FgBrightRed"),
+    _ADD(92 , "FgBrightGreen"),
+    _ADD(93 , "FgBrightYellow"),
+    _ADD(94 , "FgBrightBlue"),
+    _ADD(95 , "FgBrightMagenta"),
+    _ADD(96 , "FgBrightCyan"),
+    _ADD(97 , "FgBrightWhite"),
+    _ADD(98 , "Unknown"),
+    _ADD(99 , "Unknown"),
+    _ADD(100, "BgBrightBlack"),
+    _ADD(101, "BgBrightRed"),
+    _ADD(102, "BgBrightGreen"),
+    _ADD(103, "BgBrightYellow"),
+    _ADD(104, "BgBrightBlue"),
+    _ADD(105, "BgBrightMagenta"),
+    _ADD(106, "BgBrightCyan"),
+    _ADD(107, "BgBrightWhite"),
+};
+#undef _ADD
+
+static struct ctrl_desc_t esc_desc_table[] __unused = {
+    {0, "NF", "nF Esc"},
+    {1, "FP", "Fp Esc"},
+    {2, "FE", "Fe Esc"},
+    {3, "FS", "Fs Esc"},
+};
+
 static inline int
-fp_esc_info(int type, struct ctrl_info_t **info) {
-    static struct {
-        int type;
-        struct ctrl_info_t info;
-    } infos[] = {
-        {FP_DECPAM   ,  {"DECPAM"     , "Application Keypad"     }},
-        {FP_DECPNM   ,  {"DECPNM"     , "Normal Keypad"          }},
-        {FP_DECSC    ,  {"DECSC"      , "Save Cursor"            }},
-        {FP_DECRC    ,  {"DECRC"      , "Restore Cursor"         }},
-    };
-    for (int i = 0; i < LEN(infos); i++)
-        if (infos[i].type == type) {
-            *info = &infos[i].info;
+_ctrl_desc(struct ctrl_desc_t *table, int len,
+    struct ctrl_desc_t *item, int value) {
+    ZERO(*item);
+    for (int i = 0; i < len; i++)
+        if (table[i].value == value) {
+            *item = table[i];
             return 0;
         }
     return 1;
 }
 
-static inline int
-nf_esc_info(int type, struct ctrl_info_t **info) {
-    static struct {
-        int type;
-        struct ctrl_info_t info;
-    } infos[] = {
-        {NF_GZD4   ,  {"GZD4"     , "Set Charset G0"     }},
-        {NF_G1D4   ,  {"G1D4"     , "Set Charset G1"     }},
-        {NF_G2D4   ,  {"G2D4"     , "Set Charset G2"     }},
-        {NF_G3D4   ,  {"G3D4"     , "Set Charset G3"     }},
-    };
-    for (int i = 0; i < LEN(infos); i++)
-        if (infos[i].type == type) {
-            *info = &infos[i].info;
-            return 0;
-        }
-    return 1;
-}
+#define _CTRL_DESC(table, item, value) \
+    _ctrl_desc(table, LEN(table), item, value)
 
-static inline int
-mode_info(int type, struct ctrl_info_t **info) {
-    static struct {
-        int type;
-        struct ctrl_info_t info;
-    } infos[] = {
-        {DECCKM     ,  {"DECCKM"     , "Cursor keys"                          }},
-        {DECANM     ,  {"DECANM"     , "ANSI"                                 }},
-        {DECCOLM    ,  {"DECCOLM"    , "Column"                               }},
-        {DECSCLM    ,  {"DECSCLM"    , "Scrolling"                            }},
-        {DECSCNM    ,  {"DECSCNM"    , "Screen"                               }},
-        {DECOM      ,  {"DECOM"      , "Origin"                               }},
-        {DECAWM     ,  {"DECAWM"     , "Autowrap"                             }},
-        {DECARM     ,  {"DECARM"     , "Autorepeat"                           }},
-        {DECPFF     ,  {"DECPFF"     , "Print form Feed"                      }},
-        {DECPEX     ,  {"DECPEX"     , "Printer Extent"                       }},
-        {DECTCEM    ,  {"DECTCEM"    , "Text Cursor Enable"                   }},
-        {DECRLM     ,  {"DECRLM"     , "Cursor Direction, Right to Left"      }},
-        {DECHEBM    ,  {"DECHEBM"    , "Hebrew Keyboard Mapping"              }},
-        {DECHEM     ,  {"DECHEM"     , "Hebrew Encoding Mode"                 }},
-        {DECNRCM    ,  {"DECNRCM"    , "National Replacement Character Set"   }},
-        {DECNAKB    ,  {"DECNAKB"    , "Greek keyboard Mapping"               }},
-        {DECHCCM    ,  {"DECHCCM"    , "Horizontal Cursor Coupling"           }},
-        {DECVCCM    ,  {"DECVCCM"    , "Vertical Cursor Coupling"             }},
-        {DECPCCM    ,  {"DECPCCM"    , "Page Cursor Coupling"                 }},
-        {DECNKM     ,  {"DECNKM"     , "Numeric Keypad"                       }},
-        {DECBKM     ,  {"DECBKM"     , "Backarrow Key"                        }},
-        {DECKBUM    ,  {"DECKBUM"    , "Keyboard Usage"                       }},
-        {DECVSSM    ,  {"DECVSSM"    , "Vertical Split Screen"                }},
-        {DECLRMM    ,  {"DECLRMM"    , "Vertical Split Screen"                }},
-        {DECXRLM    ,  {"DECXRLM"    , "Transmit Rate Limiting"               }},
-        {DECKPM     ,  {"DECKPM"     , "Key Position"                         }},
-        {DECNCSM    ,  {"DECNCSM"    , "No Clearing Screen on Column Change"  }},
-        {DECRLCM    ,  {"DECRLCM"    , "Cursor Right to Left"                 }},
-        {DECCRTSM   ,  {"DECCRTSM"   , "CRT Save"                             }},
-        {DECARSM    ,  {"DECARSM"    , "Auto Resize"                          }},
-        {DECMCM     ,  {"DECMCM"     , "Modem Control"                        }},
-        {DECAAM     ,  {"DECAAM"     , "Auto Answerback"                      }},
-        {DECCANSM   ,  {"DECCANSM"   , "Conceal Answerback Message"           }},
-        {DECNULM    ,  {"DECNULM"    , "Ignoring Null"                        }},
-        {DECHDPXM   ,  {"DECHDPXM"   , "Half-Duplex"                          }},
-        {DECESKM    ,  {"DECESKM"    , "Secondary Keyboard Language"          }},
-        {DECOSCNM   ,  {"DECOSCNM"   , "Overscan"                             }},
-        {M_SF       ,  {"M_SF"       , "Send Focus Events to TTY"             }},
-        {M_BP       ,  {"M_BP"       , "Bracketed Paste"                      }},
-        {M_SBC      ,  {"M_SBC"      , "Start Blinking Cursor"                }},
-        {M_MUTF8    ,  {"M_MUTF8"    , "UTF-8 mouse"                          }},
-        {M_MP       ,  {"M_MP"       , "Report Button Press"                  }},
-        {M_MMP      ,  {"M_MM "      , "Report Motion on Button Press"        }},
-        {M_MMA      ,  {"M_MMA"      , "Enalbe All Mouse Motions"             }},
-        {M_ME       ,  {"M_ME"       , "Extened Reporting"                    }},
-        {M_ALTS     ,  {"M_ALTS"     , "Use Alternate Screen Buffer"          }},
-        {M_SC       ,  {"M_SC"       , "Save Cursor"                          }},
-        {M_SC_ALTS  ,  {"M_SC_ALTS"  , "M_SC and M_ALTS"                      }},
-    };
-    for (int i = 0; i < LEN(infos); i++)
-        if (infos[i].type == type) {
-            *info = &infos[i].info;
-            return 0;
-        }
-    return 1;
-}
-
-static inline int
-ctrl_info(unsigned char type, struct ctrl_info_t **info) {
-    static struct {
-        unsigned char type;
-        struct ctrl_info_t info;
-    } infos [] = {
-        {NUL , {"NUL" , "Null"                                       }},
-        {SOH , {"SOH" , "Start of Heading"                           }},
-        {STX , {"STX" , "Start of Text"                              }},
-        {ETX , {"ETX" , "End of Text"                                }},
-        {EOT , {"EOT" , "End of Transmission"                        }},
-        {ENQ , {"ENQ" , "Enquiry"                                    }},
-        {ACK , {"ACK" , "Acknowledge"                                }},
-        {BEL , {"BEL" , "Bell, Alert"                                }},
-        {BS  , {"BS"  , "Backspace"                                  }},
-        {HT  , {"HT"  , "Character Tabulation, Horizontal Tabulation"}},
-        {LF  , {"LF"  , "Line Feed"                                  }},
-        {VT  , {"VT"  , "Line Tabulation, Vertical Tabulation"       }},
-        {FF  , {"FF"  , "Form Feed"                                  }},
-        {CR  , {"CR"  , "Carriage Return"                            }},
-        {SO  , {"SO"  , "Shift Out"                                  }},
-        {SI  , {"SI"  , "Shift In"                                   }},
-        {DLE , {"DLE" , "Data Link Escape"                           }},
-        {DC1 , {"DC1" , "Device Control One"                         }},
-        {DC2 , {"DC2" , "Device Control Two"                         }},
-        {DC3 , {"DC3" , "Device Control Three"                       }},
-        {DC4 , {"DC4" , "Device Control Four"                        }},
-        {NAK , {"NAK" , "Negative Acknowledge"                       }},
-        {SYN , {"SYN" , "Synchronous Idle"                           }},
-        {ETB , {"ETB" , "End of Transmission Block"                  }},
-        {CAN , {"CAN" , "Cancel"                                     }},
-        {EM  , {"EM"  , "End of medium"                              }},
-        {SUB , {"SUB" , "Substitute"                                 }},
-        {ESC , {"ESC" , "Escape"                                     }},
-        {FS  , {"FS"  , "File Separator"                             }},
-        {GS  , {"GS"  , "Group Separator"                            }},
-        {RS  , {"RS"  , "Record Separator"                           }},
-        {US  , {"US"  , "Unit Separator"                             }},
-        {DEL , {"DEL" , "Delete"                                     }},
-        {PAD , {"PAD" , "Padding Character"                          }},
-        {HOP , {"HOP" , "High Octet Preset"                          }},
-        {BPH , {"BPH" , "Break Permitted Here"                       }},
-        {NBH , {"NBH" , "No Break Here"                              }},
-        {IND , {"IND" , "Index"                                      }},
-        {NEL , {"NEL" , "Next Line"                                  }},
-        {SSA , {"SSA" , "Start of Selected Area"                     }},
-        {ESA , {"ESA" , "End of Selected Area"                       }},
-        {HTS , {"HTS" , "Horizontal Tabulation Set"                  }},
-        {HTJ , {"HTJ" , "Horizontal Tabulation With Justification"   }},
-        {VTS , {"VTS" , "Vertical Tabulation Set"                    }},
-        {PLD , {"PLD" , "Partial Line Down"                          }},
-        {PLU , {"PLU" , "Partial Line Up"                            }},
-        {RI  , {"RI"  , "Reverse Index"                              }},
-        {SS2 , {"SS2" , "Single-Shift 2"                             }},
-        {SS3 , {"SS3" , "Single-Shift 3"                             }},
-        {DCS , {"DCS" , "Device Control String"                      }},
-        {PU1 , {"PU1" , "Private Use 1"                              }},
-        {PU2 , {"PU2" , "Private Use 2"                              }},
-        {STS , {"STS" , "Set Transmit State"                         }},
-        {CCH , {"CCH" , "Cancel character"                           }},
-        {MW  , {"MW"  , "Message Waiting"                            }},
-        {SPA , {"SPA" , "Start of Protected Area"                    }},
-        {EPA , {"EPA" , "End of Protected Area"                      }},
-        {SOS , {"SOS" , "Start of String"                            }},
-        {SGCI, {"SGCI", "Single Graphic Character Introducer"        }},
-        {SCI , {"SCI" , "Single Character Introducer"                }},
-        {CSI , {"CSI" , "Control Sequence Introducer"                }},
-        {ST  , {"ST"  , "String Terminator"                          }},
-        {OSC , {"OSC" , "Operating System Command"                   }},
-        {PM  , {"PM"  , "Privacy Message"                            }},
-        {APC , {"APC" , "Application Program Command"                }},
-    };
-
-    for (int i = 0; i < LEN(infos); i++)
-        if (type == infos[i].type) {
-            *info = &infos[i].info;
-            return 0;
-        }
-    return 1;
-}
-
-static inline int
-csi_info(unsigned char type, struct ctrl_info_t **info) {
-    static struct {
-        unsigned char type;
-        struct ctrl_info_t info;
-    } infos[] = {
-        {ICH    , {"ICH"    , "Insert Blank Char"               }},
-        {CUU    , {"CUU"    , "Cursor Up"                       }},
-        {CUD    , {"CUD"    , "Cursor Down"                     }},
-        {CUF    , {"CUF"    , "Cursor Forward"                  }},
-        {CUB    , {"CUB"    , "Cursor Backward"                 }},
-        {CNL    , {"CNL"    , "Cursor Next Line"                }},
-        {CPL    , {"CPL"    , "Cursor Previous Line"            }},
-        {CHA    , {"CHA"    , "Cursor Horizontal Absolute"      }},
-        {CUP    , {"CUP"    , "Cursor Position"                 }},
-        {CHT    , {"CHT"    , "Cursor Forward Tabulation"       }},
-        {ED     , {"ED"     , "Erase in Display"                }},
-        {EL     , {"EL"     , "Erase in Line"                   }},
-        {IL     , {"IL"     , "Insert Line"                     }},
-        {DL     , {"DL"     , "Delete Line"                     }},
-        {DCH    , {"DCH"    , "Delect Char"                     }},
-        {SU     , {"SU"     , "Scroll Line Up"                  }},
-        {SD     , {"SD"     , "Scroll Line Down"                }},
-        {ECH    , {"ECH"    , "Erase Char"                      }},
-        {CBT    , {"CBT"    , "Cursor Backward Tabulation"      }},
-        {REP    , {"REP"    , "Repeat Print"                    }},
-        {DA     , {"DA"     , "Device Attributes"               }},
-        {HVP    , {"HVP"    , "Horizontal and Vertical Position"}},
-        {TBC    , {"TBC"    , "Tab Clear"                       }},
-        {SM     , {"SM"     , "Set Mode"                        }},
-        {MC     , {"MC"     , "Media Copy"                      }},
-        {RM     , {"RM"     , "Reset Mode"                      }},
-        {SGR    , {"SGR"    , "Select Graphic Rendition"        }},
-        {DSR    , {"DSR"    , "Device Status Report"            }},
-        {DECLL  , {"DECLL"  , "Load LEDs"                       }},
-        {DECSTBM, {"DECSTBM", "Set Top and Bottom Margins"      }},
-        {DECSC  , {"DECSC"  , "Save Cursor"                     }},
-        {DECRC  , {"DECRC"  , "Restore Cursor"                  }},
-        {VPA    , {"VPA"    , "Vertical Line Position Absolute" }},
-        {VPR    , {"VPR"    , "Vertical Position Relative"      }},
-        {HPA    , {"HPA"    , "Horizontal Position Absolute"    }},
-        {HPR    , {"HPR"    , "Horizontal Position Relative"    }},
-        {WINMAN , {"WINMAN" , "Window Manipulation"             }},
-    };
-    for (int i = 0; i < LEN(infos); i++)
-        if (infos[i].type == type) {
-            *info = &infos[i].info;
-            return 0;
-        }
-    return 1;
-}
-
-static inline int
-sgr_info(unsigned char type, struct ctrl_info_t **info) {
-    static struct ctrl_info_t infos[108] = {
-        {"0"  , "Reset"                                                      },
-        {"1"  , "Bold"                                                       },
-        {"2"  , "Faint"                                                      },
-        {"3"  , "Italic"                                                     },
-        {"4"  , "Underline"                                                  },
-        {"5"  , "Slow Blink"                                                 },
-        {"6"  , "Rapid Blink"                                                },
-        {"7"  , "Reverse Video or Invert"                                    },
-        {"8"  , "Conceal"                                                    },
-        {"9"  , "Crossed Out"                                                },
-        {"10" , "Primary Font"                                               },
-        {"11" , "Alternative Font"                                           },
-        {"12" , "Alternative Font"                                           },
-        {"13" , "Alternative Font"                                           },
-        {"14" , "Alternative Font"                                           },
-        {"15" , "Alternative Font"                                           },
-        {"16" , "Alternative Font"                                           },
-        {"17" , "Alternative Font"                                           },
-        {"18" , "Alternative Font"                                           },
-        {"19" , "Alternative Font"                                           },
-        {"20" , "Fraktur"                                                    },
-        {"21" , "Double Underlined"                                          },
-        {"22" , "Normal Intensity"                                           },
-        {"23" , "Neither Italic, nor Blackletter"                            },
-        {"24" , "Not Underlined"                                             },
-        {"25" , "Not Blinking"                                               },
-        {"26" , "Proportional Spacing"                                       },
-        {"27" , "Not Reversed"                                               },
-        {"28" , "Reveal"                                                     },
-        {"29" , "Not Crossed Out"                                            },
-        {"30" , "Set Foreground Color"                                       },
-        {"31" , "Set Foreground Color"                                       },
-        {"32" , "Set Foreground Color"                                       },
-        {"33" , "Set Foreground Color"                                       },
-        {"34" , "Set Foreground Color"                                       },
-        {"35" , "Set Foreground Color"                                       },
-        {"36" , "Set Foreground Color"                                       },
-        {"37" , "Set Foreground Color"                                       },
-        {"38" , "Set Foreground Color"                                       },
-        {"39" , "Default Foreground Color"                                   },
-        {"40" , "Set Background Color"                                       },
-        {"41" , "Set Background Color"                                       },
-        {"42" , "Set Background Color"                                       },
-        {"43" , "Set Background Color"                                       },
-        {"44" , "Set Background Color"                                       },
-        {"45" , "Set Background Color"                                       },
-        {"46" , "Set Background Color"                                       },
-        {"47" , "Set Background Color"                                       },
-        {"48" , "Set Background Color"                                       },
-        {"49" , "Default Background Color"                                   },
-        {"50" , "Disable Proportional Spacing"                               },
-        {"51" , "Framed"                                                     },
-        {"52" , "Encircled"                                                  },
-        {"53" , "Overlined"                                                  },
-        {"54" , "Neither Framed nor Encircled"                               },
-        {"55" , "Not Overlined"                                              },
-        {"56" , "Unknown"                                                    },
-        {"57" , "Unknown"                                                    },
-        {"58" , "Set Underline Color"                                        },
-        {"59" , "Default Underline Color"                                    },
-        {"60" , "Ideogram Underline or Right Side Line"                      },
-        {"61" , "Ideogram Double Underline, or Double Line on the Right Side"},
-        {"62" , "Ideogram Overline or Left Side Line"                        },
-        {"63" , "Ideogram Double Overline, or Double Line on the Left Side"  },
-        {"64" , "Ideogram Stress Marking"                                    },
-        {"65" , "No Ideogram Attributes"                                     },
-        {"66" , "Unknown"                                                    },
-        {"67" , "Unknown"                                                    },
-        {"68" , "Unknown"                                                    },
-        {"69" , "Unknown"                                                    },
-        {"70" , "Unknown"                                                    },
-        {"71" , "Unknown"                                                    },
-        {"72" , "Unknown"                                                    },
-        {"73" , "Superscript"                                                },
-        {"74" , "Subscript"                                                  },
-        {"75" , "Neither Superscript nor Subscript"                          },
-        {"76" , "Unknown"                                                    },
-        {"77" , "Unknown"                                                    },
-        {"78" , "Unknown"                                                    },
-        {"79" , "Unknown"                                                    },
-        {"80" , "Unknown"                                                    },
-        {"81" , "Unknown"                                                    },
-        {"82" , "Unknown"                                                    },
-        {"83" , "Unknown"                                                    },
-        {"84" , "Unknown"                                                    },
-        {"85" , "Unknown"                                                    },
-        {"86" , "Unknown"                                                    },
-        {"87" , "Unknown"                                                    },
-        {"88" , "Unknown"                                                    },
-        {"89" , "Unknown"                                                    },
-        {"90" , "Set Bright Foreground Color"                                },
-        {"91" , "Set Bright Foreground Color"                                },
-        {"92" , "Set Bright Foreground Color"                                },
-        {"93" , "Set Bright Foreground Color"                                },
-        {"94" , "Set Bright Foreground Color"                                },
-        {"95" , "Set Bright Foreground Color"                                },
-        {"96" , "Set Bright Foreground Color"                                },
-        {"97" , "Set Bright Foreground Color"                                },
-        {"98" , "Unknown"                                                    },
-        {"99" , "Unknown"                                                    },
-        {"100", "Set Bright Background Color"                                },
-        {"101", "Set Bright Background Color"                                },
-        {"102", "Set Bright Background Color"                                },
-        {"103", "Set Bright Background Color"                                },
-        {"104", "Set Bright Background Color"                                },
-        {"105", "Set Bright Background Color"                                },
-        {"106", "Set Bright Background Color"                                },
-        {"107", "Set Bright Background Color"                                },
-    };
-    if (type <= 107) {
-        *info = &infos[type];
-        return 0;
-    }
-    return 1;
-}
-
-static inline int
-esc_info(unsigned char type, struct ctrl_info_t **info) {
-    static struct ctrl_info_t infos[] = {
-        {"NF", "nF Escape"},
-        {"FP", "Fp Escape"},
-        {"FE", "Fe Escape"},
-        {"FS", "Fs Escape"},
-    };
-    if (type <= 3) {
-        *info = &infos[type];
-        return 0;
-    }
-    return 1;
-}
+#define fp_esc_desc(desc, value) _CTRL_DESC(fp_esc_desc_table, desc, value)
+#define nf_esc_desc(desc, value) _CTRL_DESC(nf_esc_desc_table, desc, value)
+#define mode_desc(desc, value)   _CTRL_DESC(mode_desc_table, desc, value)
+#define ctrl_desc(desc, value)   _CTRL_DESC(ctrl_desc_table, desc, value)
+#define csi_desc(desc, value)    _CTRL_DESC(csi_desc_table, desc, value)
+#define sgr_desc(desc, value)    _CTRL_DESC(sgr_desc_table, desc, value)
+#define esc_desc(desc, value)    _CTRL_DESC(esc_desc_table, desc, value)
 
 #endif

@@ -63,7 +63,7 @@ struct esc_t {
 
 void
 dump(unsigned char *buf, int n) {
-    struct ctrl_info_t *info = NULL;
+    struct ctrl_desc_t desc;;
     int i;
 
     if (n == 0) return;
@@ -73,8 +73,8 @@ dump(unsigned char *buf, int n) {
             continue;
         }
         if (ISCTRL(buf[i])) {
-            ctrl_info(buf[i], &info);
-            printf("%s", info->name);
+            ctrl_desc(&desc, buf[i]);
+            printf("%s", desc.name);
             continue;
         }
         printf("%0x02X", buf[i]);
@@ -225,7 +225,7 @@ csi_dump(struct esc_t *esc) {
                  dump(esc->seq+a, b-a+1);
          }
      }
-    // printf("%s\n", get_esc_str(esc, 1));
+    // printf("%s\n", get_esc_str(esc));
 }
 
 int
@@ -238,7 +238,7 @@ find_osc_end(unsigned char *seq, int len, int *n) {
 
 int
 find_csi_end(unsigned char *seq, int len, int *n) {
-    if ((*n = range_search(seq, len, 0x40, 0x7E, 0)) < 0)
+    if ((*n = range_search(seq, len, 0x40, 0x7e, 0)) < 0)
         return ESCCSINOEND;
     return 0;
 }
@@ -253,7 +253,7 @@ find_dcs_end(unsigned char *seq, int len, int *n) {
 
 int
 find_nfesc_end(unsigned char *seq, int len, int *n) {
-    if ((*n = range_search(seq, len, 0x30, 0x7E, 0)) < 0)
+    if ((*n = range_search(seq, len, 0x30, 0x7e, 0)) < 0)
         return ESCNFNOEND;
     return 0;
 }
@@ -272,11 +272,11 @@ esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
     //dump(seq, len);
     c = seq[0];
 
-    if (c < 0x20 || c > 0x7E)
+    if (c < 0x20 || c > 0x7e)
         return ESCERR;
     esc->len = 1;
 
-    if (c >= 0x20 && c <= 0x2F) {
+    if (c >= 0x20 && c <= 0x2f) {
         esc->type = ESCNF;
         esc->esc = c;
         if ((ret = find_nfesc_end(seq+1, len-1, &n)))
@@ -284,7 +284,7 @@ esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
         esc->len += n+1;
     }
 
-    if (c >= 0x40 && c <= 0x5F) {
+    if (c >= 0x40 && c <= 0x5f) {
         esc->type = ESCFE;
         esc->esc = c - 0x40 + 0x80;
         switch (esc->esc) {
@@ -311,12 +311,12 @@ esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
         }
     }
 
-    if (c >= 0x60 && c <= 0x7E) {
+    if (c >= 0x60 && c <= 0x7e) {
         esc->type = ESCFS;
         esc->esc = c;
     }
 
-    if (c >= 0x30 && c <= 0x3F) {
+    if (c >= 0x30 && c <= 0x3f) {
         esc->type = ESCFP;
         esc->esc = c;
     }
@@ -325,13 +325,13 @@ esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
 }
 
 char* // debug
-get_esc_str(struct esc_t *esc, int desc) {
-    struct ctrl_info_t *info, *info2;
-    int i, pos, n, ret;
+get_esc_str(struct esc_t *esc) {
+    struct ctrl_desc_t d;
+    int i, pos, n, ret, v;
     char *p;
     static char buf[BUFSIZ];
 
-#define MYPRINT(fmt, ...) \
+#define _P(fmt, ...) \
     pos += snprintf(buf+pos, sizeof(buf)-pos, fmt, ##__VA_ARGS__)
 
     pos = 0;
@@ -339,12 +339,12 @@ get_esc_str(struct esc_t *esc, int desc) {
     if (!esc->len)
         return buf;
 
-    if (esc_info(esc->type, &info)) {
-        MYPRINT("Unknown esc type");
+    if (esc_desc(&d, esc->type)) {
+        _P("Unknown esc type");
         return buf;
     }
 
-    MYPRINT("ESC.%s ", info->name);
+    _P("ESC.%s ", d.name);
     switch (esc->type) {
     case ESCFE: goto escfe;
     case ESCNF: goto escnf;
@@ -354,91 +354,93 @@ get_esc_str(struct esc_t *esc, int desc) {
     }
 
 escfe:
-    if (ctrl_info(esc->esc, &info)) {
-        MYPRINT("error fe esc type");
+    if (ctrl_desc(&d, esc->esc)) {
+        _P("error fe esc type");
         return buf;
     }
-    MYPRINT("%s ", info->name);
+    _P("%s ", d.name);
 
     switch (esc->esc) {
     case CSI:
-        if (csi_info(esc->csi, &info)) {
-            MYPRINT("%c ", esc->csi);
-            desc = 0;
-        } else {
-            MYPRINT("%s ", info->name);
-        }
+        if (csi_desc(&d, esc->csi))
+            _P("%c ", esc->csi);
+        else
+            _P("%s ", d.name);
 
-        if (esc->csi == RM ||  esc->csi == SM) {
-            if (esc->seq[1] != '?')
-                MYPRINT("unknown ");
-            else
-                for (i = 0; i < get_par_num(esc); i++) {
-                    if (get_str_par(esc, i, &p) || p == NULL) {
-                        MYPRINT("unknown ");
-                        continue;
-                    }
-                    if (i == 0)
-                        ret = parse_int(p+1, &n);
-                    else
-                        ret = parse_int(p, &n);
-
-                    if (ret || (ret = mode_info(n, &info2))) {
-                        MYPRINT("unknown ");
-                        continue;
-                    }
-                    MYPRINT("%s ", info2->name);
-                    if (desc)
-                        MYPRINT("%s ", info2->desc);
-                }
-        }
-
-        MYPRINT("[");
         n = get_par_num(esc);
+
+        _P("[");
         for (i = 0; i < n; i++) {
             if (get_str_par(esc, i, &p) || p == NULL)
-                MYPRINT("%s", "-");
+                _P("%s", "-");
             else
-                MYPRINT("%s", p);
+                _P("%s", p);
+
             if (i < n-1)
-                MYPRINT(",");
+                _P(",");
         }
-        MYPRINT("] ");
+        _P("] ");
+
+        switch (esc->csi) {
+        case RM:
+        case SM:
+            if (esc->seq[1] != '?') {
+                _P("unknown ");
+                break;
+            }
+            for (i = 0; i < n; i++) {
+                if (get_str_par(esc, i, &p) || p == NULL) {
+                    _P("unknown ");
+                    continue;
+                }
+                if (i == 0)
+                    ret = parse_int(p+1, &v);
+                else
+                    ret = parse_int(p, &v);
+
+                if (ret || (ret = mode_desc(&d, v))) {
+                    _P("unknown ");
+                    continue;
+                }
+                _P("%s ", d.name);
+            }
+            break;
+        case SGR:
+            for (i = 0; i < n; i++) {
+                if (get_int_par(esc, i, &v, 0))
+                    _P("unknown ");
+                else
+                    _P("%s ", sgr_desc(&d, v) ? "unknown" : d.desc);
+            }
+            break;
+        }
         break;
 
     case OSC:
         break;
 
     }
-    if (desc)
-        MYPRINT("`%s`", info->desc);
     return buf;
 
 escnf:
-    if (nf_esc_info(esc->esc, &info))
-        MYPRINT("0x%X (%c)", esc->esc, esc->esc);
-    else {
-        MYPRINT("%s ", info->name);
-        if (desc)
-            MYPRINT("`%s`", info->desc);
-    }
+    if (nf_esc_desc(&d, esc->esc))
+        _P("0x%X (%c)", esc->esc, esc->esc);
+    else
+        _P("%s ", d.name);
     return buf;
 
 escfp:
-    if (fp_esc_info(esc->esc, &info))
-        MYPRINT("0x%X (%c)", esc->esc, esc->esc);
-    else {
-        MYPRINT("%s ", info->name);
-        if (desc)
-            MYPRINT("`%s`", info->desc);
-    }
+    if (fp_esc_desc(&d, esc->esc))
+        _P("0x%X (%c)", esc->esc, esc->esc);
+    else
+        _P("%s ", d.name);
     return buf;
 
 escfs:
-    MYPRINT("0x%X (%c)", esc->esc, esc->esc);
+    _P("0x%X (%c)", esc->esc, esc->esc);
     return buf;
 
-#undef MYPRINT
+#undef _P
 }
 
 void
@@ -559,7 +561,7 @@ mode_handle(void) {
         return;
     }
 
-    //printf("%s\n", get_esc_str(&esc, 0));
+    //printf("%s\n", get_esc_str(&esc));
     npar = get_par_num(&esc);
     s = (esc.csi == SM ? SET : RESET);
     for (i = 0; i < npar; i++) {
@@ -883,12 +885,12 @@ escfs:
 void
 ctrl_handle(unsigned char *buf, int len) {
     unsigned char c = buf[0];
-    struct ctrl_info_t *info = NULL;
+    struct ctrl_desc_t desc;
 
     ASSERT(len >= 0, "");
     ctrl_error = 0;
     zt.lastc = 0;
-    bzero(&esc, sizeof(struct esc_t));
+    ZERO(esc);
     switch (c) {
     case ESC: esc_handle(buf+1, len-1); break;
     case LF : lnew()                  ; break;
@@ -921,15 +923,15 @@ ctrl_handle(unsigned char *buf, int len) {
         printf("can not find esc\n");
         break;
     case ERR_PAR:
-        printf("error parameter: %s\n", get_esc_str(&esc, 1));
+        printf("error parameter: %s\n", get_esc_str(&esc));
         break;
     case ERR_UNSUPP:
         printf("unsupported: ");
         if (c != ESC) {
-            ASSERT(ctrl_info(c, &info) == 0, "");
-            printf("%s %s\n", info->name, info->desc);
+            ASSERT(ctrl_desc(&desc, c) == 0, "");
+            printf("%s %s\n", desc.name, desc.desc);
         } else
-            printf("%s\n", get_esc_str(&esc, 1));
+            printf("%s\n", get_esc_str(&esc));
         break;
     }
 }
@@ -1013,13 +1015,13 @@ ldump(int y, int x1, int x2) {
 
 void // debug
 cdump(unsigned char c) {
-    struct ctrl_info_t *info = NULL;
+    struct ctrl_desc_t desc;
 
     if (c == ESC)
-        printf("[%3d] %-s\n", esc.len, get_esc_str(&esc, 0));
+        printf("[%3d] %-s\n", esc.len, get_esc_str(&esc));
     else {
-        ASSERT(ctrl_info(c, &info) == 0, "");
-        printf("[%3d] %-s\n", 1, info->name);
+        ASSERT(ctrl_desc(&desc, c) == 0, "");
+        printf("[%3d] %-s\n", 1, desc.name);
     }
     fflush(stdout);
 }
@@ -1059,7 +1061,7 @@ parse(unsigned char *buf, int len, int force) {
     }
 
 #ifdef DEBUG_BUF
-    printf("nread: %d\n", nread);
+    printf("nread: %d, size: %d\n", nread, len);
     dump(buf, len);
 #endif
 
