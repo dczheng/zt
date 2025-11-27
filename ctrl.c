@@ -56,7 +56,7 @@ void ldirty_all(void);
 void twrite(char*, int);
 
 struct esc_t {
-    int len;
+    int len, npar;
     unsigned char *seq, type, esc, csi;
 };
 
@@ -121,17 +121,6 @@ search(unsigned char *seq, int len, int n, unsigned char *c) {
         }
     }
     return -1;
-}
-
-int
-get_par_num(struct esc_t *esc) {
-    int i, n;
-
-    for (i = 1, n = 0; i < esc->len-1; i++) {
-        if (esc->seq[i] == ';')
-            n++;
-    }
-    return n+1;
 }
 
 int
@@ -213,7 +202,7 @@ csi_dump(struct esc_t *esc) {
      if (esc->csi != SGR)
         return;
      dump(esc->seq, esc->len);
-     for (i = 0; i < get_par_num(esc); i++) {
+     for (i = 0; i < esc->npar; i++) {
          if ((rr = get_int_par(esc, i, &r, 1)))
              printf("%s\n", strerror(rr));
          else
@@ -261,13 +250,21 @@ find_nfesc_end(unsigned char *seq, int len, int *n) {
 int
 esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
     unsigned char c;
-    int n, ret;
+    int i, n, ret;
 
     esc->type = -1;
     esc->seq = seq;
     ASSERT(len >= 0, "");
     if (!len)
         return ESCNOEND;
+
+#define _NPAR() { \
+    for (i = 1; i < esc->len-1; i++) { \
+        if (esc->seq[i] == ';') \
+            esc->npar++; \
+    } \
+    esc->npar++; \
+}
 
     //dump(seq, len);
     c = seq[0];
@@ -293,6 +290,7 @@ esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
                 return ret;
             esc->len += n+1;
             esc->csi = seq[esc->len-1];
+            _NPAR();
             //csi_dump(esc);
             break;
 
@@ -321,13 +319,14 @@ esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
         esc->esc = c;
     }
 
+#undef _NPAR
     return 0;
 }
 
 char* // debug
 get_esc_str(struct esc_t *esc) {
     struct ctrl_desc_t d;
-    int i, pos, n, ret, v;
+    int i, pos, ret, v;
     char *p;
     static char buf[BUFSIZ];
 
@@ -361,22 +360,23 @@ escfe:
     _P("%s ", d.name);
 
     switch (esc->esc) {
+    case OSC:
+        break;
+
     case CSI:
         if (csi_desc(&d, esc->csi))
             _P("%c ", esc->csi);
         else
             _P("%s ", d.name);
 
-        n = get_par_num(esc);
-
         _P("[");
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < esc->npar; i++) {
             if (get_str_par(esc, i, &p) || p == NULL)
                 _P("%s", "-");
             else
                 _P("%s", p);
 
-            if (i < n-1)
+            if (i < esc->npar-1)
                 _P(",");
         }
         _P("] ");
@@ -388,7 +388,7 @@ escfe:
                 _P("unknown ");
                 break;
             }
-            for (i = 0; i < n; i++) {
+            for (i = 0; i < esc->npar; i++) {
                 if (get_str_par(esc, i, &p) || p == NULL) {
                     _P("unknown ");
                     continue;
@@ -406,7 +406,7 @@ escfe:
             }
             break;
         case SGR:
-            for (i = 0; i < n; i++) {
+            for (i = 0; i < esc->npar; i++) {
                 if (get_int_par(esc, i, &v, 0))
                     _P("unknown ");
                 else
@@ -414,9 +414,6 @@ escfe:
             }
             break;
         }
-        break;
-
-    case OSC:
         break;
 
     }
@@ -445,7 +442,7 @@ escfs:
 
 void
 sgr_handle(void) {
-    int n, m, v, r, g, b, i, npar;
+    int n, m, v, r, g, b, i;
 
 #define SGR_PAR(idx, v, v0) \
         if (get_int_par(&esc, idx, &v, v0)) { \
@@ -453,13 +450,12 @@ sgr_handle(void) {
             return; \
         }
 
-    npar = get_par_num(&esc);
-    if (npar == 0) {
+    if (esc.npar == 0) {
         ATTR_RESET();
         return;
     }
 
-    for (i = 0; i < npar;) {
+    for (i = 0; i < esc.npar;) {
         SGR_PAR(i++, n, 0);
 
         if (n >= 30 && n <= 37) {
@@ -553,7 +549,7 @@ sgr_handle(void) {
 
 void
 mode_handle(void) {
-    int i, n, ret, npar, s;
+    int i, n, ret, s;
     char *p;
 
     if (esc.seq[1] != '?') {
@@ -562,9 +558,8 @@ mode_handle(void) {
     }
 
     //printf("%s\n", get_esc_str(&esc));
-    npar = get_par_num(&esc);
     s = (esc.csi == SM ? SET : RESET);
-    for (i = 0; i < npar; i++) {
+    for (i = 0; i < esc.npar; i++) {
         if (get_str_par(&esc, i, &p) || p == NULL)
             continue;
         if (i==0)
@@ -628,7 +623,7 @@ dsr_handle(void) {
     char wbuf[32], *p;
 
     ctrl_error = ERR_PAR;
-    if (get_par_num(&esc) == 0 || get_str_par(&esc, 0, &p) || p == NULL)
+    if (esc.npar == 0 || get_str_par(&esc, 0, &p) || p == NULL)
         return;
 
     if (p[0] == '?')
@@ -702,7 +697,7 @@ csi_handle(void) {
 
     case CUP:
     case HVP:
-        if (get_par_num(&esc) == 1) {
+        if (esc.npar == 1) {
             m = 1;
             CSI_PAR(0, n, 1);
             break;
@@ -711,13 +706,13 @@ csi_handle(void) {
         CSI_PAR(1, m, 1);
         break;
     case DA:
-        if (get_par_num(&esc) == 0)
+        if (esc.npar == 0)
             n = 0;
         else
             CSI_PAR(0, n, 0);
         break;
     case DECRC:
-        if (get_par_num(&esc)) {
+        if (esc.npar) {
             ctrl_error = ERR_PAR;
             return;
         }
@@ -835,7 +830,6 @@ escfe:
             lmoveto(zt.y-1, zt.x);
         break;
     case OSC:
-        //printf("%d\n", get_par_num(&esc));
         //dump(esc.seq, esc.len);
         break;
     case DCS:
