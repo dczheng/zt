@@ -11,7 +11,3 @@ A simple terminal for X.
 - Multiple fonts
 - 256 colors and true colors
 - Multiple platforms: DragonFlyBSD, FreeBSD, Linux, macOS
-
-### Configuration
-Edit **config.h** according to your needs.
-

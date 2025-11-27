@@ -1,11 +1,8 @@
-#include <stdlib.h>
+#include "zt.h"
 #if defined(__linux)
 #define  __USE_XOPEN
 #endif
 #include <wchar.h>
-
-#include "zt.h"
-#include "tools.h"
 
 char *norm_line_buffer, *alt_line_buffer;
 
@@ -46,7 +43,7 @@ lmove(int y, int dst, int src, int n) {
     if (n == 0)
         return;
     memmove(&zt.line[y][dst], &zt.line[y][src],
-        n * sizeof(struct MyChar));
+        n * sizeof(struct char_t));
 }
 
 void
@@ -111,10 +108,8 @@ lsettb(int t, int b) {
 
 void
 lclean(void) {
-    printf("free line buffer\n");
     free(norm_line_buffer);
     free(alt_line_buffer);
-    printf("free dirty\n");
     free(zt.dirty);
 }
 
@@ -161,7 +156,7 @@ ltab(int n) {
 }
 
 void
-lwrite(MyRune c) {
+lwrite(uint32_t c) {
     int w;
 
     if ((w = wcwidth(c)) <= 0) {
@@ -241,17 +236,17 @@ lalloc(void) {
     ASSERT(zt.tabs != NULL, "");
     ltab_reset();
 
-    n = (sizeof(struct MyChar*) +
-        sizeof(struct MyChar) * zt.col) * zt.row;
+    n = (sizeof(struct char_t*) +
+        sizeof(struct char_t) * zt.col) * zt.row;
 
 #define F(ls, buf) \
     buf = malloc(n); \
     ASSERT(buf != NULL, ""); \
-    ls = (struct MyChar **)buf; \
-    p = buf + sizeof(struct MyChar*) * zt.row; \
+    ls = (struct char_t **)buf; \
+    p = buf + sizeof(struct char_t*) * zt.row; \
     for (i = 0; i < zt.row; i++) { \
-        ls[i] = (struct MyChar*)p; \
-        p += sizeof(struct MyChar) * zt.col; \
+        ls[i] = (struct char_t*)p; \
+        p += sizeof(struct char_t) * zt.col; \
     }  \
     zt.line = ls; \
     lclear_all();
@@ -277,8 +272,8 @@ lresize(void) {
     int i, j, mr, mc;
     char *norm_line_buffer_old = norm_line_buffer;
     char *alt_line_buffer_old = alt_line_buffer;
-    struct MyChar **norm_line_old = zt.norm_line;
-    struct MyChar **alt_line_old = zt.alt_line;
+    struct char_t **norm_line_old = zt.norm_line;
+    struct char_t **alt_line_old = zt.alt_line;
     int *tabs_old = zt.tabs;
 
     mr = MIN(zt.row, zt.row_old);

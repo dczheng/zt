@@ -1,15 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <pwd.h>
 #include <signal.h>
+#include <locale.h>
+#include <termios.h>
+#include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/wait.h>
 #include <sys/select.h>
-#include <termios.h>
-#include <pwd.h>
-#include <errno.h>
-#include <locale.h>
 
 #if defined(__linux)
 #include <pty.h>
@@ -21,10 +17,21 @@
 
 #include "zt.h"
 #include "ctrl.h"
-#include "config.h"
 
-struct ZT zt;
+#define LATENCY 1
+
+struct zt_t zt;
+int tty;
 pid_t pid;
+
+void ldirty_reset(void);
+void linit(void);
+void lclean(void);
+int parse(unsigned char*, int, int);
+void xinit(void);
+void xclean(void);
+int xevent(void);
+void xdraw(void);
 
 int
 io_wait(int *r, int nr, int *w, int nw, long nano) {
@@ -86,8 +93,7 @@ void
 cleanup(void) {
     lclean();
     xclean();
-    close(zt.tty);
-    printf("exit\n");
+    close(tty);
     _exit(0);
 }
 
@@ -108,10 +114,10 @@ tread(int wait) {
         n = 0;
     }
 
-    if (wait > 0 && io_wait(&zt.tty, 1, NULL, 0, wait) != -1)
+    if (wait > 0 && io_wait(&tty, 1, NULL, 0, wait) != -1)
         return 1;
 
-    ret = read(zt.tty, buf+n, sizeof(buf)-n);
+    ret = read(tty, buf+n, sizeof(buf)-n);
     if (ret < 0) {
         printf("failed to read tty: %s\n", strerror(errno));
         return 0;
@@ -135,9 +141,9 @@ twrite(char *s, int n) {
         ntry++;
         ASSERT(ntry <= 100, "can't write tty");
 
-        if (io_wait(NULL, 0, &zt.tty, 1, wait) != 1)
+        if (io_wait(NULL, 0, &tty, 1, wait) != 1)
             continue;
-        ret = write(zt.tty, s, n);
+        ret = write(tty, s, n);
         if (ret < 0)  {
             printf("failed to read tty: %s\n", strerror(errno));
             return;
@@ -148,7 +154,7 @@ twrite(char *s, int n) {
 }
 
 void
-sigchld(int a UNUSED) {
+sigchld(int a __unused) {
     int stat;
     pid_t p;
 
@@ -169,7 +175,7 @@ tresize(void) {
     ws.ws_col = zt.col;
     ws.ws_xpixel = zt.width;
     ws.ws_ypixel = zt.height;
-    ret = ioctl(zt.tty, TIOCSWINSZ, &ws);
+    ret = ioctl(tty, TIOCSWINSZ, &ws);
     ASSERT(ret >= 0, "failed to set tty size: %s", strerror(errno));
 }
 
@@ -179,7 +185,7 @@ tinit(void) {
     struct passwd *pw;
     int ret, slave;
 
-    ret = openpty(&zt.tty, &slave, NULL, NULL, NULL);
+    ret = openpty(&tty, &slave, NULL, NULL, NULL);
     ASSERT(ret>=0, "openpty failed: %s", strerror(errno));
 
     sh = getenv("SHELL");
@@ -204,7 +210,7 @@ tinit(void) {
     ret = ioctl(slave, TIOCSCTTY, NULL);
     ASSERT(ret >= 0, "ioctl TIOCSCTTY failed: %s", strerror(errno));
     close(slave);
-    close(zt.tty);
+    close(tty);
 
     args[0] = sh;
     args[1] = NULL;
@@ -237,8 +243,8 @@ main(int argc, char **argv) {
         zt.fontsize = 1;
     }
 
-    zt.row = MAX(ROW, 8);
-    zt.col = MAX(COL, 8);
+    zt.row = 82;
+    zt.col = 24;
     setlocale(LC_CTYPE, "");
     MODE_RESET();
 
@@ -249,7 +255,7 @@ main(int argc, char **argv) {
 
     last = get_time();
     fd[0] = zt.xfd;
-    fd[1] = zt.tty;
+    fd[1] = tty;
     latency = LATENCY * MICROSEC;
     timeout = -1;
     for (;;){
@@ -267,12 +273,12 @@ main(int argc, char **argv) {
         now = get_time();
         latency -= now-last;
         last = now;
-	    //printf("%ld\n", latency);
+        //printf("%ld\n", latency);
 
-	    if (latency >= 0) {
+        if (latency >= 0) {
             timeout = latency;
             continue;
-	    }
+        }
 
         latency = LATENCY * MICROSEC;
         timeout = -1;

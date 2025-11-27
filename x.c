@@ -1,10 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
-#include <locale.h>
 #include <ctype.h>
-
+#include <locale.h>
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
 #include <X11/Xft/Xft.h>
@@ -12,7 +7,6 @@
 
 #include "zt.h"
 #include "ctrl.h"
-#include "config.h"
 
 //#define XDEBUG
 
@@ -29,12 +23,17 @@ Pixmap pixmap;
 XftGlyphFontSpec *specs;
 int screen, depth, nspec;
 
+void tresize(void);
+void lresize(void);
+void twrite(char*, int);
+struct color_t c8_to_rgb(unsigned char);
+
 struct {
     XIM im;
     XIC ic;
 } xim = {0};
 
-struct MyFont {
+struct font_t {
     XftFont *font;
     int weight, slant;
     FcChar8 *family;
@@ -72,7 +71,7 @@ xcolor_free(XftColor *c) {
 }
 
 void
-xdraw_specs(struct MyChar c) {
+xdraw_specs(struct char_t c) {
     XftColor bg, fg;
     int x, y, w, rf, rb, t;
 
@@ -97,23 +96,23 @@ xdraw_specs(struct MyChar c) {
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_FG))) {
         switch (c.fg.type) {
-            case COLOR8:
-                fg = color8[c.fg.c8];
-                break;
-            case COLOR24:
-                rf = xcolor_alloc(&fg, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2]);
-                break;
+        case COLOR8:
+            fg = color8[c.fg.c8];
+            break;
+        case COLOR24:
+            rf = xcolor_alloc(&fg, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2]);
+            break;
         }
     }
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_BG))) {
         switch (c.bg.type) {
-            case COLOR8:
-                bg = color8[c.bg.c8];
-                break;
-            case COLOR24:
-                rb = xcolor_alloc(&bg, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2]);
-                break;
+        case COLOR8:
+            bg = color8[c.bg.c8];
+            break;
+        case COLOR24:
+            rb = xcolor_alloc(&bg, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2]);
+            break;
         }
     }
 
@@ -135,7 +134,7 @@ xdraw_specs(struct MyChar c) {
 }
 
 void
-xfont_lookup(struct MyChar c, XftFont **f, FT_UInt *idx) {
+xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
     int i, weight, slant;
 
     weight = FC_WEIGHT_REGULAR;
@@ -168,7 +167,7 @@ xfont_lookup(struct MyChar c, XftFont **f, FT_UInt *idx) {
 void
 xdraw_line(int k, int y) {
     XRectangle r;
-    struct MyChar c, c0;
+    struct char_t c, c0;
     int i, x;
 
     r.x = 0;
@@ -246,24 +245,24 @@ xdraw(void) {
 void
 xkeymap(KeySym k, unsigned int state, char *buf, int *len) {
     switch (k) {
-        case XK_BackSpace:
-            if (state == 0) {
-                buf[0] = DEL;
-                *len = 1;
-            }
-            break;
-        case XK_Up:
-            *len = snprintf(buf, 4, "\033[A");
-            break;
-        case XK_Down:
-            *len = snprintf(buf, 4, "\033[B");
-            break;
-        case XK_Right:
-            *len = snprintf(buf, 4, "\033[C");
-            break;
-        case XK_Left:
-            *len = snprintf(buf, 4, "\033[D");
-            break;
+    case XK_BackSpace:
+        if (state == 0) {
+            buf[0] = DEL;
+            *len = 1;
+        }
+        break;
+    case XK_Up:
+        *len = snprintf(buf, 4, "\033[A");
+        break;
+    case XK_Down:
+        *len = snprintf(buf, 4, "\033[B");
+        break;
+    case XK_Right:
+        *len = snprintf(buf, 4, "\033[C");
+        break;
+    case XK_Left:
+        *len = snprintf(buf, 4, "\033[D");
+        break;
     }
 }
 
@@ -300,18 +299,18 @@ _Mouse(XEvent *ev) {
 
 /*
     switch (ev->xbutton.type) {
-        case ButtonPress:
-            t = 'P';
-            break;
-        case ButtonRelease:
-            t = 'R';
-            break;
+    case ButtonPress:
+        t = 'P';
+        break;
+    case ButtonRelease:
+        t = 'R';
+        break;
 
-        case MotionNotify:
-            t = 'M';
-            break;
-        default:
-            t = '-';
+    case MotionNotify:
+        t = 'M';
+        break;
+    default:
+        t = '-';
     }
     printf("%c (%d %d): %d, %d, %d, %d, %d, %d\n", t, r, c,
         MODE_HAS(MODE_MOUSE),
@@ -327,37 +326,37 @@ _Mouse(XEvent *ev) {
         return;
 
     switch (ev->xbutton.type) {
-        case ButtonPress:
-            if (!MODE_HAS(MODE_MOUSE_PRESS))
-                return;
-            t = 'M';
-            or = r;
-            oc = c;
-            ob = b;
-            break;
-
-        case ButtonRelease:
-            if (!MODE_HAS(MODE_MOUSE_RELEASE))
-                return;
-            t = 'm';
-            break;
-
-        case MotionNotify:
-            if (!MODE_HAS(MODE_MOUSE_MOTION_PRESS) &&
-                !MODE_HAS(MODE_MOUSE_MOTION_ANY))
-                return;
-            if (r == or && c == oc)
-                return;
-            t = 'M';
-            or = r;
-            oc = c;
-            b = ob+32;
-            break;
-
-        default:
-            printf("Unsupported button type: %d\n",
-                ev->xbutton.type);
+    case ButtonPress:
+        if (!MODE_HAS(MODE_MOUSE_PRESS))
             return;
+        t = 'M';
+        or = r;
+        oc = c;
+        ob = b;
+        break;
+
+    case ButtonRelease:
+        if (!MODE_HAS(MODE_MOUSE_RELEASE))
+            return;
+        t = 'm';
+        break;
+
+    case MotionNotify:
+        if (!MODE_HAS(MODE_MOUSE_MOTION_PRESS) &&
+            !MODE_HAS(MODE_MOUSE_MOTION_ANY))
+            return;
+        if (r == or && c == oc)
+            return;
+        t = 'M';
+        or = r;
+        oc = c;
+        b = ob+32;
+        break;
+
+    default:
+        printf("Unsupported button type: %d\n",
+            ev->xbutton.type);
+        return;
     }
 
     if (MODE_HAS(MODE_MOUSE_EXT)) {
@@ -384,7 +383,7 @@ _Focus(XEvent *ev) {
 }
 
 void
-_Expose(XEvent *ev UNUSED) {
+_Expose(XEvent *ev __unused) {
     xflush();
 }
 
@@ -427,7 +426,10 @@ _ConfigureNotify(XEvent *ev) {
     zt.row = r;
     zt.col = c;
 
-    //printf("resize: %dx%d -> %dx%d\n", zt.row_old, zt.col_old, zt.row, zt.col);
+    /*
+    printf("resize: %dx%d -> %dx%d\n",
+        zt.row_old, zt.col_old, zt.row, zt.col);
+    */
 
     xresize();
     tresize();
@@ -451,22 +453,22 @@ xevent(void) {
         if (XFilterEvent(&e, None))
             continue;
         switch(e.type) {
-            H(Expose)
-            H(KeyPress)
-            H(ConfigureNotify)
-            H2(MotionNotify, Mouse)
-            H2(ButtonPress, Mouse)
-            H2(ButtonRelease, Mouse)
-            H2(FocusIn, Focus)
-            H2(FocusOut, Focus)
-            case MapNotify:
-            case KeyRelease:
-            case UnmapNotify:
-                break;
-            case DestroyNotify:
-                return 1;
-            default:
-                printf("Unsupport event %d\n", e.type);
+        H(Expose)
+        H(KeyPress)
+        H(ConfigureNotify)
+        H2(MotionNotify, Mouse)
+        H2(ButtonPress, Mouse)
+        H2(ButtonRelease, Mouse)
+        H2(FocusIn, Focus)
+        H2(FocusOut, Focus)
+        case MapNotify:
+        case KeyRelease:
+        case UnmapNotify:
+            break;
+        case DestroyNotify:
+            return 1;
+        default:
+            printf("Unsupport event %d\n", e.type);
         }
     }
     return 0;
@@ -491,25 +493,21 @@ xclean(void) {
     XFreeCursor(display, cursor);
     XftDrawDestroy(drawable);
 
-    printf("free fonts\n");
     for (i = 0; i < nfont; i++)
         XftFontClose(display, fonts[i].font);
     free(fonts);
 
-    printf("free colors\n");
     xcolor_free(&background);
     xcolor_free(&foreground);
     for (i = 0; i < 256; i++)
         xcolor_free(&color8[i]);
 
-    printf("free specs\n");
     free(specs);
-
     close(zt.xfd);
 }
 
 void
-xfont_load(char *str, struct MyFont *f) {
+xfont_load(char *str, struct font_t *f) {
     FcPattern *p, *m;
     FcResult r;
 
@@ -535,7 +533,7 @@ xfont_load(char *str, struct MyFont *f) {
 void
 xfont_init(void) {
     int i, j, size;
-    struct MyFont *f;
+    struct font_t *f;
     XGlyphInfo exts;
     char printable[257], buf[128];
 
@@ -549,7 +547,6 @@ xfont_init(void) {
     nfont = LEN(font_list) * 4;
     fonts = malloc(nfont * sizeof(fonts[0]));
     ASSERT(fonts != NULL, "");
-    printf("nfont: %d\n", nfont);
     for (i = 0; i < nfont; i++) {
         f = &fonts[i];
         f->weight = ((i%4) / 2 == 0 ? FC_WEIGHT_REGULAR : FC_WEIGHT_BOLD);
@@ -558,16 +555,20 @@ xfont_init(void) {
         size = font_list[i/4].pixelsize * zt.fontsize;
         size = MAX(size, 1);
 
-        snprintf(buf, sizeof(buf), "%s:pixelsize=%d", font_list[i/4].name, size);
+        snprintf(buf, sizeof(buf), "%s:pixelsize=%d",
+            font_list[i/4].name, size);
         xfont_load(buf, f);
 
         if (i % 4 != 0)
             continue;
+
+        /*
         printf("%s: %s (%d %d %d)\n", font_list[i/4].name,
             f->family,
             f->font->max_advance_width,
             f->font->height,
             f->font->height - f->font->descent);
+        */
     }
 
     font_height = fonts[0].font->height;
@@ -578,19 +579,21 @@ xfont_init(void) {
 
     zt.width = zt.col * font_width;
     zt.height = zt.row * font_height;
+
+    /*
     printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
     printf("font size: %dx%d\n", font_width, font_height);
+    */
 }
 
 void
 xcolor_init(void) {
     int n;
-    struct MyColor mc;
+    struct color_t mc;
 
     n = sizeof(XftGlyphFontSpec) * zt.col;
     specs = malloc(n);
     ASSERT(specs != NULL, "");
-    printf("allocate %s for specs\n", parse_bytes(n));
 
     for (n = 0; n < 256; n++) {
         mc = c8_to_rgb(n);

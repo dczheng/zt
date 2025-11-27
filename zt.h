@@ -1,31 +1,107 @@
-#ifndef __ZT_H__
-#define __ZT_H__
+#ifndef __zt_t_H__
+#define __zt_t_H__
 
-#include "line.h"
+#include <time.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <string.h>
 
-// global namespace
-struct ZT {
-    int *dirty, *tabs,
-        top, bot, width ,height,
-        x, y, x_saved, y_saved,
-        row, col, row_old, col_old,
-        tty, xfd;
-    struct MyChar **line, **alt_line, **norm_line, c;
-    MyRune lastc;
+#define __unused __attribute__((unused))
+
+// config begin
+#define TERM "xterm-256color"
+#define BACKGROUND "gray20"
+#define FOREGROUND "white"
+#define USED_COLOR UBUNTU_COLOR
+static struct {
+    char *name;
+    int pixelsize;
+} font_list[] __unused = {
+    {"Sarasa Mono CL", 26},
+    {"Noto Emoji", 8},
+    {"Unifont", 18},
+};
+// config end
+
+struct color_t {
+    unsigned char type;
+    union {
+        unsigned char rgb[3];
+        unsigned char c8;
+    };
+};
+
+struct char_t {
+    uint32_t c;
+    char width;
+    struct color_t fg, bg;
+    unsigned int flag;
+};
+
+struct zt_t {
+    int *dirty, *tabs, top, bot, width ,height,
+        x, y, x_saved, y_saved, row, col,
+        row_old, col_old, xfd;
+    struct char_t **line, **alt_line, **norm_line, c;
+    uint32_t lastc;
     unsigned long mode;
     double fontsize;
 };
-extern struct ZT zt;
+extern struct zt_t zt;
 
-void twrite(char*, int);
-void tresize(void);
-int parse(unsigned char*, int, int);
-void xinit(void);
-void xclean(void);
-int xevent(void);
-void xdraw(void);
+#define NANOSEC     1000000000
+#define MICROSEC    1000000
+static inline long
+get_time(void) {
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+    return tv.tv_sec * NANOSEC + tv.tv_nsec;
+}
 
-// mode
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define LEN(x) ((int)(sizeof(x) / sizeof(x[0])))
+
+#define SWAP(a,b) do { \
+    typeof(a) _t;\
+    _t = a;\
+    a = b;\
+    b = _t;\
+} while(0);
+
+#define LIMIT(x, a, b) \
+    x = (x) < (a) ? (a) : ((x) > (b) ? (b) : (x))
+
+#define ASSERT(exp, fmt, ...) do { \
+    if (!(exp)) { \
+        fprintf(stderr, "Assert failed: %s in %s %d, "fmt"\n", \
+            #exp, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+        _exit(1);\
+    }\
+} while(0)
+
+#define UBUNTU_COLOR    1
+#define XTERM_COLOR     2
+#define COLOR8    8
+#define COLOR24  24
+#define COLOR_RESET(c)  bzero(&c, sizeof(struct color_t))
+#define SET_COLOR8(c, v) do { \
+    (c).type = COLOR8; \
+    (c).c8 = v; \
+} while(0)
+#define SET_COLOR24(c, r, g, b) do { \
+    (c).type = COLOR24; \
+    (c).rgb[0] = r; \
+    (c).rgb[1] = g; \
+    (c).rgb[2] = b; \
+} while(0)
+int color_equal(struct color_t, struct color_t);
+
+#define SET     1
+#define RESET   0
 #define MODE_TEXT_CURSOR        (1<<0)
 #define MODE_SEND_FOCUS         (1<<1)
 #define MODE_BRACKETED_PASTE    (1<<2)
@@ -37,11 +113,7 @@ void xdraw(void);
 #define MODE_MOUSE_EXT          (1<<8)
 
 #define MODE_HAS(m)     ((zt.mode & (m)) != 0)
-#define MODE_RESET() do { \
-    zt.mode = MODE_TEXT_CURSOR \
-            ; \
-} while(0)
-
+#define MODE_RESET()    zt.mode = MODE_TEXT_CURSOR
 #define MODE_SET(s, v) do { \
     ASSERT(s == SET || s == RESET, "");\
     if (s == SET) \
@@ -50,7 +122,6 @@ void xdraw(void);
         zt.mode &= ~(v); \
 } while (0)
 
-// attr
 #define ATTR_DEFAULT_FG                (1<<0)
 #define ATTR_DEFAULT_BG                (1<<1)
 #define ATTR_UNDERLINE                 (1<<2)
@@ -87,9 +158,7 @@ void xdraw(void);
 #define ATTR_RESET() do { \
     COLOR_RESET(zt.c.fg); \
     COLOR_RESET(zt.c.bg); \
-    zt.c.flag = ATTR_DEFAULT_FG \
-              | ATTR_DEFAULT_BG \
-              ;\
+    zt.c.flag = ATTR_DEFAULT_FG | ATTR_DEFAULT_BG; \
     zt.c.width = 1;\
     zt.c.c = ' ';\
 } while(0)
