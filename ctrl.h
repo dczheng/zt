@@ -111,12 +111,6 @@
 #define WINMAN   't'
 #define HPA      '`'
 
-// esc type
-#define ESCNF 0
-#define ESCFP 1
-#define ESCFE 2
-#define ESCFS 3
-
 // mode
 #define DECCKM         1
 #define DECANM         2
@@ -178,6 +172,21 @@
 #define FP_DECPNM      '>'
 #define FP_DECSC       '7'
 #define FP_DECRC       '8'
+
+// esc type
+#define ESCNF 0
+#define ESCFP 1
+#define ESCFE 2
+#define ESCFS 3
+
+#define ESCNF_MIN      0x20
+#define ESCNF_MAX      0x2f
+#define ESCFP_MIN      0x30
+#define ESCFP_MAX      0x3f
+#define ESCFE_MIN      0x40
+#define ESCFE_MAX      0x5f
+#define ESCFS_MIN      0x60
+#define ESCFS_MAX      0x7e
 
 #define ISCTRLC0(c)     ((c) <= 0x1f || (c) == 0x7f)
 #define ISCTRLC1(c)     ((c) >= 0x80 && (c) <= 0x9f)
@@ -475,12 +484,14 @@ static struct ctrl_desc_t sgr_desc_table[] __unused = {
 };
 #undef _ADD
 
+#define _ADD(value, desc) {value,  #value + 3, desc}
 static struct ctrl_desc_t esc_desc_table[] __unused = {
-    {0, "NF", "nF Esc"},
-    {1, "FP", "Fp Esc"},
-    {2, "FE", "Fe Esc"},
-    {3, "FS", "Fs Esc"},
+    _ADD(ESCNF, "nF Esc"),
+    _ADD(ESCFP, "Fp Esc"),
+    _ADD(ESCFE, "Fe Esc"),
+    _ADD(ESCFS, "Fs Esc"),
 };
+#undef _ADD
 
 static inline int
 _ctrl_desc(struct ctrl_desc_t *table, int len,
@@ -504,5 +515,18 @@ _ctrl_desc(struct ctrl_desc_t *table, int len,
 #define csi_desc(desc, value)    _CTRL_DESC(csi_desc_table, desc, value)
 #define sgr_desc(desc, value)    _CTRL_DESC(sgr_desc_table, desc, value)
 #define esc_desc(desc, value)    _CTRL_DESC(esc_desc_table, desc, value)
+
+static inline int
+esc_type(unsigned char c) {
+    if (c >= ESCNF_MIN && c <= ESCNF_MAX)
+        return ESCNF;
+    if (c >= ESCFP_MIN && c <= ESCFP_MAX)
+        return ESCFP;
+    if (c >= ESCFE_MIN && c <= ESCFE_MAX)
+        return ESCFE;
+    if (c >= ESCFS_MIN && c <= ESCFS_MAX)
+        return ESCFS;
+    return -1;
+}
 
 #endif

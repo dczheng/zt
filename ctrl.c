@@ -32,11 +32,11 @@
 #define RETRY_MAX 3
 
 //#define DEBUG_CTRL
+//#define DEBUG_BUF
 //#define DEBUG_CTRL_TERM
 //#define DEBUG_TERM
 //#define DEBUG_NOUTF8
 //#define DEBUG_WRITE
-//#define DEBUG_BUF
 
 int utf8_decode(unsigned char*, int, uint32_t*, int*);
 void lclear(int, int, int, int);
@@ -201,7 +201,6 @@ esc_parse(unsigned char *seq, int len) {
     unsigned char c;
     int i, n, ret;
 
-    esc.type = -1;
     esc.seq = seq;
     ASSERT(len >= 0, "");
     if (!len)
@@ -218,20 +217,30 @@ esc_parse(unsigned char *seq, int len) {
     //dump(seq, len);
     c = seq[0];
 
-    if (c < 0x20 || c > 0x7e)
-        return ESCERR;
+    esc.type = esc_type(c);
     esc.len = 1;
 
-    if (c >= 0x20 && c <= 0x2f) {
-        esc.type = ESCNF;
+    switch (esc.type) {
+    default:
+        esc.len = 0;
+        return ESCERR;
+
+    case ESCNF:
         esc.esc = c;
         if ((n = range_search(seq+1, len-1, 0x30, 0x7e, 0)) < 0)
             return ESCNFNOEND;
         esc.len += n+1;
-    }
+        break;
 
-    if (c >= 0x40 && c <= 0x5f) {
-        esc.type = ESCFE;
+    case ESCFP:
+        esc.esc = c;
+        break;
+
+    case ESCFS:
+        esc.esc = c;
+        break;
+
+    case ESCFE:
         esc.esc = c - 0x40 + 0x80;
         switch (esc.esc) {
         case CSI:
@@ -256,17 +265,6 @@ esc_parse(unsigned char *seq, int len) {
             break;
         }
     }
-
-    if (c >= 0x60 && c <= 0x7e) {
-        esc.type = ESCFS;
-        esc.esc = c;
-    }
-
-    if (c >= 0x30 && c <= 0x3f) {
-        esc.type = ESCFP;
-        esc.esc = c;
-    }
-
 #undef _NPAR
     return 0;
 }
@@ -293,14 +291,29 @@ get_esc_str(void) {
 
     _P("ESC.%s ", d.name);
     switch (esc.type) {
-    case ESCFE: goto escfe;
-    case ESCNF: goto escnf;
-    case ESCFS: goto escfs;
-    case ESCFP: goto escfp;
+    case ESCNF:
+        if (nf_esc_desc(&d, esc.esc))
+            _P("0x%X (%c)", esc.esc, esc.esc);
+        else
+            _P("%s ", d.name);
+        break;
+
+    case ESCFS:
+        _P("0x%X (%c)", esc.esc, esc.esc);
+        break;
+
+    case ESCFP:
+        if (fp_esc_desc(&d, esc.esc))
+            _P("0x%X (%c)", esc.esc, esc.esc);
+        else
+            _P("%s ", d.name);
+        break;
+
+    case ESCFE:
+        break;
     default: ASSERT(0, "can't be");
     }
 
-escfe:
     if (ctrl_desc(&d, esc.esc)) {
         _P("error fe esc type");
         return buf;
@@ -366,25 +379,6 @@ escfe:
 
     }
     return buf;
-
-escnf:
-    if (nf_esc_desc(&d, esc.esc))
-        _P("0x%X (%c)", esc.esc, esc.esc);
-    else
-        _P("%s ", d.name);
-    return buf;
-
-escfp:
-    if (fp_esc_desc(&d, esc.esc))
-        _P("0x%X (%c)", esc.esc, esc.esc);
-    else
-        _P("%s ", d.name);
-    return buf;
-
-escfs:
-    _P("0x%X (%c)", esc.esc, esc.esc);
-    return buf;
-
 #undef _P
 }
 
@@ -393,10 +387,10 @@ sgr_handle(void) {
     int n, m, v, r, g, b, i;
 
 #define SGR_PAR(idx, v, v0) \
-        if (get_int_par(idx, &v, v0)) { \
-            ctrl_error = ERR_PAR; \
-            return; \
-        }
+    if (get_int_par(idx, &v, v0)) { \
+        ctrl_error = ERR_PAR; \
+        return; \
+    }
 
     if (esc.npar == 0) {
         ATTR_RESET();
@@ -603,10 +597,11 @@ csi_handle(void) {
     int n, m;
 
 #define CSI_PAR(idx, v, v0) \
-        if (get_int_par(idx, &v, v0)) { \
-            ctrl_error = ERR_PAR; \
-            return; \
-        }
+    if (get_int_par(idx, &v, v0)) { \
+        ctrl_error = ERR_PAR; \
+        return; \
+    }
+
     switch (esc.csi) {
     case CUF:
     case CUB:
@@ -754,74 +749,66 @@ esc_handle(unsigned char *buf, int len) {
     }
 
     switch (esc.type) {
-    case ESCFE: goto escfe;
-    case ESCNF: goto escnf;
-    case ESCFS: goto escfs;
-    case ESCFP: goto escfp;
+    case ESCNF:
+        switch (esc.esc) {
+        case NF_GZD4:
+        case NF_G1D4:
+        case NF_G2D4:
+        case NF_G3D4:
+            break;
+        default:
+            ctrl_error = ERR_UNSUPP;
+        }
+        break;
+
+    case ESCFP:
+        switch (esc.esc) {
+        case FP_DECSC:
+            lcursor(SET);
+            break;
+        case FP_DECRC:
+            lcursor(RESET);
+            break;
+        case FP_DECPAM:
+        case FP_DECPNM:
+            break;
+        default:
+            ctrl_error = ERR_UNSUPP;
+        }
+        break;
+
+    case ESCFS:
+        ctrl_error = ERR_UNSUPP;
+        break;
+
+    case ESCFE:
+        switch (esc.esc) {
+        case CSI:
+            csi_handle();
+            break;
+        case HTS:
+            zt.tabs[zt.x] = 1;
+            break;
+        case RI:
+            if (zt.y == zt.top) {
+                lscroll_down(zt.top, 1);
+                zt.y = zt.top;
+            }
+            else
+                lmoveto(zt.y-1, zt.x);
+            break;
+        case OSC:
+            //dump(esc.seq, esc.len);
+            break;
+        case DCS:
+            //dump(esc.seq, esc.len);
+            break;
+        default:
+            ctrl_error = ERR_UNSUPP;
+        }
+        break;
     default: ASSERT(0, "can't be");
     }
-
-escfe:
-    switch (esc.esc) {
-    case CSI:
-        csi_handle();
-        break;
-    case HTS:
-        zt.tabs[zt.x] = 1;
-        break;
-    case RI:
-        if (zt.y == zt.top) {
-            lscroll_down(zt.top, 1);
-            zt.y = zt.top;
-        }
-        else
-            lmoveto(zt.y-1, zt.x);
-        break;
-    case OSC:
-        //dump(esc.seq, esc.len);
-        break;
-    case DCS:
-        //dump(esc.seq, esc.len);
-        break;
-    default:
-        ctrl_error = ERR_UNSUPP;
-    }
-    return;
-
-//TODO
-escnf:
-    switch (esc.esc) {
-    case NF_GZD4:
-    case NF_G1D4:
-    case NF_G2D4:
-    case NF_G3D4:
-        break;
-    default:
-        ctrl_error = ERR_UNSUPP;
-    }
-    return;
-
-//TODO
-escfp:
-    switch (esc.esc) {
-    case FP_DECSC:
-        lcursor(SET);
-        break;
-    case FP_DECRC:
-        lcursor(RESET);
-        break;
-    case FP_DECPAM:
-    case FP_DECPNM:
-        break;
-    default:
-        ctrl_error = ERR_UNSUPP;
-    }
-    return;
-
-//TODO
-escfs:
-    ctrl_error = ERR_UNSUPP;
-
 }
 
 void
