@@ -5,9 +5,6 @@
 #include "zt.h"
 #include "ctrl.h"
 
-int ctrl_error, esc_error;
-struct esc_t esc;
-
 /*
   References
   https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -55,11 +52,11 @@ void lcursor(int);
 void ldirty_all(void);
 void twrite(char*, int);
 
-struct esc_t {
+int ctrl_error, esc_error;
+struct {
     int len, npar;
     unsigned char *seq, type, esc, csi;
-};
-
+} esc;
 
 void
 dump(unsigned char *buf, int n) {
@@ -124,12 +121,12 @@ search(unsigned char *seq, int len, int n, unsigned char *c) {
 }
 
 int
-get_par(struct esc_t *esc, int idx, int *a, int *b) {
+get_par(int idx, int *a, int *b) {
     int i, n;
 
     *a = *b = 1;
-    for (i = 1, n = 0; i < esc->len-1; i++) {
-        if (esc->seq[i] != ';')
+    for (i = 1, n = 0; i < esc.len-1; i++) {
+        if (esc.seq[i] != ';')
             continue;
         if (n == idx) {
             *b = i-1;
@@ -139,9 +136,9 @@ get_par(struct esc_t *esc, int idx, int *a, int *b) {
         n++;
     }
 
-    if (i == esc->len-1) {
+    if (i == esc.len-1) {
         if (n == idx)
-            *b = esc->len-2;
+            *b = esc.len-2;
         else
             return 1;
     }
@@ -155,12 +152,12 @@ get_par(struct esc_t *esc, int idx, int *a, int *b) {
 }
 
 int
-get_str_par(struct esc_t *esc, int idx, char **p) {
+get_str_par(int idx, char **p) {
     static char buf[BUFSIZ];
     int a, b;
     size_t n;
 
-    if (get_par(esc, idx, &a, &b))
+    if (get_par(idx, &a, &b))
         return EDOM;
 
     if (a<0) {
@@ -172,7 +169,7 @@ get_str_par(struct esc_t *esc, int idx, char **p) {
     if (n > sizeof(buf)-1)
         return ENOMEM;
 
-    memcpy(buf, esc->seq+a, n);
+    memcpy(buf, esc.seq+a, n);
     buf[n] = '\0';
     *p = buf;
     return 0;
@@ -180,11 +177,11 @@ get_str_par(struct esc_t *esc, int idx, char **p) {
 }
 
 int
-get_int_par(struct esc_t *esc, int idx, int *v, int v0) {
+get_int_par(int idx, int *v, int v0) {
     int ret;
     char *p;
 
-    ret = get_str_par(esc, idx, &p);
+    ret = get_str_par(idx, &p);
     if (ret)
         return ret;
 
@@ -193,28 +190,6 @@ get_int_par(struct esc_t *esc, int idx, int *v, int v0) {
         return 0;
     }
     return parse_int(p, v);
-}
-
-void // debug
-csi_dump(struct esc_t *esc) {
-    int i, r, rr, a, b;
-
-     if (esc->csi != SGR)
-        return;
-     dump(esc->seq, esc->len);
-     for (i = 0; i < esc->npar; i++) {
-         if ((rr = get_int_par(esc, i, &r, 1)))
-             printf("%s\n", strerror(rr));
-         else
-             printf("%d\n", r);
-         if (!get_par(esc, i, &a, &b)) {
-             if (a<0)
-                 printf("-\n");
-             else
-                 dump(esc->seq+a, b-a+1);
-         }
-     }
-    // printf("%s\n", get_esc_str(esc));
 }
 
 int
@@ -248,22 +223,22 @@ find_nfesc_end(unsigned char *seq, int len, int *n) {
 }
 
 int
-esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
+esc_parse(unsigned char *seq, int len) {
     unsigned char c;
     int i, n, ret;
 
-    esc->type = -1;
-    esc->seq = seq;
+    esc.type = -1;
+    esc.seq = seq;
     ASSERT(len >= 0, "");
     if (!len)
         return ESCNOEND;
 
 #define _NPAR() { \
-    for (i = 1; i < esc->len-1; i++) { \
-        if (esc->seq[i] == ';') \
-            esc->npar++; \
+    for (i = 1; i < esc.len-1; i++) { \
+        if (esc.seq[i] == ';') \
+            esc.npar++; \
     } \
-    esc->npar++; \
+    esc.npar++; \
 }
 
     //dump(seq, len);
@@ -271,52 +246,51 @@ esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
 
     if (c < 0x20 || c > 0x7e)
         return ESCERR;
-    esc->len = 1;
+    esc.len = 1;
 
     if (c >= 0x20 && c <= 0x2f) {
-        esc->type = ESCNF;
-        esc->esc = c;
+        esc.type = ESCNF;
+        esc.esc = c;
         if ((ret = find_nfesc_end(seq+1, len-1, &n)))
             return ret;
-        esc->len += n+1;
+        esc.len += n+1;
     }
 
     if (c >= 0x40 && c <= 0x5f) {
-        esc->type = ESCFE;
-        esc->esc = c - 0x40 + 0x80;
-        switch (esc->esc) {
+        esc.type = ESCFE;
+        esc.esc = c - 0x40 + 0x80;
+        switch (esc.esc) {
         case CSI:
             if ((ret = find_csi_end(seq+1, len-1, &n)))
                 return ret;
-            esc->len += n+1;
-            esc->csi = seq[esc->len-1];
+            esc.len += n+1;
+            esc.csi = seq[esc.len-1];
             _NPAR();
-            //csi_dump(esc);
             break;
 
         case OSC:
             if ((ret = find_osc_end(seq+1, len-1, &n)))
                 return ret;
-            esc->len += n+1;
-            //dump(esc->seq, esc->len);
+            esc.len += n+1;
+            //dump(esc.seq, esc.len);
             break;
         case DCS:
             if ((ret = find_dcs_end(seq+1, len-1, &n)))
                 return ret;
-            esc->len += n+1;
-            //dump(esc->seq, esc->len);
+            esc.len += n+1;
+            //dump(esc.seq, esc.len);
             break;
         }
     }
 
     if (c >= 0x60 && c <= 0x7e) {
-        esc->type = ESCFS;
-        esc->esc = c;
+        esc.type = ESCFS;
+        esc.esc = c;
     }
 
     if (c >= 0x30 && c <= 0x3f) {
-        esc->type = ESCFP;
-        esc->esc = c;
+        esc.type = ESCFP;
+        esc.esc = c;
     }
 
 #undef _NPAR
@@ -324,7 +298,7 @@ esc_parse(unsigned char *seq, int len, struct esc_t *esc) {
 }
 
 char* // debug
-get_esc_str(struct esc_t *esc) {
+get_esc_str(void) {
     struct ctrl_desc_t d;
     int i, pos, ret, v;
     char *p;
@@ -335,16 +309,16 @@ get_esc_str(struct esc_t *esc) {
 
     pos = 0;
     buf[0] = 0;
-    if (!esc->len)
+    if (!esc.len)
         return buf;
 
-    if (esc_desc(&d, esc->type)) {
+    if (esc_desc(&d, esc.type)) {
         _P("Unknown esc type");
         return buf;
     }
 
     _P("ESC.%s ", d.name);
-    switch (esc->type) {
+    switch (esc.type) {
     case ESCFE: goto escfe;
     case ESCNF: goto escnf;
     case ESCFS: goto escfs;
@@ -353,43 +327,43 @@ get_esc_str(struct esc_t *esc) {
     }
 
 escfe:
-    if (ctrl_desc(&d, esc->esc)) {
+    if (ctrl_desc(&d, esc.esc)) {
         _P("error fe esc type");
         return buf;
     }
     _P("%s ", d.name);
 
-    switch (esc->esc) {
+    switch (esc.esc) {
     case OSC:
         break;
 
     case CSI:
-        if (csi_desc(&d, esc->csi))
-            _P("%c ", esc->csi);
+        if (csi_desc(&d, esc.csi))
+            _P("%c ", esc.csi);
         else
             _P("%s ", d.name);
 
         _P("[");
-        for (i = 0; i < esc->npar; i++) {
-            if (get_str_par(esc, i, &p) || p == NULL)
+        for (i = 0; i < esc.npar; i++) {
+            if (get_str_par(i, &p) || p == NULL)
                 _P("%s", "-");
             else
                 _P("%s", p);
 
-            if (i < esc->npar-1)
+            if (i < esc.npar-1)
                 _P(",");
         }
         _P("] ");
 
-        switch (esc->csi) {
+        switch (esc.csi) {
         case RM:
         case SM:
-            if (esc->seq[1] != '?') {
+            if (esc.seq[1] != '?') {
                 _P("unknown ");
                 break;
             }
-            for (i = 0; i < esc->npar; i++) {
-                if (get_str_par(esc, i, &p) || p == NULL) {
+            for (i = 0; i < esc.npar; i++) {
+                if (get_str_par(i, &p) || p == NULL) {
                     _P("unknown ");
                     continue;
                 }
@@ -406,8 +380,8 @@ escfe:
             }
             break;
         case SGR:
-            for (i = 0; i < esc->npar; i++) {
-                if (get_int_par(esc, i, &v, 0))
+            for (i = 0; i < esc.npar; i++) {
+                if (get_int_par(i, &v, 0))
                     _P("unknown ");
                 else
                     _P("%s ", sgr_desc(&d, v) ? "unknown" : d.desc);
@@ -420,21 +394,21 @@ escfe:
     return buf;
 
 escnf:
-    if (nf_esc_desc(&d, esc->esc))
-        _P("0x%X (%c)", esc->esc, esc->esc);
+    if (nf_esc_desc(&d, esc.esc))
+        _P("0x%X (%c)", esc.esc, esc.esc);
     else
         _P("%s ", d.name);
     return buf;
 
 escfp:
-    if (fp_esc_desc(&d, esc->esc))
-        _P("0x%X (%c)", esc->esc, esc->esc);
+    if (fp_esc_desc(&d, esc.esc))
+        _P("0x%X (%c)", esc.esc, esc.esc);
     else
         _P("%s ", d.name);
     return buf;
 
 escfs:
-    _P("0x%X (%c)", esc->esc, esc->esc);
+    _P("0x%X (%c)", esc.esc, esc.esc);
     return buf;
 
 #undef _P
@@ -445,7 +419,7 @@ sgr_handle(void) {
     int n, m, v, r, g, b, i;
 
 #define SGR_PAR(idx, v, v0) \
-        if (get_int_par(&esc, idx, &v, v0)) { \
+        if (get_int_par(idx, &v, v0)) { \
             ctrl_error = ERR_PAR; \
             return; \
         }
@@ -560,7 +534,7 @@ mode_handle(void) {
     //printf("%s\n", get_esc_str(&esc));
     s = (esc.csi == SM ? SET : RESET);
     for (i = 0; i < esc.npar; i++) {
-        if (get_str_par(&esc, i, &p) || p == NULL)
+        if (get_str_par(i, &p) || p == NULL)
             continue;
         if (i==0)
             ret = parse_int(p+1, &n);
@@ -623,7 +597,7 @@ dsr_handle(void) {
     char wbuf[32], *p;
 
     ctrl_error = ERR_PAR;
-    if (esc.npar == 0 || get_str_par(&esc, 0, &p) || p == NULL)
+    if (esc.npar == 0 || get_str_par(0, &p) || p == NULL)
         return;
 
     if (p[0] == '?')
@@ -655,7 +629,7 @@ csi_handle(void) {
     int n, m;
 
 #define CSI_PAR(idx, v, v0) \
-        if (get_int_par(&esc, idx, &v, v0)) { \
+        if (get_int_par(idx, &v, v0)) { \
             ctrl_error = ERR_PAR; \
             return; \
         }
@@ -795,7 +769,7 @@ csi_handle(void) {
 
 void
 esc_handle(unsigned char *buf, int len) {
-    esc_error = esc_parse(buf, len, &esc);
+    esc_error = esc_parse(buf, len);
     ASSERT(len >= 0, "");
     if (esc_error) {
         if (esc_error != ESCERR)
@@ -917,7 +891,7 @@ ctrl_handle(unsigned char *buf, int len) {
         printf("can not find esc\n");
         break;
     case ERR_PAR:
-        printf("error parameter: %s\n", get_esc_str(&esc));
+        printf("error parameter: %s\n", get_esc_str());
         break;
     case ERR_UNSUPP:
         printf("unsupported: ");
@@ -925,7 +899,7 @@ ctrl_handle(unsigned char *buf, int len) {
             ASSERT(ctrl_desc(&desc, c) == 0, "");
             printf("%s %s\n", desc.name, desc.desc);
         } else
-            printf("%s\n", get_esc_str(&esc));
+            printf("%s\n", get_esc_str());
         break;
     }
 }
@@ -1012,7 +986,7 @@ cdump(unsigned char c) {
     struct ctrl_desc_t desc;
 
     if (c == ESC)
-        printf("[%3d] %-s\n", esc.len, get_esc_str(&esc));
+        printf("[%3d] %-s\n", esc.len, get_esc_str());
     else {
         ASSERT(ctrl_desc(&desc, c) == 0, "");
         printf("[%3d] %-s\n", 1, desc.name);
