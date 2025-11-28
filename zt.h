@@ -27,10 +27,10 @@ static struct {
 // config end
 
 struct color_t {
-    unsigned char type;
+    uint8_t type;
     union {
-        unsigned char rgb[3];
-        unsigned char c8;
+        uint8_t rgb[3];
+        uint8_t c8;
     };
 };
 

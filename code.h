@@ -198,11 +198,11 @@
 #define ISCTRL(c)   (ISCTRLC0(c) || ISCTRLC1(c))
 #define C1ALT(c)    ((c) & 0xEF)
 
-static unsigned char osc_end_codes[] __unused = {
+static uint8_t osc_end_codes[] __unused = {
     BEL, ST, C1ALT(ST), ESC
 };
 
-static unsigned char dcs_end_codes[] __unused = {
+static uint8_t dcs_end_codes[] __unused = {
     C1ALT(ST), ESC
 };
 
@@ -530,7 +530,7 @@ _ctrl_desc(struct ctrl_desc_t *table, int len,
 #define esc_desc(desc, value)    _CTRL_DESC(esc_desc_table, desc, value)
 
 static inline int
-esc_type(unsigned char c) {
+esc_type(uint8_t c) {
     if (c >= ESCNF_MIN && c <= ESCNF_MAX)
         return ESCNF;
     if (c >= ESCFP_MIN && c <= ESCFP_MAX)

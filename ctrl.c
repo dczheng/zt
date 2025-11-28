@@ -36,7 +36,7 @@
 //#define DEBUG_NOUTF8
 //#define DEBUG_WRITE
 
-int utf8_decode(unsigned char*, int, uint32_t*, int*);
+int utf8_decode(uint8_t*, int, uint32_t*, int*);
 void lclear(int, int, int, int);
 void lclear_all();
 void lerase(int, int, int);
@@ -60,11 +60,11 @@ void twrite(char*, int);
 int ctrl_error, esc_error;
 struct {
     int len, npar, type;
-    unsigned char *seq, code, c1, csi;
+    uint8_t *seq, code, c1, csi;
 } esc;
 
 void
-dump(unsigned char *buf, int n) {
+dump(uint8_t *buf, int n) {
     struct ctrl_desc_t desc;;
     int i;
 
@@ -102,8 +102,8 @@ parse_int(char *p, int *r) {
 }
 
 int
-range_search(unsigned char *seq, int len,
-        unsigned char a, unsigned char b, int mode) {
+range_search(uint8_t *seq, int len,
+        uint8_t a, uint8_t b, int mode) {
     for (int i = 0; i < len; i++) {
         if ((!mode) && (seq[i] >= a && seq[i] <= b))
             return i;
@@ -114,7 +114,7 @@ range_search(unsigned char *seq, int len,
 }
 
 int
-search(unsigned char *seq, int len, int n, unsigned char *c) {
+search(uint8_t *seq, int len, int n, uint8_t *c) {
     int i, j;
     for (i = 0; i < n; i++) {
         for (j = 0; j < len; j++) {
@@ -186,7 +186,7 @@ get_int_par(int idx, int *v, int v0) {
 }
 
 int
-esc_parse(unsigned char *seq, int len) {
+esc_parse(uint8_t *seq, int len) {
     int i, n;
 
     esc.seq = seq;
@@ -721,7 +721,7 @@ csi_handle(void) {
 }
 
 void
-esc_handle(unsigned char *buf, int len) {
+esc_handle(uint8_t *buf, int len) {
     esc_error = esc_parse(buf, len);
     ASSERT(len >= 0, "");
     if (esc_error) {
@@ -796,8 +796,8 @@ esc_handle(unsigned char *buf, int len) {
 }
 
 void
-ctrl_handle(unsigned char *buf, int len) {
-    unsigned char c = buf[0];
+ctrl_handle(uint8_t *buf, int len) {
+    uint8_t c = buf[0];
     struct ctrl_desc_t desc;
 
     ASSERT(len >= 0, "");
@@ -927,7 +927,7 @@ ldump(int y, int x1, int x2) {
 
 
 void // debug
-cdump(unsigned char c) {
+cdump(uint8_t c) {
     struct ctrl_desc_t desc;
 
     if (c == ESC)
@@ -940,7 +940,7 @@ cdump(unsigned char c) {
 }
 
 int
-parse(unsigned char *buf, int len, int force) {
+parse(uint8_t *buf, int len, int force) {
     uint32_t u;
     int nread = 0, n = 0, ulen = 0,
         char_bytes = 0, ctrl_bytes = 0,
@@ -953,7 +953,7 @@ parse(unsigned char *buf, int len, int force) {
 
 #ifdef DEBUG_CTRL
     static int count = 0;
-    unsigned char last_c = 0;
+    uint8_t last_c = 0;
 #endif
 
 #if defined(DEBUG_CTRL_TERM) || defined(DEBUG_TERM)

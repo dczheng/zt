@@ -26,7 +26,7 @@ int screen, depth, nspec;
 void tresize(void);
 void lresize(void);
 void twrite(char*, int);
-struct color_t c8_to_rgb(unsigned char);
+struct color_t c8_to_rgb(uint8_t);
 
 struct {
     XIM im;
@@ -49,9 +49,9 @@ xflush(void) {
 
 static inline int
 xcolor_alloc(XftColor *c,
-        unsigned char r,
-        unsigned char g,
-        unsigned char b) {
+        uint8_t r,
+        uint8_t g,
+        uint8_t b) {
     XRenderColor rc;
 
     rc.red = r << 8;
@@ -400,7 +400,7 @@ _KeyPress(XEvent *ev) {
         return;
 
     xkeymap(ksym, e->state, buf, &n);
-    //dump((unsigned char*)buf, n);
+    //dump((uint8_t*)buf, n);
     twrite(buf, n);
 }
 

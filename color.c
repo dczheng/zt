@@ -1,9 +1,9 @@
 #include "zt.h"
 
 struct color_t
-xterm_c8(unsigned char v) {
+xterm_c8(uint8_t v) {
     struct color_t c;
-    unsigned char r, g, b;
+    uint8_t r, g, b;
 
     r = g = b = 0;
     /* standard colors */
@@ -42,9 +42,9 @@ xterm_c8(unsigned char v) {
 }
 
 struct color_t
-ubuntu_c8(unsigned char v) {
+ubuntu_c8(uint8_t v) {
     struct color_t c;
-    unsigned char r, g, b;
+    uint8_t r, g, b;
 
     r = g = b = 0;
     /* standard colors */
@@ -83,9 +83,9 @@ ubuntu_c8(unsigned char v) {
 }
 
 struct color_t
-c8_to_rgb(unsigned char v) {
+c8_to_rgb(uint8_t v) {
     struct color_t c;
-    unsigned char r, g, b;
+    uint8_t r, g, b;
 
     if (v <= 15) {
         switch (USED_COLOR) {

@@ -1,7 +1,7 @@
 #include "zt.h"
 
 struct {
-    unsigned char byte, mask;
+    uint8_t byte, mask;
     uint32_t min, max;
 } utf8[] = {
      {0x80, 0xc0,       0,        0},
@@ -12,7 +12,7 @@ struct {
 };
 
 int
-utf8_byte_decode(unsigned char c, uint32_t *v) {
+utf8_byte_decode(uint8_t c, uint32_t *v) {
     for (int i = 0; i < 5; i++)
         if ((c & utf8[i].mask) == utf8[i].byte) {
             *v = c & ~utf8[i].mask;
@@ -30,7 +30,7 @@ utf8_validate(uint32_t *u, size_t i) {
 }
 
 int
-utf8_decode(unsigned char *c, int len, uint32_t *u, int *ulen) {
+utf8_decode(uint8_t *c, int len, uint32_t *u, int *ulen) {
     int i, j;
     uint32_t uu;
 

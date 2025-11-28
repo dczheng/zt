@@ -27,7 +27,7 @@ pid_t pid;
 void ldirty_reset(void);
 void linit(void);
 void lclean(void);
-int parse(unsigned char*, int, int);
+int parse(uint8_t*, int, int);
 void xinit(void);
 void xclean(void);
 int xevent(void);
@@ -104,7 +104,7 @@ tdrawed(void) {
 
 int
 tread(int wait) {
-    static unsigned char buf[BUFSIZ];
+    static uint8_t buf[BUFSIZ];
     static int n=0;
     int ret, m;
 
