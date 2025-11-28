@@ -124,6 +124,8 @@ search(uint8_t *seq, int len, int n, uint8_t *c) {
     }
     return -1;
 }
+#define SEARCH(seq, len, codes) \
+    search(seq, len, (int)sizeof(codes), codes)
 
 int
 get_par(int idx, char **p) {
@@ -236,13 +238,13 @@ esc_parse(uint8_t *seq, int len) {
             break;
 
         case OSC:
-            if ((n = search(seq, len, sizeof(osc_end_codes), osc_end_codes)) < 0)
+            if ((n = SEARCH(seq, len, osc_end_codes)) < 0)
                 return ESCOSCNOEND;
             esc.len += n+1;
             //dump(esc.seq, esc.len);
             break;
         case DCS:
-            if ((n = search(seq+1, len-1, sizeof(dcs_end_codes), dcs_end_codes)) < 0)
+            if ((n = SEARCH(seq+1, len-1, dcs_end_codes)) < 0)
                 return ESCDCSNOEND;
             esc.len += n+1;
             //dump(esc.seq, esc.len);
@@ -966,8 +968,7 @@ parse(uint8_t *buf, int len, int force) {
         printf("force read\n");
 
     if (osc_no_end) {
-        if ((nread = search(buf, len,
-            sizeof(osc_end_codes), osc_end_codes)) < 0) {
+        if ((nread = SEARCH(buf, len, osc_end_codes)) < 0) {
             nread = len;
             goto retry;
         }
