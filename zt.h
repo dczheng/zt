@@ -49,21 +49,19 @@ struct zt_t {
     uint32_t lastc;
     unsigned long mode;
     double fontsize;
+    struct {
+        int x, ctrl, term, ctrl_term, retry;
+    } debug;
 };
 extern struct zt_t zt;
 
 #define NANOSEC     1000000000
 #define MICROSEC    1000000
-static inline long
-get_time(void) {
-    struct timespec tv;
-    clock_gettime(CLOCK_MONOTONIC, &tv);
-    return tv.tv_sec * NANOSEC + tv.tv_nsec;
-}
-
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define LEN(x) ((int)(sizeof(x) / sizeof(x[0])))
+#define ZERO(a) bzero(&(a), sizeof(a))
+#define STRLEN(s) ((s) ? strlen(s) : 0)
 
 #define SWAP(a,b) do { \
     typeof(a) _t;\
@@ -87,8 +85,6 @@ get_time(void) {
         __FILE__, __FUNCTION__, __LINE__); \
     _exit(1);\
 } while(0)
-
-#define ZERO(a) bzero(&(a), sizeof(a))
 
 #define UBUNTU_COLOR    1
 #define XTERM_COLOR     2
@@ -174,5 +170,28 @@ int color_equal(struct color_t, struct color_t);
     (color_equal((a).fg, (b).fg) && \
      color_equal((a).bg, (b).bg) && \
      (a).flag == (b).flag && (a).width == (b).width)
+
+static inline long
+get_time(void) {
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+    return tv.tv_sec * NANOSEC + tv.tv_nsec;
+}
+
+static inline int
+stoi(int *i, char *p) {
+    char *e = NULL;
+    if (!STRLEN(p)) return EINVAL;
+    *i = strtol(p, &e, 10);
+    return (STRLEN(e) ? EINVAL : 0);
+}
+
+static inline double
+stod(double *d, char *p) {
+    char *e = NULL;
+    if (!STRLEN(p)) return EINVAL;
+    *d = strtod(p, &e);
+    return (STRLEN(e) ? EINVAL : 0);
+}
 
 #endif

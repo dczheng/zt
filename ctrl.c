@@ -16,11 +16,6 @@
 
 #define VT102 "\033[?6c"
 
-//#define DEBUG_CTRL
-//#define DEBUG_CTRL_TERM
-//#define DEBUG_TERM
-//#define DEBUG_RETRY
-
 int utf8_decode(uint8_t*, int, uint32_t*, int*);
 void lclear(int, int, int, int);
 void lclear_all();
@@ -123,22 +118,6 @@ tdump(void) {
 }
 
 int
-parse_int(char *p, int *r) {
-    long ret;
-    char *ed;
-
-    *r = 0;
-    if (p == NULL || !strlen(p))
-        return EINVAL;
-
-    ret = strtol(p, &ed, 10);
-    if (ed[0])
-        return EILSEQ;
-    *r = ret;
-    return 0;
-}
-
-int
 range_search(uint8_t *seq, int len, uint8_t a, uint8_t b, int mode) {
     for (int i = 0; i < len; i++) {
         if ((!mode) && (seq[i] >= a && seq[i] <= b))
@@ -226,7 +205,8 @@ get_int_par(int idx, int *v, int v0) {
         *v = v0;
         return 0;
     }
-    return parse_int(p, v);
+
+    return stoi(v, p);
 }
 #define GET_INT_PAR(idx, v, v0) do { \
     if (get_int_par(idx, &(v), v0)) { \
@@ -350,7 +330,7 @@ mode_handle(void) {
         if (get_par(i, &p) || p == NULL)
             continue;
 
-        if (parse_int(i == 0 ? p+1 : p, &n)) {
+        if (stoi(&n, i == 0 ? p+1 : p)) {
             status |= NOTSUP;
             continue;
         }
@@ -412,7 +392,7 @@ dsr_handle(void) {
         return;
     }
 
-    if (parse_int(p[0] == '?' ? p+1 : p, &n)) {
+    if (stoi(&n, p[0] == '?' ? p+1 : p)) {
         status |= NOTSUP;
         return;
     }
@@ -654,11 +634,7 @@ esc_str(void) {
                     _P("unknown ");
                     continue;
                 }
-                if (i == 0)
-                    ret = parse_int(p+1, &v);
-                else
-                    ret = parse_int(p, &v);
-
+                ret = stoi(&v, i == 0 ? p+1 : p);
                 if (ret || (ret = mode_desc(&d, v))) {
                     _P("unknown ");
                     continue;
@@ -846,9 +822,8 @@ parse(uint8_t *buf, int len) {
     ASSERT(len >= 0, "");
     if (!len) return 0;
 
-#ifdef DEBUG_CTRL
-    dump(buf, len);
-#endif
+    if (zt.debug.ctrl)
+        dump(buf, len);
 
     while (nread < len) {
         if (ISCTRL(buf[nread])) {
@@ -872,19 +847,18 @@ parse(uint8_t *buf, int len) {
             }
             n = esc.len + 1;
 
-#ifdef DEBUG_CTRL
-            if (buf[nread] != ESC) {
-                ASSERT(ctrl_desc(&desc, buf[nread]) == 0, "");
-                printf("%s\n", desc.name);
-            } else {
-                printf("%s\n", esc_str());
+            if (zt.debug.ctrl) {
+                if (buf[nread] != ESC) {
+                    ASSERT(ctrl_desc(&desc, buf[nread]) == 0, "");
+                    printf("%s\n", desc.name);
+                } else {
+                    printf("%s\n", esc_str());
+                }
+                fflush(stdout);
             }
-            fflush(stdout);
-#endif
-
-#ifdef DEBUG_CTRL_TERM
-            tdump();
-#endif
+            
+            if (zt.debug.ctrl_term)
+                tdump();
         } else {
             if (utf8_decode(buf+nread, len-nread, &u, &ulen)) {
                 retry++;
@@ -898,16 +872,15 @@ parse(uint8_t *buf, int len) {
         nread += n;
     }
 
-#ifdef DEBUG_TERM
-    tdump();
-#endif
+    if (zt.debug.term)
+        tdump();
 
-#ifdef DEBUG_TERM
-    if (retry) {
-        printf("retry: ");
-        dump(buf + n, nread-n);
+    if (zt.debug.retry) {
+        if (retry) {
+            printf("retry: ");
+            dump(buf + n, nread-n);
+        }
     }
-#endif
 
     if (retry == retry_max) {
         retry = 0;

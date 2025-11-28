@@ -1,4 +1,5 @@
 #include <pwd.h>
+#include <getopt.h>
 #include <signal.h>
 #include <locale.h>
 #include <termios.h>
@@ -20,7 +21,7 @@
 
 #define LATENCY 1
 
-struct zt_t zt;
+struct zt_t zt = {0};
 int tty;
 pid_t pid;
 
@@ -236,16 +237,31 @@ tinit(void) {
 
 int
 main(int argc, char **argv) {
-    int fd[2], ret;
-    char *e = NULL;
+    int fd[2], ret, i;
     long now, last, latency, timeout;
+    struct option opts [] = {
+        {"font-size",       required_argument, NULL, 1},
+        {"debug-ctrl",      no_argument,       NULL, 2},
+        {"debug-term",      no_argument,       NULL, 3},
+        {"debug-ctrl-term", no_argument,       NULL, 4},
+        {"debug-retry",     no_argument,       NULL, 5},
+        {"debug-x",         no_argument,       NULL, 6},
+        {0, 0, 0, 0}
+    };
 
-    if (argc > 1) {
-        zt.fontsize = strtod(argv[1], &e);
-        if (strlen(e))
-            zt.fontsize = 1;
-    } else {
-        zt.fontsize = 1;
+    zt.fontsize = 1;
+    while ((i = getopt_long_only(argc, argv, "", opts, NULL)) != -1) {
+        switch(i) {
+        case 1:
+            if (stod(&zt.fontsize, optarg))
+                zt.fontsize = 1;
+            break;
+        case 2: zt.debug.ctrl = 1;      break;
+        case 3: zt.debug.term = 1;      break;
+        case 4: zt.debug.ctrl_term = 1; break;
+        case 5: zt.debug.retry = 1;     break;
+        case 6: zt.debug.x = 1;         break;
+        }
     }
 
     zt.row = 82;

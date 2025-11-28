@@ -8,8 +8,6 @@
 #include "zt.h"
 #include "code.h"
 
-//#define XDEBUG
-
 Display *display;
 Window root, window;
 GC gc;
@@ -89,10 +87,9 @@ xdraw_specs(struct char_t c) {
     if (t > 0 && t < font_width)
         w = zt.width-x;
 
-#ifdef XDEBUG
+    if (zt.debug.x)
         printf("(%d, %d, %d, %d, %d) ", nspec, c.width, x, w,
             specs[nspec-1].x);
-#endif
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_FG))) {
         switch (c.fg.type) {
@@ -175,9 +172,9 @@ xdraw_line(int k, int y) {
     r.width = zt.width;
     r.height = font_height;
 
-#ifdef XDEBUG
-    printf("[%3d] ", k);
-#endif
+    if (zt.debug.x)
+        printf("[%3d] ", k);
+
     XftDrawSetClipRectangles(drawable, 0, y, &r, 1);
     //XftDrawRect(drawable, &background, 0, y, zt.width, font_height);
     for (i = 0, x = 0, nspec = 0; i < zt.col;) {
@@ -197,10 +194,11 @@ xdraw_line(int k, int y) {
         }
         xdraw_specs(c0);
     }
+
+    if (zt.debug.x)
+        printf("\n");
+
     xdraw_specs(c0);
-#ifdef XDEBUG
-    printf("\n");
-#endif
     XftDrawSetClip(drawable, 0);
 }
 
@@ -226,10 +224,11 @@ xdraw(void) {
     int y, i, nline=0;
 
     //XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
-#ifdef XDEBUG
-    printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-    printf("font size: %dx%d\n", font_width, font_height);
-#endif
+    if (zt.debug.x) {
+        printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
+        printf("font size: %dx%d\n", font_width, font_height);
+    }
+
     for (i = 0, y = 0; i < zt.row; i++, y += font_height) {
         if (!zt.dirty[i])
             continue;
