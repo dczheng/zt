@@ -227,7 +227,7 @@ esc_parse(uint8_t *seq, int len) {
         break;
 
     case ESCFE:
-        esc.c1 = esc.code - 0x40 + 0x80;
+        esc.c1 = ATOC1(esc.code);
         switch (esc.c1) {
         case CSI:
             if ((n = range_search(seq+1, len-1, CSI_MIN, CSI_MAX, 0)) < 0)
@@ -241,6 +241,7 @@ esc_parse(uint8_t *seq, int len) {
             if ((n = SEARCH(seq+1, len-1, osc_end_codes)) < 0)
                 return ESCOSCNOEND;
             esc.len += n+1;
+            //dump(seq+1, len-1);
             //dump(esc.seq, esc.len);
             break;
         case DCS:

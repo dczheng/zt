@@ -196,14 +196,15 @@
 #define ISCTRLC0(c) ((c) <= 0x1f || (c) == 0x7f)
 #define ISCTRLC1(c) ((c) >= 0x80 && (c) <= 0x9f)
 #define ISCTRL(c)   (ISCTRLC0(c) || ISCTRLC1(c))
-#define C1ALT(c)    ((c) & 0xEF)
+#define ATOC1(c)    ((c) - 0x40 + 0x80)
+#define C1TOA(c)    ((c) - 0x80 + 0x40)
 
 static uint8_t osc_end_codes[] __unused = {
-    BEL, ST, C1ALT(ST), ESC
+    BEL, ST, C1TOA(ST), ESC
 };
 
 static uint8_t dcs_end_codes[] __unused = {
-    C1ALT(ST), ESC
+    C1TOA(ST), ESC
 };
 
 struct ctrl_desc_t {
