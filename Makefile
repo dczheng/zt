@@ -18,5 +18,6 @@ zt: $(OBJ)
 $(OBJ): %.o:%.c $(INC) Makefile
 	$(CC) $(CFLAGS) -c $<  -o $@
 
+.PHONY: clean
 clean:
 	rm -f zt $(OBJ)

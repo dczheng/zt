@@ -52,17 +52,17 @@ dump(uint8_t *buf, int n) {
     if (n == 0) return;
     for (int i = 0; i < n; i++) {
         if (isprint(buf[i])) {
-            printf("\033[32m%c", buf[i]);
+            LOG(zt.log >= 0 ? "%c" : "\033[32m%c", buf[i]);
             continue;
         }
         if (ISCTRL(buf[i])) {
             ctrl_desc(&desc, buf[i]);
-            printf("\033[33m%s", desc.name);
+            LOG(zt.log >= 0 ? "%s" : "\033[33m%s", desc.name);
             continue;
         }
-        printf("\033[31m%02x", buf[i]);
+        LOG(zt.log >= 0? "%02x" : "\033[31m%02x", buf[i]);
     }
-    printf("\n\033[0m");
+    LOG(zt.log >= 0? "\n" : "\n\033[0m");
     fflush(stdout);
 }
 
@@ -75,17 +75,17 @@ tdump(void) {
 
 #define _space \
     for (i = 0; i < 6; i++) \
-        printf(" ");
+        LOG(" ");
 
 #define _sep \
     _space; \
     for (i = 0; i < zt.col; i++) \
-        printf("-"); \
-    printf("\n"); \
+        LOG("-"); \
+    LOG("\n"); \
 
     _sep;
     _space;
-    printf("frame: %d, size: %dx%d, margin: %d-%d, cur: %dx%d\n",
+    LOG("frame: %d, size: %dx%d, margin: %d-%d, cur: %dx%d\n",
         frame++, zt.row, zt.col, zt.top, zt.bot, zt.y, zt.x);
     _sep;
 
@@ -94,21 +94,21 @@ tdump(void) {
         if (i % 10 == 0) {
             n = snprintf(buf, sizeof(buf), "%d", i);
             i += n-1;
-            printf("%s", buf);
+            LOG("%s", buf);
         } else
-            printf(" ");
-    printf("\n");
+            LOG(" ");
+    LOG("\n");
     for (i = 0; i < zt.row; i++) {
-        printf("%c %3d ", zt.dirty[i] ? '*' : ' ', i);
+        LOG("%c %3d ", zt.dirty[i] ? '*' : ' ', i);
         for (j = 0; j < zt.col; j++) {
             c = zt.line[i][j];
             //printf("%d", c.width);
             if (isprint(c.c))
-                printf("%c", c.c);
+                LOG("%c", c.c);
             else
-                printf("%X ", c.c);
+                LOG("%X ", c.c);
         }
-        printf("\n");
+        LOG("\n");
     }
     _sep;
     fflush(stdout);
@@ -835,9 +835,9 @@ parse(uint8_t *buf, int len) {
             if (status & NOTSUP) {
                 if (buf[nread] != ESC) {
                     ASSERT(ctrl_desc(&desc, buf[nread]) == 0, "");
-                    printf("unsupported: %s %s\n", desc.name, desc.desc);
+                    LOG("unsupported: %s %s\n", desc.name, desc.desc);
                 } else {
-                    printf("unsupported: %s\n", esc_str());
+                    LOG("unsupported: %s\n", esc_str());
                 }
             }
 
@@ -850,9 +850,9 @@ parse(uint8_t *buf, int len) {
             if (zt.debug.ctrl) {
                 if (buf[nread] != ESC) {
                     ASSERT(ctrl_desc(&desc, buf[nread]) == 0, "");
-                    printf("%s\n", desc.name);
+                    LOG("%s\n", desc.name);
                 } else {
-                    printf("%s\n", esc_str());
+                    LOG("%s\n", esc_str());
                 }
                 fflush(stdout);
             }
@@ -877,7 +877,7 @@ parse(uint8_t *buf, int len) {
 
     if (zt.debug.retry) {
         if (retry) {
-            printf("retry: ");
+            LOG("retry: ");
             dump(buf + n, nread-n);
         }
     }
@@ -889,7 +889,7 @@ parse(uint8_t *buf, int len) {
             if (ISCTRL(buf[nread]))
                 break;
         }
-        printf("drop: ");
+        LOG("drop: ");
         dump(buf + n, nread-n);
     }
 

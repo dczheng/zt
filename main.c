@@ -1,4 +1,5 @@
 #include <pwd.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
 #include <locale.h>
@@ -22,7 +23,7 @@
 #define LATENCY 1
 
 struct zt_t zt = {0};
-int tty;
+int tty = 0;
 pid_t pid;
 
 void ldirty_reset(void);
@@ -95,6 +96,8 @@ cleanup(void) {
     lclean();
     xclean();
     close(tty);
+    if (zt.log >= 0)
+        close(zt.log);
     _exit(0);
 }
 
@@ -116,7 +119,7 @@ tread(int wait) {
 
     ret = read(tty, buf+n, sizeof(buf)-n);
     if (ret < 0) {
-        printf("failed to read tty: %s\n", strerror(errno));
+        LOG("failed to read tty: %s\n", strerror(errno));
         return 0;
     }
 
@@ -142,7 +145,7 @@ twrite(char *s, int n) {
             continue;
         ret = write(tty, s, n);
         if (ret < 0)  {
-            printf("failed to read tty: %s\n", strerror(errno));
+            LOG("failed to read tty: %s\n", strerror(errno));
             return;
         }
         n -= ret;
@@ -246,10 +249,12 @@ main(int argc, char **argv) {
         {"debug-ctrl-term", no_argument,       NULL, 4},
         {"debug-retry",     no_argument,       NULL, 5},
         {"debug-x",         no_argument,       NULL, 6},
+        {"log",             required_argument, NULL, 7},
         {0, 0, 0, 0}
     };
 
     zt.fontsize = 1;
+    zt.log = -1;
     while ((i = getopt_long_only(argc, argv, "", opts, NULL)) != -1) {
         switch(i) {
         case 1:
@@ -261,6 +266,15 @@ main(int argc, char **argv) {
         case 4: zt.debug.ctrl_term = 1; break;
         case 5: zt.debug.retry = 1;     break;
         case 6: zt.debug.x = 1;         break;
+        case 7:
+            if ((zt.log = open(optarg,
+                O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
+                LOG("failed to open log: %s\n", optarg);
+                break;
+            }
+            dup2(zt.log, 1);
+            dup2(zt.log, 2);
+            break;
         }
     }
 

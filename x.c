@@ -57,7 +57,7 @@ xcolor_alloc(XftColor *c,
     rc.blue = b << 8;
     rc.alpha = 0xffff;
     if (!XftColorAllocValue(display, visual, colormap, &rc, c)) {
-        printf("failed to allocate color for (%u %u %u)\n", r, b, g);
+        LOG("failed to allocate color for (%u %u %u)\n", r, b, g);
         return 1;
     }
     return 0;
@@ -88,7 +88,7 @@ xdraw_specs(struct char_t c) {
         w = zt.width-x;
 
     if (zt.debug.x)
-        printf("(%d, %d, %d, %d, %d) ", nspec, c.width, x, w,
+        LOG("(%d, %d, %d, %d, %d) ", nspec, c.width, x, w,
             specs[nspec-1].x);
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_FG))) {
@@ -156,7 +156,7 @@ xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
             return;
     }
 
-    printf("can't find font for %x\n", c.c);
+    LOG("can't find font for %x\n", c.c);
     *f = fonts[0].font;
     *idx = XftCharIndex(display, *f, ' ');
 }
@@ -173,7 +173,7 @@ xdraw_line(int k, int y) {
     r.height = font_height;
 
     if (zt.debug.x)
-        printf("[%3d] ", k);
+        LOG("[%3d] ", k);
 
     XftDrawSetClipRectangles(drawable, 0, y, &r, 1);
     //XftDrawRect(drawable, &background, 0, y, zt.width, font_height);
@@ -196,7 +196,7 @@ xdraw_line(int k, int y) {
     }
 
     if (zt.debug.x)
-        printf("\n");
+        LOG("\n");
 
     xdraw_specs(c0);
     XftDrawSetClip(drawable, 0);
@@ -225,8 +225,8 @@ xdraw(void) {
 
     //XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
     if (zt.debug.x) {
-        printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-        printf("font size: %dx%d\n", font_width, font_height);
+        LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
+        LOG("font size: %dx%d\n", font_width, font_height);
     }
 
     for (i = 0, y = 0; i < zt.row; i++, y += font_height) {
@@ -311,7 +311,7 @@ _Mouse(XEvent *ev) {
     default:
         t = '-';
     }
-    printf("%c (%d %d): %d, %d, %d, %d, %d, %d\n", t, r, c,
+    LOG("%c (%d %d): %d, %d, %d, %d, %d, %d\n", t, r, c,
         MODE_HAS(MODE_MOUSE),
         MODE_HAS(MODE_MOUSE_PRESS),
         MODE_HAS(MODE_MOUSE_RELEASE),
@@ -353,7 +353,7 @@ _Mouse(XEvent *ev) {
         break;
 
     default:
-        printf("Unsupported button type: %d\n",
+        LOG("Unsupported button type: %d\n",
             ev->xbutton.type);
         return;
     }
@@ -425,10 +425,8 @@ _ConfigureNotify(XEvent *ev) {
     zt.row = r;
     zt.col = c;
 
-    /*
-    printf("resize: %dx%d -> %dx%d\n",
+    LOG("resize: %dx%d -> %dx%d\n",
         zt.row_old, zt.col_old, zt.row, zt.col);
-    */
 
     xresize();
     tresize();
@@ -467,7 +465,7 @@ xevent(void) {
         case DestroyNotify:
             return 1;
         default:
-            printf("Unsupport event %d\n", e.type);
+            LOG("Unsupport event %d\n", e.type);
         }
     }
     return 0;
@@ -478,7 +476,7 @@ xevent(void) {
 int
 xerror(Display *display, XErrorEvent *e) {
     XSync(display, False);
-    fprintf(stderr, "xerror: %d\n", e->error_code);
+    LOGERR("xerror: %d\n", e->error_code);
     return 0;
 }
 
@@ -561,13 +559,11 @@ xfont_init(void) {
         if (i % 4 != 0)
             continue;
 
-        /*
-        printf("%s: %s (%d %d %d)\n", font_list[i/4].name,
+        LOG("%s: %s (%d %d %d)\n", font_list[i/4].name,
             f->family,
             f->font->max_advance_width,
             f->font->height,
             f->font->height - f->font->descent);
-        */
     }
 
     font_height = fonts[0].font->height;
@@ -579,10 +575,8 @@ xfont_init(void) {
     zt.width = zt.col * font_width;
     zt.height = zt.row * font_height;
 
-    /*
-    printf("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-    printf("font size: %dx%d\n", font_width, font_height);
-    */
+    LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
+    LOG("font size: %dx%d\n", font_width, font_height);
 }
 
 void

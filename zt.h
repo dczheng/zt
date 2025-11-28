@@ -44,7 +44,7 @@ struct char_t {
 struct zt_t {
     int *dirty, *tabs, top, bot, width ,height,
         x, y, x_saved, y_saved, row, col,
-        row_old, col_old, xfd;
+        row_old, col_old, xfd, log;
     struct char_t **line, **alt_line, **norm_line, c;
     uint32_t lastc;
     unsigned long mode;
@@ -73,16 +73,26 @@ extern struct zt_t zt;
 #define LIMIT(x, a, b) \
     x = (x) < (a) ? (a) : ((x) > (b) ? (b) : (x))
 
+#define LOG(arg...) do { \
+    fprintf(stdout, ##arg); \
+    fflush(stdout); \
+} while(0)
+
+#define LOGERR(arg...) do { \
+    fprintf(stderr, ##arg); \
+    fflush(stderr); \
+} while(0)
+
 #define ASSERT(exp, fmt, arg...) do { \
     if (!(exp)) { \
-        fprintf(stderr, "Assert failed `%s` %s:%s:%d, "fmt"\n", \
+        LOG("Assert failed `%s` %s:%s:%d, "fmt"\n", \
             #exp, __FILE__, __FUNCTION__, __LINE__, ##arg); \
         _exit(1);\
     }\
 } while(0)
+
 #define DIE() do { \
-    fprintf(stderr, "DIE %s:%s:%d\n", \
-        __FILE__, __FUNCTION__, __LINE__); \
+    LOG("DIE %s:%s:%d\n", __FILE__, __FUNCTION__, __LINE__); \
     _exit(1);\
 } while(0)
 
