@@ -118,8 +118,8 @@ range_search(unsigned char *seq, int len,
 int
 search(unsigned char *seq, int len, int n, unsigned char *c) {
     int i, j;
-    for (j = 0; j < len; j++) {
-        for (i = 0; i < n; i++) {
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < len; j++) {
             if (seq[j] == c[i])
                 return j;
         }
