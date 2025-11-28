@@ -857,7 +857,7 @@ parse(uint8_t *buf, int len) {
                 fflush(stdout);
             }
             
-            if (zt.debug.ctrl_term)
+            if (zt.debug.term == 2)
                 tdump();
         } else {
             if (utf8_decode(buf+nread, len-nread, &u, &ulen)) {
@@ -872,7 +872,7 @@ parse(uint8_t *buf, int len) {
         nread += n;
     }
 
-    if (zt.debug.term)
+    if (zt.debug.term == 1)
         tdump();
 
     if (zt.debug.retry) {

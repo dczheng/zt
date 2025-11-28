@@ -243,13 +243,12 @@ main(int argc, char **argv) {
     int fd[2], ret, i;
     long now, last, latency, timeout;
     struct option opts [] = {
-        {"font-size",       required_argument, NULL, 1},
-        {"debug-ctrl",      no_argument,       NULL, 2},
-        {"debug-term",      no_argument,       NULL, 3},
-        {"debug-ctrl-term", no_argument,       NULL, 4},
+        {"log",             required_argument, NULL, 1},
+        {"font-size",       required_argument, NULL, 2},
+        {"debug-ctrl",      no_argument,       NULL, 3},
+        {"debug-term",      required_argument, NULL, 4},
         {"debug-retry",     no_argument,       NULL, 5},
         {"debug-x",         no_argument,       NULL, 6},
-        {"log",             required_argument, NULL, 7},
         {0, 0, 0, 0}
     };
 
@@ -258,15 +257,6 @@ main(int argc, char **argv) {
     while ((i = getopt_long_only(argc, argv, "", opts, NULL)) != -1) {
         switch(i) {
         case 1:
-            if (stod(&zt.fontsize, optarg))
-                zt.fontsize = 1;
-            break;
-        case 2: zt.debug.ctrl = 1;      break;
-        case 3: zt.debug.term = 1;      break;
-        case 4: zt.debug.ctrl_term = 1; break;
-        case 5: zt.debug.retry = 1;     break;
-        case 6: zt.debug.x = 1;         break;
-        case 7:
             if ((zt.log = open(optarg,
                 O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
                 LOG("failed to open log: %s\n", optarg);
@@ -274,6 +264,23 @@ main(int argc, char **argv) {
             }
             dup2(zt.log, 1);
             dup2(zt.log, 2);
+            break;
+        case 2:
+            if (stod(&zt.fontsize, optarg))
+                zt.fontsize = 1;
+            break;
+        case 3:
+            zt.debug.ctrl = 1;
+            break;
+        case 4:
+            if (stoi(&zt.debug.term, optarg))
+                zt.debug.term = 0;
+            break;
+        case 5:
+            zt.debug.retry = 1;
+            break;
+        case 6:
+            zt.debug.x = 1;
             break;
         }
     }

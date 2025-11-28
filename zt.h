@@ -50,7 +50,7 @@ struct zt_t {
     unsigned long mode;
     double fontsize;
     struct {
-        int x, ctrl, term, ctrl_term, retry;
+        int x, ctrl, term, retry;
     } debug;
 };
 extern struct zt_t zt;
