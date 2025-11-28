@@ -29,8 +29,6 @@
 #define ESCOSCNOEND       1004
 #define ESCDCSNOEND       1005
 
-#define RETRY_MAX 3
-
 //#define DEBUG_CTRL
 //#define DEBUG_BUF
 //#define DEBUG_CTRL_TERM
@@ -946,8 +944,9 @@ parse(unsigned char *buf, int len, int force) {
     uint32_t u;
     int nread = 0, n = 0, ulen = 0,
         char_bytes = 0, ctrl_bytes = 0,
-        total_char_bytes = 0, total_ctrl_bytes = 0;
-    static int retries = 0, osc_no_end = 0;
+        total_char_bytes = 0, total_ctrl_bytes = 0,
+        retry_max = 3;
+    static int retry = 0, osc_no_end = 0;
 
     if (!len)
         return 0;
@@ -1004,15 +1003,15 @@ parse(unsigned char *buf, int len, int force) {
                         nread = len;
                         goto retry;
                     }
-                    if (retries < RETRY_MAX) {
-                        retries++;
+                    if (retry < retry_max) {
+                        retry++;
                         goto retry;
                     }
                     printf("reach max retry for ctrl\n");
                 }
             }
 
-            retries = 0;
+            retry = 0;
             n = esc.len + 1;
             ctrl_bytes += n;
             continue;
@@ -1021,8 +1020,8 @@ parse(unsigned char *buf, int len, int force) {
 #ifndef DEBUG_NOUTF8
         if (utf8_decode(buf+nread, len-nread, &u, &ulen)) {
             if (!force) {
-                if (retries < RETRY_MAX) {
-                    retries++;
+                if (retry < retry_max) {
+                    retry++;
                     goto retry;
                 }
                 printf("reach max retry for utf8\n");
@@ -1030,7 +1029,7 @@ parse(unsigned char *buf, int len, int force) {
             u = buf[nread];
             ulen = 1;
         }
-        retries = 0;
+        retry = 0;
 #else
         u = buf[nread];
         ulen = 1;
@@ -1062,14 +1061,14 @@ retry:
     tdump();
 #endif
 
-    ASSERT(retries <= RETRY_MAX && retries >= 0, "");
+    ASSERT(retry <= retry_max && retry >= 0, "");
     if (force)
         ASSERT(nread == len,
             "force read error: nread:%d, len: %d, ctrl: %d, char: %d",
             nread, len, total_ctrl_bytes, total_char_bytes);
 
-    if (retries == RETRY_MAX)
-        retries = 0;
+    if (retry == retry_max)
+        retry = 0;
 
     ASSERT(nread <= len, "nread: %d, len: %d, bytes: %d, ctrl_byte: %d",
             nread, len, total_char_bytes, total_ctrl_bytes);
