@@ -238,7 +238,7 @@ esc_parse(uint8_t *seq, int len) {
             break;
 
         case OSC:
-            if ((n = SEARCH(seq, len, osc_end_codes)) < 0)
+            if ((n = SEARCH(seq+1, len-1, osc_end_codes)) < 0)
                 return ESCOSCNOEND;
             esc.len += n+1;
             //dump(esc.seq, esc.len);
