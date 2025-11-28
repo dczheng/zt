@@ -75,12 +75,17 @@ get_time(void) {
 #define LIMIT(x, a, b) \
     x = (x) < (a) ? (a) : ((x) > (b) ? (b) : (x))
 
-#define ASSERT(exp, fmt, ...) do { \
+#define ASSERT(exp, fmt, arg...) do { \
     if (!(exp)) { \
-        fprintf(stderr, "Assert failed: %s in %s %d, "fmt"\n", \
-            #exp, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
+        fprintf(stderr, "Assert failed `%s` %s:%s:%d, "fmt"\n", \
+            #exp, __FILE__, __FUNCTION__, __LINE__, ##arg); \
         _exit(1);\
     }\
+} while(0)
+#define DIE() do { \
+    fprintf(stderr, "DIE %s:%s:%d\n", \
+        __FILE__, __FUNCTION__, __LINE__); \
+    _exit(1);\
 } while(0)
 
 #define ZERO(a) bzero(&(a), sizeof(a))

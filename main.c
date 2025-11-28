@@ -105,14 +105,10 @@ tdrawed(void) {
 int
 tread(int wait) {
     static uint8_t buf[BUFSIZ];
-    static int n=0;
+    static int n = 0;
     int ret, m;
 
-    ASSERT(n >= 0, "");
-    if (n == BUFSIZ) {
-        parse(buf, n, 1);
-        n = 0;
-    }
+    ASSERT(n >= 0 && n < (int)sizeof(buf), "");
 
     if (wait > 0 && io_wait(&tty, 1, NULL, 0, wait) != -1)
         return 1;
@@ -186,7 +182,7 @@ tinit(void) {
     int ret, slave;
 
     ret = openpty(&tty, &slave, NULL, NULL, NULL);
-    ASSERT(ret>=0, "openpty failed: %s", strerror(errno));
+    ASSERT(ret >= 0, "openpty failed: %s", strerror(errno));
 
     sh = getenv("SHELL");
     ASSERT(sh != NULL, "");
@@ -207,9 +203,11 @@ tinit(void) {
     dup2(slave, 0);
     dup2(slave, 1);
     dup2(slave, 2);
+
     ret = ioctl(slave, TIOCSCTTY, NULL);
     ASSERT(ret >= 0, "ioctl TIOCSCTTY failed: %s", strerror(errno));
-    close(slave);
+    if (slave > 2)
+        close(slave);
     close(tty);
 
     args[0] = sh;
