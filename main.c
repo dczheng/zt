@@ -30,7 +30,7 @@ void ldirty_reset(void);
 void linit(void);
 void lclean(void);
 void cinit();
-int parse(uint8_t*, int, int);
+int ctrl(uint8_t*, int, int);
 void xinit(void);
 void xclean(void);
 int xevent(void);
@@ -125,7 +125,7 @@ tread(int wait) {
     }
 
     n += ret;
-    m = parse(buf, n, 0);
+    m = ctrl(buf, n, 0);
     n -= m;
     if (n>0)
         memmove(buf, buf+m, n);

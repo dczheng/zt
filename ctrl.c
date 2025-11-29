@@ -851,7 +851,7 @@ ctrl_handle(uint8_t *buf, int len) {
 }
 
 int
-parse(uint8_t *buf, int len) {
+ctrl(uint8_t *buf, int len) {
     uint32_t u;
     int nread = 0, n = 0, ulen = 0, retry_max = 3;
     struct ctrl_desc_t desc;
