@@ -352,10 +352,12 @@ _Focus(XEvent *ev) {
     if (!(zt.mode & MODE_SEND_FOCUS))
         return;
     if (ev->type == FocusIn) {
-        XSetICFocus(xim.ic);
+        if (xim.ic)
+            XSetICFocus(xim.ic);
         twrite("\033[I", 3);
     } else {
-        XUnsetICFocus(xim.ic);
+        if (xim.ic)
+            XUnsetICFocus(xim.ic);
         twrite("\033[O", 3);
     }
 }
@@ -373,9 +375,15 @@ _KeyPress(XEvent *ev) {
     XKeyEvent *e = &ev->xkey;
     Status status;
 
-    n = XmbLookupString(xim.ic, e, buf, sizeof(buf), &ksym, &status);
-    if (status == XBufferOverflow)
-        return;
+    if (xim.ic) {
+        n = XmbLookupString(xim.ic, e, buf, sizeof(buf), &ksym, &status);
+        if (status == XBufferOverflow) {
+            LOG("xim buffer overflow\n");
+            return;
+        }
+    } else  {
+        n = XLookupString(e, buf, sizeof(buf), &ksym, NULL);
+    }
 
     xkeymap(ksym, e->state, buf, &n);
     //dump((uint8_t*)buf, n);
@@ -438,6 +446,7 @@ xevent(void) {
         H2(FocusIn, Focus)
         H2(FocusOut, Focus)
         case MapNotify:
+        case MappingNotify:
         case KeyRelease:
         case UnmapNotify:
             break;
@@ -463,8 +472,8 @@ void
 xclean(void) {
     int i;
 
-    XDestroyIC(xim.ic);
-    XCloseIM(xim.im);
+    if (xim.ic) XDestroyIC(xim.ic);
+    if (xim.im) XCloseIM(xim.im);
     XFreePixmap(display, pixmap);
     XFreeCursor(display, cursor);
     XftDrawDestroy(drawable);
@@ -574,14 +583,43 @@ xcolor_init(void) {
     }
 }
 
+int xim_init(void);
 void
+_xim_init(Display *dpy __unused, XPointer client __unused,
+    XPointer call __unused) {
+    if (!xim_init())
+        XUnregisterIMInstantiateCallback(display, NULL, NULL, NULL,
+            _xim_init, NULL);
+}
+
+void
+xim_destroy(XIM im __unused, XPointer client __unused,
+    XPointer call __unused) {
+    LOG("xim destroy\n");
+    if (xim.ic)
+        XDestroyIC(xim.ic);
+    xim.im = NULL;
+    xim.ic = NULL;
+    XRegisterIMInstantiateCallback(display, NULL, NULL, NULL,
+            _xim_init, NULL);
+}
+
+int
 xim_init(void) {
-    XSetLocaleModifiers("");
-    ASSERT(xim.im = XOpenIM(display, NULL, NULL, NULL),);
+    XIMCallback cb = {.client_data = NULL, .callback = xim_destroy};
+
+    LOG("xim init\n");
+    if (!(xim.im = XOpenIM(display, NULL, NULL, NULL))) {
+        LOG("can't init xim\n");
+        return 1;
+    }
+    ASSERT(!XSetIMValues(xim.im, XNDestroyCallback, &cb, NULL),"");
+
     ASSERT(xim.ic = XCreateIC(xim.im,
         XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
         XNClientWindow, window, NULL),);
     XSetICFocus(xim.ic);
+    return 0;
 }
 
 void
@@ -592,6 +630,8 @@ xinit(void) {
     XEvent e;
 
     setlocale(LC_CTYPE, "");
+    XSetLocaleModifiers("");
+
     display = XOpenDisplay(NULL);
     ASSERT(display, "can't open display");
 
@@ -632,7 +672,6 @@ xinit(void) {
            | CWBitGravity | CWEventMask
            | CWColormap | CWCursor
            , &wa);
-    xim_init();
 
     ZERO(gcvalues);
     gcvalues.graphics_exposures = False;
@@ -642,6 +681,10 @@ xinit(void) {
     pixmap = XCreatePixmap(display, window, zt.width, zt.height, depth);
     drawable = XftDrawCreate(display, pixmap, visual, colormap);
     XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
+
+    if (xim_init())
+        XRegisterIMInstantiateCallback(display, NULL, NULL, NULL,
+            _xim_init, NULL);
 
     XMapWindow(display, window);
     XSync(display, False);
