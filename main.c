@@ -285,14 +285,11 @@ main(int argc, char **argv) {
         }
     }
 
-    zt.row = 82;
-    zt.col = 24;
-    setlocale(LC_CTYPE, "");
     MODE_RESET();
 
+    linit();
     tinit();
     xinit();
-    linit();
     tresize();
 
     last = get_time();

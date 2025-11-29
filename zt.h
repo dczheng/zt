@@ -38,7 +38,7 @@ struct char_t {
     uint32_t c;
     char width;
     struct color_t fg, bg;
-    unsigned int flag;
+    unsigned int attr;
 };
 
 struct zt_t {
@@ -144,9 +144,9 @@ int color_equal(struct color_t, struct color_t);
 #define ATTR_COLOR_REVERSE             (1<<6)
 #define ATTR_CROSSED_OUT               (1<<7)
 
-#define ATTR_SET(v)       (zt.c.flag |= (v))
-#define ATTR_UNSET(v)     (zt.c.flag &= ~(v))
-#define ATTR_HAS(a, v)    (((a).flag & (v)) != 0)
+#define ATTR_SET(v)       (zt.c.attr |= (v))
+#define ATTR_UNSET(v)     (zt.c.attr &= ~(v))
+#define ATTR_HAS(a, v)    (((a).attr & (v)) != 0)
 
 #define ATTR_FG8(v) do { \
     SET_COLOR8(zt.c.fg, v); \
@@ -171,7 +171,7 @@ int color_equal(struct color_t, struct color_t);
 #define ATTR_RESET() do { \
     COLOR_RESET(zt.c.fg); \
     COLOR_RESET(zt.c.bg); \
-    zt.c.flag = ATTR_DEFAULT_FG | ATTR_DEFAULT_BG; \
+    zt.c.attr = ATTR_DEFAULT_FG | ATTR_DEFAULT_BG; \
     zt.c.width = 1;\
     zt.c.c = ' ';\
 } while(0)
@@ -179,7 +179,7 @@ int color_equal(struct color_t, struct color_t);
 #define ATTR_EQUAL(a, b) \
     (color_equal((a).fg, (b).fg) && \
      color_equal((a).bg, (b).bg) && \
-     (a).flag == (b).flag && (a).width == (b).width)
+     (a).attr == (b).attr && (a).width == (b).width)
 
 static inline long
 get_time(void) {

@@ -258,13 +258,11 @@ lalloc(void) {
 
 void
 linit(void) {
+    zt.row = 24;
+    zt.col = 80;
+    zt.bot = zt.row-1;
     ATTR_RESET();
     lalloc();
-    zt.top = 0;
-    zt.bot = zt.row-1;
-    zt.x = zt.y = 0;
-    zt.x_saved = zt.y_saved = 0;
-    zt.lastc = 0;
 }
 
 void
