@@ -2,7 +2,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
-#include <locale.h>
 #include <termios.h>
 #include <sys/wait.h>
 #include <sys/types.h>

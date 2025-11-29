@@ -576,7 +576,6 @@ xcolor_init(void) {
 
 void
 xim_init(void) {
-    setlocale(LC_CTYPE, "");
     XSetLocaleModifiers("");
     ASSERT(xim.im = XOpenIM(display, NULL, NULL, NULL),);
     ASSERT(xim.ic = XCreateIC(xim.im,
@@ -592,6 +591,7 @@ xinit(void) {
     int ret;
     XEvent e;
 
+    setlocale(LC_CTYPE, "");
     display = XOpenDisplay(NULL);
     ASSERT(display, "can't open display");
 

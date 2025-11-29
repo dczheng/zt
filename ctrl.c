@@ -62,8 +62,7 @@ dump(uint8_t *buf, int n) {
         }
         LOG(zt.log >= 0? "%02x" : "\033[31m%02x", buf[i]);
     }
-    LOG(zt.log >= 0? "\n" : "\n\033[0m");
-    fflush(stdout);
+    LOG(zt.log >= 0 ? "\n" : "\n\033[0m");
 }
 
 void
@@ -111,7 +110,6 @@ tdump(void) {
         LOG("\n");
     }
     _sep;
-    fflush(stdout);
 
 #undef _sep
 #undef _space
@@ -892,7 +890,6 @@ ctrl(uint8_t *buf, int len) {
                 } else {
                     LOG("%s\n", esc_str());
                 }
-                fflush(stdout);
             }
 
             if (zt.debug.term == 2)
