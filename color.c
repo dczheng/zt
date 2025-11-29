@@ -34,7 +34,7 @@ xterm_c8(uint8_t v) {
         }
     }
 
-    c.type = COLOR24;
+    c.type = 24;
     c.rgb[0] = r;
     c.rgb[1] = g;
     c.rgb[2] = b;
@@ -75,7 +75,7 @@ ubuntu_c8(uint8_t v) {
         }
     }
 
-    c.type = COLOR24;
+    c.type = 24;
     c.rgb[0] = r;
     c.rgb[1] = g;
     c.rgb[2] = b;
@@ -117,7 +117,7 @@ c8_to_rgb(uint8_t v) {
         r = g = b = 0x0808 + 0x0a0a * v; // copyed from st.
     }
 
-    c.type = COLOR24;
+    c.type = 24;
     c.rgb[0] = r;
     c.rgb[1] = g;
     c.rgb[2] = b;
@@ -128,7 +128,7 @@ int
 color_equal(struct color_t a, struct color_t b) {
     if (a.type != b.type)
         return 0;
-    if (a.type == COLOR8)
+    if (a.type == 8)
         return a.c8 == b.c8;
     return a.rgb[0] == b.rgb[0] &&
            a.rgb[1] == b.rgb[1] &&

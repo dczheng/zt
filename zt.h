@@ -98,19 +98,6 @@ extern struct zt_t zt;
 
 #define UBUNTU_COLOR    1
 #define XTERM_COLOR     2
-#define COLOR8    8
-#define COLOR24  24
-#define COLOR_RESET(c) ZERO(c)
-#define SET_COLOR8(c, v) do { \
-    (c).type = COLOR8; \
-    (c).c8 = v; \
-} while(0)
-#define SET_COLOR24(c, r, g, b) do { \
-    (c).type = COLOR24; \
-    (c).rgb[0] = r; \
-    (c).rgb[1] = g; \
-    (c).rgb[2] = b; \
-} while(0)
 int color_equal(struct color_t, struct color_t);
 
 #define MODE_TEXT_CURSOR        (1<<0)
@@ -123,42 +110,50 @@ int color_equal(struct color_t, struct color_t);
 #define MODE_MOUSE_MOTION_ANY   (1<<7)
 #define MODE_MOUSE_EXT          (1<<8)
 
-#define ATTR_DEFAULT_FG                (1<<0)
-#define ATTR_DEFAULT_BG                (1<<1)
-#define ATTR_UNDERLINE                 (1<<2)
-#define ATTR_BOLD                      (1<<3)
-#define ATTR_ITALIC                    (1<<4)
-#define ATTR_FAINT                     (1<<5)
-#define ATTR_COLOR_REVERSE             (1<<6)
-#define ATTR_CROSSED_OUT               (1<<7)
+#define ATTR_DEFAULT_FG     (1<<0)
+#define ATTR_DEFAULT_BG     (1<<1)
+#define ATTR_UNDERLINE      (1<<2)
+#define ATTR_BOLD           (1<<3)
+#define ATTR_ITALIC         (1<<4)
+#define ATTR_FAINT          (1<<5)
+#define ATTR_COLOR_REVERSE  (1<<6)
+#define ATTR_CROSSED_OUT    (1<<7)
 
-#define ATTR_SET(v)       (zt.c.attr |= (v))
-#define ATTR_UNSET(v)     (zt.c.attr &= ~(v))
-#define ATTR_HAS(a, v)    (((a).attr & (v)) != 0)
+#define ATTR_SET(v)     (zt.c.attr |= (v))
+#define ATTR_UNSET(v)   (zt.c.attr &= ~(v))
+#define ATTR_HAS(a, v)  (((a).attr & (v)) != 0)
 
 #define ATTR_FG8(v) do { \
-    SET_COLOR8(zt.c.fg, v); \
+    zt.c.fg.type = 8; \
+    zt.c.fg.c8 = v; \
     ATTR_UNSET(ATTR_DEFAULT_FG);\
 } while(0)
 
 #define ATTR_BG8(v) do { \
-    SET_COLOR8(zt.c.bg, v); \
+    zt.c.bg.type = 8; \
+    zt.c.bg.c8 = v; \
     ATTR_UNSET(ATTR_DEFAULT_BG);\
 } while(0)
 
 #define ATTR_FG24(r, g, b) do { \
-    SET_COLOR24(zt.c.fg, r, g, b); \
+    zt.c.fg.type = 24; \
+    zt.c.fg.rgb[0] = r; \
+    zt.c.fg.rgb[1] = g; \
+    zt.c.fg.rgb[2] = b; \
     ATTR_UNSET(ATTR_DEFAULT_FG);\
 } while(0)
 
 #define ATTR_BG24(r, g, b) do { \
-    SET_COLOR24(zt.c.bg, r, g, b); \
+    zt.c.bg.type = 24; \
+    zt.c.bg.rgb[0] = r; \
+    zt.c.bg.rgb[1] = g; \
+    zt.c.bg.rgb[2] = b; \
     ATTR_UNSET(ATTR_DEFAULT_BG);\
 } while(0)
 
 #define ATTR_RESET() do { \
-    COLOR_RESET(zt.c.fg); \
-    COLOR_RESET(zt.c.bg); \
+    ZERO(zt.c.fg); \
+    ZERO(zt.c.bg); \
     zt.c.attr = ATTR_DEFAULT_FG | ATTR_DEFAULT_BG; \
     zt.c.width = 1;\
     zt.c.c = ' ';\

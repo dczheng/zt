@@ -93,10 +93,10 @@ xdraw_specs(struct char_t c) {
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_FG))) {
         switch (c.fg.type) {
-        case COLOR8:
+        case 8:
             fg = color8[c.fg.c8];
             break;
-        case COLOR24:
+        case 24:
             rf = xcolor_alloc(&fg, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2]);
             break;
         }
@@ -104,10 +104,10 @@ xdraw_specs(struct char_t c) {
 
     if ((!ATTR_HAS(c, ATTR_DEFAULT_BG))) {
         switch (c.bg.type) {
-        case COLOR8:
+        case 8:
             bg = color8[c.bg.c8];
             break;
-        case COLOR24:
+        case 24:
             rb = xcolor_alloc(&bg, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2]);
             break;
         }
