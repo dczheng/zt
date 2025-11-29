@@ -24,6 +24,7 @@ int screen, depth, nspec;
 void tresize(void);
 void lresize(void);
 void twrite(char*, int);
+int color_equal(struct color_t, struct color_t);
 struct color_t c8_to_rgb(uint8_t);
 
 struct {
@@ -91,7 +92,7 @@ xdraw_specs(struct char_t c) {
         LOG("(%d, %d, %d, %d, %d) ", nspec, c.width, x, w,
             specs[nspec-1].x);
 
-    if ((!ATTR_HAS(c, ATTR_DEFAULT_FG))) {
+    if ((!(c.attr & ATTR_DEFAULT_FG))) {
         switch (c.fg.type) {
         case 8:
             fg = color8[c.fg.c8];
@@ -102,7 +103,7 @@ xdraw_specs(struct char_t c) {
         }
     }
 
-    if ((!ATTR_HAS(c, ATTR_DEFAULT_BG))) {
+    if ((!(c.attr & ATTR_DEFAULT_BG))) {
         switch (c.bg.type) {
         case 8:
             bg = color8[c.bg.c8];
@@ -113,13 +114,13 @@ xdraw_specs(struct char_t c) {
         }
     }
 
-    if (ATTR_HAS(c, ATTR_COLOR_REVERSE))
+    if (c.attr & ATTR_COLOR_REVERSE)
         SWAP(fg, bg);
 
     XftDrawRect(drawable, &bg, x, y, w, font_height);
-    if (ATTR_HAS(c, ATTR_UNDERLINE))
+    if (c.attr & ATTR_UNDERLINE)
         XftDrawRect(drawable, &fg, x, y + font_base + 1, w, 1);
-    if (ATTR_HAS(c, ATTR_CROSSED_OUT))
+    if (c.attr & ATTR_CROSSED_OUT)
         XftDrawRect(drawable, &fg, x, y + font_height / 2, w, 1);
 
     XftDrawGlyphFontSpec(drawable, &fg, specs, nspec);
@@ -137,14 +138,14 @@ xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
     weight = FC_WEIGHT_REGULAR;
     slant = FC_SLANT_ROMAN;
 
-    if (ATTR_HAS(c, ATTR_BOLD))
+    if (c.attr & ATTR_BOLD)
         weight = FC_WEIGHT_BOLD;
 
     // TODO
-    if (ATTR_HAS(c, ATTR_FAINT))
+    if (c.attr & ATTR_FAINT)
         weight = FC_WEIGHT_REGULAR;
 
-    if (ATTR_HAS(c, ATTR_ITALIC))
+    if (c.attr & ATTR_ITALIC)
         slant = FC_SLANT_ITALIC;
 
     for (i = 0; i < nfont; i++) {
@@ -182,7 +183,10 @@ xdraw_line(int k, int y) {
         if (nspec == 0)
             c0 = c;
 
-        if (ATTR_EQUAL(c0, c)) {
+        if (color_equal(c0.fg, c.fg) &&
+            color_equal(c0.bg, c.bg) &&
+            c0.attr == c.attr &&
+            c0.width == c.width) {
             xfont_lookup(c, &specs[nspec].font,
                 &specs[nspec].glyph);
             specs[nspec].x = x;

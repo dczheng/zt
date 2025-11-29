@@ -29,6 +29,7 @@ pid_t pid;
 void ldirty_reset(void);
 void linit(void);
 void lclean(void);
+void cinit();
 int parse(uint8_t*, int, int);
 void xinit(void);
 void xclean(void);
@@ -285,11 +286,10 @@ main(int argc, char **argv) {
         }
     }
 
-    zt.mode = MODE_TEXT_CURSOR;
-
+    cinit();
     linit();
-    tinit();
     xinit();
+    tinit();
     tresize();
 
     last = get_time();

@@ -260,7 +260,6 @@ linit(void) {
     zt.row = 24;
     zt.col = 80;
     zt.bot = zt.row-1;
-    ATTR_RESET();
     lalloc();
 }
 

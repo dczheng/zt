@@ -98,7 +98,6 @@ extern struct zt_t zt;
 
 #define UBUNTU_COLOR    1
 #define XTERM_COLOR     2
-int color_equal(struct color_t, struct color_t);
 
 #define MODE_TEXT_CURSOR        (1<<0)
 #define MODE_SEND_FOCUS         (1<<1)
@@ -118,51 +117,6 @@ int color_equal(struct color_t, struct color_t);
 #define ATTR_FAINT          (1<<5)
 #define ATTR_COLOR_REVERSE  (1<<6)
 #define ATTR_CROSSED_OUT    (1<<7)
-
-#define ATTR_SET(v)     (zt.c.attr |= (v))
-#define ATTR_UNSET(v)   (zt.c.attr &= ~(v))
-#define ATTR_HAS(a, v)  (((a).attr & (v)) != 0)
-
-#define ATTR_FG8(v) do { \
-    zt.c.fg.type = 8; \
-    zt.c.fg.c8 = v; \
-    ATTR_UNSET(ATTR_DEFAULT_FG);\
-} while(0)
-
-#define ATTR_BG8(v) do { \
-    zt.c.bg.type = 8; \
-    zt.c.bg.c8 = v; \
-    ATTR_UNSET(ATTR_DEFAULT_BG);\
-} while(0)
-
-#define ATTR_FG24(r, g, b) do { \
-    zt.c.fg.type = 24; \
-    zt.c.fg.rgb[0] = r; \
-    zt.c.fg.rgb[1] = g; \
-    zt.c.fg.rgb[2] = b; \
-    ATTR_UNSET(ATTR_DEFAULT_FG);\
-} while(0)
-
-#define ATTR_BG24(r, g, b) do { \
-    zt.c.bg.type = 24; \
-    zt.c.bg.rgb[0] = r; \
-    zt.c.bg.rgb[1] = g; \
-    zt.c.bg.rgb[2] = b; \
-    ATTR_UNSET(ATTR_DEFAULT_BG);\
-} while(0)
-
-#define ATTR_RESET() do { \
-    ZERO(zt.c.fg); \
-    ZERO(zt.c.bg); \
-    zt.c.attr = ATTR_DEFAULT_FG | ATTR_DEFAULT_BG; \
-    zt.c.width = 1;\
-    zt.c.c = ' ';\
-} while(0)
-
-#define ATTR_EQUAL(a, b) \
-    (color_equal((a).fg, (b).fg) && \
-     color_equal((a).bg, (b).bg) && \
-     (a).attr == (b).attr && (a).width == (b).width)
 
 static inline long
 get_time(void) {

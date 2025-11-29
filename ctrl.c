@@ -215,6 +215,42 @@ get_int_par(int idx, int *v, int v0) {
     } \
 } while(0)
 
+#define ATTR_FG8(v) do { \
+    zt.c.fg.type = 8; \
+    zt.c.fg.c8 = v; \
+    zt.c.attr &= ~ATTR_DEFAULT_FG; \
+} while(0)
+
+#define ATTR_BG8(v) do { \
+    zt.c.bg.type = 8; \
+    zt.c.bg.c8 = v; \
+    zt.c.attr &= ~ATTR_DEFAULT_BG; \
+} while(0)
+
+#define ATTR_FG24(r, g, b) do { \
+    zt.c.fg.type = 24; \
+    zt.c.fg.rgb[0] = r; \
+    zt.c.fg.rgb[1] = g; \
+    zt.c.fg.rgb[2] = b; \
+    zt.c.attr &= ~ATTR_DEFAULT_FG; \
+} while(0)
+
+#define ATTR_BG24(r, g, b) do { \
+    zt.c.bg.type = 24; \
+    zt.c.bg.rgb[0] = r; \
+    zt.c.bg.rgb[1] = g; \
+    zt.c.bg.rgb[2] = b; \
+    zt.c.attr &= ~ATTR_DEFAULT_BG; \
+} while(0)
+
+#define ATTR_RESET() do { \
+    ZERO(zt.c.fg); \
+    ZERO(zt.c.bg); \
+    zt.c.attr = ATTR_DEFAULT_FG | ATTR_DEFAULT_BG; \
+    zt.c.width = 1;\
+    zt.c.c = ' ';\
+} while(0)
+
 void
 sgr_handle(void) {
     int n, m, v, r, g, b, i;
@@ -248,20 +284,20 @@ sgr_handle(void) {
         }
 
         switch (n) {
-        case 0 : ATTR_RESET()                    ; break;
-        case 1 : ATTR_SET(ATTR_BOLD)             ; break;
-        case 2 : ATTR_SET(ATTR_FAINT)            ; break;
-        case 3 : ATTR_SET(ATTR_ITALIC)           ; break;
-        case 4 : ATTR_SET(ATTR_UNDERLINE)        ; break;
-        case 7 : ATTR_SET(ATTR_COLOR_REVERSE)    ; break;
-        case 9 : ATTR_SET(ATTR_CROSSED_OUT)      ; break;
-        case 22: ATTR_UNSET(ATTR_BOLD|ATTR_FAINT); break;
-        case 23: ATTR_UNSET(ATTR_ITALIC)         ; break;
-        case 24: ATTR_UNSET(ATTR_UNDERLINE)      ; break;
-        case 27: ATTR_UNSET(ATTR_COLOR_REVERSE)  ; break;
-        case 29: ATTR_UNSET(ATTR_CROSSED_OUT)    ; break;
-        case 39: ATTR_SET(ATTR_DEFAULT_FG)       ; break;
-        case 49: ATTR_SET(ATTR_DEFAULT_BG)       ; break;
+        case 0 : ATTR_RESET()                       ; break;
+        case 1 : zt.c.attr |= ATTR_BOLD             ; break;
+        case 2 : zt.c.attr |= ATTR_FAINT            ; break;
+        case 3 : zt.c.attr |= ATTR_ITALIC           ; break;
+        case 4 : zt.c.attr |= ATTR_UNDERLINE        ; break;
+        case 7 : zt.c.attr |= ATTR_COLOR_REVERSE    ; break;
+        case 9 : zt.c.attr |= ATTR_CROSSED_OUT      ; break;
+        case 22: zt.c.attr &= ~ATTR_BOLD|ATTR_FAINT ; break;
+        case 23: zt.c.attr &= ~ATTR_ITALIC          ; break;
+        case 24: zt.c.attr &= ~ATTR_UNDERLINE       ; break;
+        case 27: zt.c.attr &= ~ATTR_COLOR_REVERSE   ; break;
+        case 29: zt.c.attr &= ~ATTR_CROSSED_OUT     ; break;
+        case 39: zt.c.attr |= ATTR_DEFAULT_FG       ; break;
+        case 49: zt.c.attr |= ATTR_DEFAULT_BG       ; break;
         case 38:
         case 48:
             GET_INT_PAR(i++, m, 0);
@@ -314,6 +350,10 @@ sgr_handle(void) {
         }
     }
 }
+#undef ATTR_FG8
+#undef ATTR_BG8
+#undef ATTR_FG24
+#undef ATTR_BG24
 
 void
 mode_handle(void) {
@@ -854,7 +894,7 @@ parse(uint8_t *buf, int len) {
                 }
                 fflush(stdout);
             }
-            
+
             if (zt.debug.term == 2)
                 tdump();
         } else {
@@ -892,4 +932,10 @@ parse(uint8_t *buf, int len) {
     }
 
     return nread;
+}
+
+void
+cinit(void) {
+    zt.mode = MODE_TEXT_CURSOR;
+    ATTR_RESET();
 }
