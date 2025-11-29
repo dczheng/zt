@@ -113,8 +113,6 @@ extern struct zt_t zt;
 } while(0)
 int color_equal(struct color_t, struct color_t);
 
-#define SET     1
-#define RESET   0
 #define MODE_TEXT_CURSOR        (1<<0)
 #define MODE_SEND_FOCUS         (1<<1)
 #define MODE_BRACKETED_PASTE    (1<<2)
@@ -124,16 +122,6 @@ int color_equal(struct color_t, struct color_t);
 #define MODE_MOUSE_MOTION_PRESS (1<<6)
 #define MODE_MOUSE_MOTION_ANY   (1<<7)
 #define MODE_MOUSE_EXT          (1<<8)
-
-#define MODE_HAS(m)     ((zt.mode & (m)) != 0)
-#define MODE_RESET()    zt.mode = MODE_TEXT_CURSOR
-#define MODE_SET(s, v) do { \
-    ASSERT(s == SET || s == RESET, "");\
-    if (s == SET) \
-        zt.mode |= (v); \
-    else \
-        zt.mode &= ~(v); \
-} while (0)
 
 #define ATTR_DEFAULT_FG                (1<<0)
 #define ATTR_DEFAULT_BG                (1<<1)

@@ -214,9 +214,8 @@ lrepeat_last(int n) {
 }
 
 void
-lcursor(int m) {
-    ASSERT(m == SET || m == RESET, "");
-    if (m == SET) {
+lcursor(int save) {
+    if (save) {
         zt.x_saved = zt.x;
         zt.y_saved = zt.y;
     } else

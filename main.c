@@ -285,7 +285,7 @@ main(int argc, char **argv) {
         }
     }
 
-    MODE_RESET();
+    zt.mode = MODE_TEXT_CURSOR;
 
     linit();
     tinit();

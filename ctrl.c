@@ -325,7 +325,9 @@ mode_handle(void) {
         return;
     }
 
-    s = (esc.csi == SM ? SET : RESET);
+    s = (esc.csi == SM ? 1 : 0);
+#define _M(v) s ? (zt.mode |= v) : (zt.mode &= ~v)
+
     for (i = 0; i < esc.npar; i++) {
         if (get_par(i, &p) || p == NULL)
             continue;
@@ -337,25 +339,25 @@ mode_handle(void) {
 
         switch (n) {
         case M_SF:
-            MODE_SET(s, MODE_SEND_FOCUS);
+            _M(MODE_SEND_FOCUS);
             break;
         case DECTCEM:
-            MODE_SET(s, MODE_TEXT_CURSOR);
+            _M(MODE_TEXT_CURSOR);
             break;
         case M_BP:
-            MODE_SET(s, MODE_BRACKETED_PASTE);
+            _M(MODE_BRACKETED_PASTE);
             break;
         case M_MP:
-            MODE_SET(s, MODE_MOUSE|MODE_MOUSE_PRESS);
+            _M(MODE_MOUSE|MODE_MOUSE_PRESS);
             break;
         case M_MMP:
-            MODE_SET(s, MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS);
+            _M(MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS);
             break;
         case M_MMA:
-            MODE_SET(s, MODE_MOUSE|MODE_MOUSE_MOTION_ANY);
+            _M(MODE_MOUSE|MODE_MOUSE_MOTION_ANY);
             break;
         case M_ME:
-            MODE_SET(s, MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT);
+            _M(MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT);
             break;
         case M_SC:
             lcursor(s);
@@ -367,8 +369,7 @@ mode_handle(void) {
         case M_SC_ALTS:
             lcursor(s);
             zt.line = (s ? zt.alt_line : zt.norm_line);
-            if (s == SET)
-                lclear_all();
+            if (s) lclear_all();
             ldirty_all();
             break;
         case DECAWM:
@@ -380,6 +381,7 @@ mode_handle(void) {
             status |= NOTSUP;
         }
     }
+#undef _M
 }
 
 void
@@ -504,8 +506,8 @@ csi_handle(void) {
     case ICH    : linsert_blank(n)            ; break;
     case DCH    : ldelete_char(n)             ; break;
     case REP    : lrepeat_last(n)             ; break;
-    case DECSC  : lcursor(SET)                ; break;
-    case DECRC  : lcursor(RESET)              ; break;
+    case DECSC  : lcursor(1)                  ; break;
+    case DECRC  : lcursor(0)                  ; break;
     case DSR    : dsr_handle()                ; break;
 
     case DA:
@@ -737,12 +739,8 @@ esc_handle(uint8_t *buf, int len) {
 
     case ESCFP:
         switch (esc.code) {
-        case FP_DECSC:
-            lcursor(SET);
-            break;
-        case FP_DECRC:
-            lcursor(RESET);
-            break;
+        case FP_DECSC: lcursor(1); break;
+        case FP_DECRC: lcursor(0); break;
         case FP_DECPAM:
         case FP_DECPNM:
             break;

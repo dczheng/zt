@@ -214,7 +214,7 @@ xdraw_cursor(void) {
         last_y = zt.y;
     }
 
-    if (MODE_HAS(MODE_TEXT_CURSOR))
+    if (zt.mode & MODE_TEXT_CURSOR)
         XftDrawRect(drawable, &foreground,
             zt.x*font_width, (zt.y+1)*font_height-3, font_width, 3);
 }
@@ -296,37 +296,12 @@ _Mouse(XEvent *ev) {
     if (b >= 3)
         b += 64-3;
 
-/*
-    switch (ev->xbutton.type) {
-    case ButtonPress:
-        t = 'P';
-        break;
-    case ButtonRelease:
-        t = 'R';
-        break;
-
-    case MotionNotify:
-        t = 'M';
-        break;
-    default:
-        t = '-';
-    }
-    LOG("%c (%d %d): %d, %d, %d, %d, %d, %d\n", t, r, c,
-        MODE_HAS(MODE_MOUSE),
-        MODE_HAS(MODE_MOUSE_PRESS),
-        MODE_HAS(MODE_MOUSE_RELEASE),
-        MODE_HAS(MODE_MOUSE_MOTION_PRESS),
-        MODE_HAS(MODE_MOUSE_MOTION_ANY),
-        MODE_HAS(MODE_MOUSE_EXT)
-        );
-*/
-
-    if (!MODE_HAS(MODE_MOUSE))
+    if (!(zt.mode & MODE_MOUSE))
         return;
 
     switch (ev->xbutton.type) {
     case ButtonPress:
-        if (!MODE_HAS(MODE_MOUSE_PRESS))
+        if (!(zt.mode & MODE_MOUSE_PRESS))
             return;
         t = 'M';
         or = r;
@@ -335,14 +310,14 @@ _Mouse(XEvent *ev) {
         break;
 
     case ButtonRelease:
-        if (!MODE_HAS(MODE_MOUSE_RELEASE))
+        if (!(zt.mode & MODE_MOUSE_RELEASE))
             return;
         t = 'm';
         break;
 
     case MotionNotify:
-        if (!MODE_HAS(MODE_MOUSE_MOTION_PRESS) &&
-            !MODE_HAS(MODE_MOUSE_MOTION_ANY))
+        if (!(zt.mode & MODE_MOUSE_MOTION_PRESS) &&
+            !(zt.mode & MODE_MOUSE_MOTION_ANY))
             return;
         if (r == or && c == oc)
             return;
@@ -358,7 +333,7 @@ _Mouse(XEvent *ev) {
         return;
     }
 
-    if (MODE_HAS(MODE_MOUSE_EXT)) {
+    if (zt.mode & MODE_MOUSE_EXT) {
         n = snprintf(buf, sizeof(buf),
             "\033[<%d;%d;%d%c", b, c, r, t);
     } else {
@@ -370,7 +345,7 @@ _Mouse(XEvent *ev) {
 
 void
 _Focus(XEvent *ev) {
-    if (!MODE_HAS(MODE_SEND_FOCUS))
+    if (!(zt.mode & MODE_SEND_FOCUS))
         return;
     if (ev->type == FocusIn) {
         XSetICFocus(xim.ic);
