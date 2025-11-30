@@ -26,19 +26,18 @@ int tty = 0;
 pid_t pid;
 
 void ldirty_reset(void);
-void linit(void);
-void lclean(void);
+void cfree(void);
 void cinit();
 int ctrl(uint8_t*, int, int);
 void xinit(void);
-void xclean(void);
+void xfree(void);
 int xevent(void);
 void xdraw(void);
 
 int
 io_wait(int *r, int nr, int *w, int nw, long nano) {
-    fd_set rfd, wfd, *prfd=NULL, *pwfd=NULL;
-    int  m=-1, ret=0, i;
+    fd_set rfd, wfd, *prfd = NULL, *pwfd = NULL;
+    int m = -1, ret = 0, i;
     struct timespec tv, *ptv;
 
     if (nr <= 0 && nw <= 0)
@@ -92,18 +91,13 @@ io_wait(int *r, int nr, int *w, int nw, long nano) {
 }
 
 void
-cleanup(void) {
-    lclean();
-    xclean();
+clean(void) {
+    xfree();
+    cfree();
     close(tty);
     if (zt.log >= 0)
         close(zt.log);
     _exit(0);
-}
-
-void
-tdrawed(void) {
-    ldirty_reset();
 }
 
 int
@@ -133,7 +127,7 @@ tread(int wait) {
 
 void
 twrite(char *s, int n) {
-    int ret, ntry=0, wait=100 * MICROSEC;
+    int ret, ntry = 0, wait = 100 * MICROSEC;
 
     for (;;) {
         if (n <= 0) break;
@@ -163,7 +157,7 @@ sigchld(int a __unused) {
         pid, strerror(errno));
     if (pid != p)
         return;
-    cleanup();
+    clean();
 }
 
 void
@@ -286,7 +280,6 @@ main(int argc, char **argv) {
     }
 
     cinit();
-    linit();
     xinit();
     tinit();
     tresize();
@@ -321,10 +314,10 @@ main(int argc, char **argv) {
         latency = LATENCY * MICROSEC;
         timeout = -1;
         xdraw();
-        tdrawed();
+        ldirty_reset();
 
     }
 
-    cleanup();
+    clean();
     return 0;
 }

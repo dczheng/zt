@@ -3,7 +3,7 @@
 struct {
     uint8_t byte, mask;
     uint32_t min, max;
-} utf8[] = {
+} _utf8[] = {
      {0x80, 0xc0,       0,        0},
      {0x00, 0x80,       0,     0x7f},
      {0xc0, 0xe0,    0x80,    0x7ff},
@@ -14,8 +14,8 @@ struct {
 int
 utf8_byte_decode(uint8_t c, uint32_t *v) {
     for (int i = 0; i < 5; i++)
-        if ((c & utf8[i].mask) == utf8[i].byte) {
-            *v = c & ~utf8[i].mask;
+        if ((c & _utf8[i].mask) == _utf8[i].byte) {
+            *v = c & ~_utf8[i].mask;
             return i;
         }
     return -1;
@@ -23,7 +23,7 @@ utf8_byte_decode(uint8_t c, uint32_t *v) {
 
 int
 utf8_validate(uint32_t *u, size_t i) {
-    if ((*u < utf8[i].min || *u > utf8[i].max) ||
+    if ((*u < _utf8[i].min || *u > _utf8[i].max) ||
         (*u >= 0xd800 && *u <= 0xdfff))
         return 1;
     return 0;

@@ -4,8 +4,6 @@
 #endif
 #include <wchar.h>
 
-char *norm_line_buffer, *alt_line_buffer;
-
 #define PASSERT(x) \
     ASSERT(x >= 0, #x": %d", x)
 #define YASSERT(y) \
@@ -104,13 +102,6 @@ lsettb(int t, int b) {
     YLIMIT(zt.top);
     YLIMIT(zt.bot);
     ASSERT(zt.top <= zt.bot, "top: %d, bot: %d", zt.top, zt.bot);
-}
-
-void
-lclean(void) {
-    free(norm_line_buffer);
-    free(alt_line_buffer);
-    free(zt.dirty);
 }
 
 void
@@ -223,6 +214,18 @@ lcursor(int save) {
 }
 
 void
+lalt(int alt) {
+    zt.line = (alt ? zt.alt.line : zt.normal.line);
+}
+
+void
+lfree(void) {
+    free(zt.normal.buffer);
+    free(zt.alt.buffer);
+    free(zt.dirty);
+}
+
+void
 lalloc(void) {
     char *p;
     int i, n;
@@ -238,38 +241,30 @@ lalloc(void) {
     n = (sizeof(struct char_t*) +
         sizeof(struct char_t) * zt.col) * zt.row;
 
-#define F(ls, buf) \
-    buf = malloc(n); \
-    ASSERT(buf != NULL, ""); \
-    ls = (struct char_t **)buf; \
-    p = buf + sizeof(struct char_t*) * zt.row; \
+#define X(x) \
+    zt.x.buffer = malloc(n); \
+    ASSERT(zt.x.buffer != NULL, ""); \
+    zt.x.line = (struct char_t **)zt.x.buffer; \
+    p = zt.x.buffer + sizeof(struct char_t*) * zt.row; \
     for (i = 0; i < zt.row; i++) { \
-        ls[i] = (struct char_t*)p; \
+        zt.x.line[i] = (struct char_t*)p; \
         p += sizeof(struct char_t) * zt.col; \
     }  \
-    zt.line = ls; \
+    zt.line = zt.x.line; \
     lclear_all();
 
-    F(zt.alt_line, alt_line_buffer);
-    F(zt.norm_line, norm_line_buffer);
-#undef F
-}
-
-void
-linit(void) {
-    zt.row = 24;
-    zt.col = 80;
-    zt.bot = zt.row-1;
-    lalloc();
+    X(alt);
+    X(normal);
+#undef X
 }
 
 void
 lresize(void) {
     int i, j, mr, mc;
-    char *norm_line_buffer_old = norm_line_buffer;
-    char *alt_line_buffer_old = alt_line_buffer;
-    struct char_t **norm_line_old = zt.norm_line;
-    struct char_t **alt_line_old = zt.alt_line;
+    char *normal_buffer_old = zt.normal.buffer;
+    char *alt_buffer_old = zt.alt.buffer;
+    struct char_t **normal_line_old = zt.normal.line;
+    struct char_t **alt_line_old = zt.alt.line;
     int *tabs_old = zt.tabs;
 
     mr = MIN(zt.row, zt.row_old);
@@ -280,11 +275,11 @@ lresize(void) {
 
     for (i = 0; i < mr; i++)
         for (j = 0; j < mc; j++) {
-            zt.norm_line[i][j] = norm_line_old[i][j];
-            zt.alt_line[i][j] = alt_line_old[i][j];
+            zt.normal.line[i][j] = normal_line_old[i][j];
+            zt.alt.line[i][j] = alt_line_old[i][j];
         }
-    free(norm_line_buffer_old);
-    free(alt_line_buffer_old);
+    free(normal_buffer_old);
+    free(alt_buffer_old);
 
     for (i = 0; i < mc; i++)
         zt.tabs[i] = tabs_old[i];

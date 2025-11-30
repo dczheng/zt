@@ -17,6 +17,8 @@
 #define VT102 "\033[?6c"
 
 int utf8_decode(uint8_t*, int, uint32_t*, int*);
+void lalloc(void);
+void lfree(void);
 void lclear(int, int, int, int);
 void lclear_all();
 void lerase(int, int, int);
@@ -34,6 +36,7 @@ void lrepeat_last(int);
 void linsert_blank(int);
 void ldelete_char(int);
 void lcursor(int);
+void lalt(int);
 void ldirty_all(void);
 void twrite(char*, int);
 
@@ -250,7 +253,7 @@ get_int_par(int idx, int *v, int v0) {
 } while(0)
 
 void
-sgr_handle(void) {
+ctrl_sgr(void) {
     int n, m, v, r, g, b, i;
 
     if (esc.npar == 0) {
@@ -354,7 +357,7 @@ sgr_handle(void) {
 #undef ATTR_BG24
 
 void
-mode_handle(void) {
+ctrl_mode(void) {
     int i, n, s;
     char *p;
 
@@ -401,12 +404,12 @@ mode_handle(void) {
             lcursor(s);
             break;
         case M_ALTS:
-            zt.line = (s ? zt.alt_line : zt.norm_line);
+            lalt(s);
             ldirty_all();
             break;
         case M_SC_ALTS:
             lcursor(s);
-            zt.line = (s ? zt.alt_line : zt.norm_line);
+            lalt(s);
             if (s) lclear_all();
             ldirty_all();
             break;
@@ -423,7 +426,7 @@ mode_handle(void) {
 }
 
 void
-dsr_handle(void) {
+ctrl_dsr(void) {
     int n, nw;
     char wbuf[32], *p;
 
@@ -453,7 +456,7 @@ dsr_handle(void) {
 }
 
 void
-csi_handle(void) {
+ctrl_csi(void) {
     int n, m;
 
     switch (esc.csi) {
@@ -532,12 +535,12 @@ csi_handle(void) {
     case VPR    : lmoveto(zt.y+n, zt.y)       ; break;
     case IL     : linsert(n)                  ; break;
     case DL     : ldelete(n)                  ; break;
-    case SGR    : sgr_handle()                ; break;
+    case SGR    : ctrl_sgr()                  ; break;
     case SU     : lscroll_up(zt.top, n)       ; break;
     case SD     : lscroll_down(zt.top, n)     ; break;
     case ECH    : lerase(zt.y, zt.x, zt.x+n-1); break;
-    case SM     : mode_handle()               ; break;
-    case RM     : mode_handle()               ; break;
+    case SM     : ctrl_mode()                 ; break;
+    case RM     : ctrl_mode()                 ; break;
     case DECSTBM: lsettb(n-1, m-1)            ; break;
     case CHT    : ltab(n)                     ; break;
     case CBT    : ltab(-n)                    ; break;
@@ -546,7 +549,7 @@ csi_handle(void) {
     case REP    : lrepeat_last(n)             ; break;
     case DECSC  : lcursor(1)                  ; break;
     case DECRC  : lcursor(0)                  ; break;
-    case DSR    : dsr_handle()                ; break;
+    case DSR    : ctrl_dsr()                  ; break;
 
     case DA:
         if (n == 0)
@@ -699,7 +702,7 @@ esc_str(void) {
 }
 
 void
-esc_handle(uint8_t *buf, int len) {
+ctrl_esc(uint8_t *buf, int len) {
     int i, n;
 
     if (!len) {
@@ -794,7 +797,7 @@ esc_handle(uint8_t *buf, int len) {
     case ESCFE:
         switch (esc.c1) {
         case CSI:
-            csi_handle();
+            ctrl_csi();
             break;
         case HTS:
             zt.tabs[zt.x] = 1;
@@ -820,10 +823,10 @@ esc_handle(uint8_t *buf, int len) {
 }
 
 void
-ctrl_handle(uint8_t *buf, int len) {
+_ctrl(uint8_t *buf, int len) {
     ASSERT(len > 0, "");
     switch (buf[0]) {
-    case ESC: esc_handle(buf+1, len-1); break;
+    case ESC: ctrl_esc(buf+1, len-1)  ; break;
     case LF : lnew()                  ; break;
     case CR : lmoveto(zt.y, 0)        ; break;
     case HT : ltab(1)                 ; break;
@@ -866,7 +869,7 @@ ctrl(uint8_t *buf, int len) {
             status = 0;
             zt.lastc = 0;
             ZERO(esc);
-            ctrl_handle(buf+nread, len-nread);
+            _ctrl(buf+nread, len-nread);
 
             if (status & NOTSUP) {
                 if (buf[nread] != ESC) {
@@ -935,4 +938,13 @@ void
 cinit(void) {
     zt.mode = MODE_TEXT_CURSOR;
     ATTR_RESET();
+    zt.row = 24;
+    zt.col = 80;
+    zt.bot = zt.row-1;
+    lalloc();
+}
+
+void
+cfree(void) {
+    lfree();
 }

@@ -469,7 +469,7 @@ xerror(Display *display, XErrorEvent *e) {
 }
 
 void
-xclean(void) {
+xfree(void) {
     int i;
 
     if (xim.ic) XDestroyIC(xim.ic);

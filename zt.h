@@ -45,7 +45,11 @@ struct zt_t {
     int *dirty, *tabs, top, bot, width ,height,
         x, y, x_saved, y_saved, row, col,
         row_old, col_old, xfd, log;
-    struct char_t **line, **alt_line, **norm_line, c;
+    struct {
+        struct char_t **line;
+        char *buffer;
+    } alt, normal;
+    struct char_t **line, c;
     uint32_t lastc;
     unsigned long mode;
     double fontsize;
