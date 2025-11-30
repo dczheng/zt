@@ -19,8 +19,6 @@
 #include "zt.h"
 #include "code.h"
 
-#define LATENCY 1
-
 struct zt_t zt = {0};
 int tty = 0;
 pid_t pid;
@@ -45,8 +43,8 @@ io_wait(int *r, int nr, int *w, int nw, long nano) {
 
     ptv = NULL;
     if (nano > 0) {
-        tv.tv_sec = nano / NANOSEC;
-        tv.tv_nsec = nano % NANOSEC;
+        tv.tv_sec = nano / SECOND;
+        tv.tv_nsec = nano % SECOND;
         ptv = &tv;
     }
     if (nr > 0)
@@ -127,16 +125,13 @@ tread(int wait) {
 
 void
 twrite(char *s, int n) {
-    int ret, ntry = 0, wait = 100 * MICROSEC;
+    int ret;
 
     for (;;) {
         if (n <= 0) break;
 
-        ntry++;
-        ASSERT(ntry <= 100, "can't write tty");
+        ASSERT(io_wait(NULL, 0, &tty, 1, SECOND) == 1, "");
 
-        if (io_wait(NULL, 0, &tty, 1, wait) != 1)
-            continue;
         ret = write(tty, s, n);
         if (ret < 0)  {
             LOG("failed to read tty: %s\n", strerror(errno));
@@ -287,7 +282,7 @@ main(int argc, char **argv) {
     last = get_time();
     fd[0] = zt.xfd;
     fd[1] = tty;
-    latency = LATENCY * MICROSEC;
+    latency = LATENCY * MICROSECOND;
     timeout = -1;
     for (;;){
         ret = io_wait(fd, 2, NULL, 0, timeout);
@@ -311,7 +306,7 @@ main(int argc, char **argv) {
             continue;
         }
 
-        latency = LATENCY * MICROSEC;
+        latency = LATENCY * MICROSECOND;
         timeout = -1;
         xdraw();
         ldirty_reset();

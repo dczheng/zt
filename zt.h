@@ -16,6 +16,7 @@
 #define BACKGROUND "gray20"
 #define FOREGROUND "white"
 #define USED_COLOR UBUNTU_COLOR
+#define LATENCY 1
 static struct {
     char *name;
     int pixelsize;
@@ -59,8 +60,6 @@ struct zt_t {
 };
 extern struct zt_t zt;
 
-#define NANOSEC     1000000000
-#define MICROSEC    1000000
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define LEN(x) ((int)(sizeof(x) / sizeof(x[0])))
@@ -122,11 +121,14 @@ extern struct zt_t zt;
 #define ATTR_COLOR_REVERSE  (1<<6)
 #define ATTR_CROSSED_OUT    (1<<7)
 
+#define SECOND         1000000000L
+#define MILLISECOND    1000000L
+#define MICROSECOND    1000L
 static inline long
 get_time(void) {
     struct timespec tv;
     clock_gettime(CLOCK_MONOTONIC, &tv);
-    return tv.tv_sec * NANOSEC + tv.tv_nsec;
+    return tv.tv_sec * SECOND + tv.tv_nsec;
 }
 
 static inline int
