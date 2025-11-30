@@ -16,7 +16,6 @@
 
 #define VT102 "\033[?6c"
 
-int utf8_decode(uint8_t*, int, uint32_t*, int*);
 void lalloc(void);
 void lfree(void);
 void lclear(int, int, int, int);
@@ -25,7 +24,6 @@ void lerase(int, int, int);
 void lscroll_up(int, int);
 void lscroll_down(int, int);
 void lnew(void);
-void lwrite(uint32_t);
 void linsert(int);
 void ldelete(int);
 void lmoveto(int, int);
@@ -39,6 +37,7 @@ void lcursor(int);
 void lalt(int);
 void ldirty_all(void);
 void tty_write(char*, int);
+int lwrite(uint8_t*, int, int*);
 
 #define NOTSUP (1 << 0)
 #define RETRY  (1 << 1)
@@ -854,8 +853,8 @@ tctrl(uint8_t *buf, int len) {
 
 int
 twrite(uint8_t *buf, int len) {
-    uint32_t u;
-    int nread = 0, n = 0, ulen = 0, retry_max = 3;
+    uint8_t c;
+    int nread, n, retry_max = 3;
     struct code_desc_t desc;
     static int retry = 0;
 
@@ -865,50 +864,47 @@ twrite(uint8_t *buf, int len) {
     if (zt.opt.debug.ctrl)
         dump(buf, len);
 
-    while (nread < len) {
-        if (ISCTRL(buf[nread])) {
-            status = 0;
-            zt.lastc = 0;
-            ZERO(esc);
-            tctrl(buf+nread, len-nread);
+    for (nread = 0; nread < len; nread += n, retry = 0) {
+        c = buf[nread];
 
-            if (status & NOTSUP) {
-                if (buf[nread] != ESC) {
-                    ASSERT(code_desc(&desc, buf[nread]) == 0);
-                    LOG("unsupported: %s %s\n", desc.name, desc.desc);
-                } else {
-                    LOG("unsupported: %s\n", esc_str());
-                }
-            }
-
-            if (status & RETRY) {
+        if (!ISCTRL(c)) {
+            if (lwrite(buf+nread, len-nread, &n)) {
                 retry++;
                 break;
             }
-            n = esc.len + 1;
-
-            if (zt.opt.debug.ctrl) {
-                if (buf[nread] != ESC) {
-                    ASSERT(code_desc(&desc, buf[nread]) == 0);
-                    LOG("%s\n", desc.name);
-                } else {
-                    LOG("%s\n", esc_str());
-                }
-            }
-
-            if (zt.opt.debug.term == 2)
-                tdump();
-        } else {
-            if (utf8_decode(buf+nread, len-nread, &u, &ulen)) {
-                retry++;
-                break;
-            }
-
-            lwrite(u);
-            n = ulen;
+            continue;
         }
-        retry = 0;
-        nread += n;
+
+        status = 0;
+        zt.lastc = 0;
+        ZERO(esc);
+        tctrl(buf+nread, len-nread);
+
+        if (status & NOTSUP) {
+            if (c != ESC) {
+                ASSERT(code_desc(&desc, c) == 0);
+                LOG("unsupported: %s %s\n", desc.name, desc.desc);
+            } else {
+                LOG("unsupported: %s\n", esc_str());
+            }
+        }
+
+        if (status & RETRY) {
+            retry++;
+            break;
+        }
+        n = esc.len + 1;
+
+        if (zt.opt.debug.ctrl) {
+            if (c != ESC) {
+                ASSERT(code_desc(&desc, c) == 0);
+                LOG("%s\n", desc.name);
+            } else {
+                LOG("%s\n", esc_str());
+            }
+        }
+        if (zt.opt.debug.term == 2)
+            tdump();
     }
 
     if (zt.opt.debug.term == 1)

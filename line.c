@@ -7,6 +7,8 @@
 #define YLIMIT(y) LIMIT(y, 0, zt.row-1)
 #define XLIMIT(x) LIMIT(x, 0, zt.col-1)
 
+int utf8_decode(uint8_t*, int, uint32_t*, int*);
+
 void
 ldirty(int a, int b) {
     ASSERT(a >= 0);
@@ -142,7 +144,7 @@ ltab(int n) {
 }
 
 void
-lwrite(uint32_t c) {
+_lwrite(uint32_t c) {
     int w;
 
     if ((w = wcwidth(c)) <= 0) {
@@ -160,6 +162,15 @@ lwrite(uint32_t c) {
     ldirty(zt.y, zt.y);
     for (w--, zt.x++; w > 0; zt.x++, w--)
         zt.line[zt.y][zt.x] = zt.c;
+}
+
+int
+lwrite(uint8_t *buf, int len, int *wlen) {
+    uint32_t c;
+    if (utf8_decode(buf, len, &c, wlen))
+        return EAGAIN;
+    _lwrite(c);
+    return 0;
 }
 
 void
@@ -196,7 +207,7 @@ lrepeat_last(int n) {
     if (!zt.lastc)
         return;
     for (; n > 0; n--)
-        lwrite(zt.lastc);
+        _lwrite(zt.lastc);
 }
 
 void

@@ -20,4 +20,4 @@ $(OBJ): %.o:%.c $(INC) Makefile
 
 .PHONY: clean
 clean:
-	rm -f zt $(OBJ)
+	rm -f zt *.o
