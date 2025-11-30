@@ -4,18 +4,13 @@
 #endif
 #include <wchar.h>
 
-#define PASSERT(x) \
-    ASSERT(x >= 0, #x": %d", x)
-#define YASSERT(y) \
-    ASSERT(y >= 0 && y < zt.row, #y": %d, row: %d", y, zt.row)
-
 #define YLIMIT(y) LIMIT(y, 0, zt.row-1)
 #define XLIMIT(x) LIMIT(x, 0, zt.col-1)
 
 void
 ldirty(int a, int b) {
-    PASSERT(a);
-    PASSERT(b);
+    ASSERT(a >= 0);
+    ASSERT(b >= 0);
     if (a >= zt.col)
         return;
     XLIMIT(b);
@@ -30,10 +25,10 @@ ldirty_all(void) {
 
 void
 lmove(int y, int dst, int src, int n) {
-    YASSERT(y);
-    PASSERT(dst);
-    PASSERT(src);
-    PASSERT(n);
+    ASSERT(y >= 0 && y < zt.row);
+    ASSERT(dst >= 0);
+    ASSERT(src >= 0);
+    ASSERT(n >= 0);
     if (dst >= zt.col || src >= zt.col)
         return;
     LIMIT(n, 0, zt.col-dst);
@@ -46,9 +41,9 @@ lmove(int y, int dst, int src, int n) {
 
 void
 lerase(int y, int a, int b) {
-    YASSERT(y);
-    PASSERT(a);
-    PASSERT(b);
+    ASSERT(y >= 0 && y < zt.row);
+    ASSERT(a >= 0);
+    ASSERT(b >= 0);
     if (a >= zt.col)
         return;
     XLIMIT(b);
@@ -101,7 +96,7 @@ lsettb(int t, int b) {
     lmoveto(0, 0);
     YLIMIT(zt.top);
     YLIMIT(zt.bot);
-    ASSERT(zt.top <= zt.bot, "top: %d, bot: %d", zt.top, zt.bot);
+    ASSERT(zt.top <= zt.bot);
 }
 
 void
@@ -133,7 +128,7 @@ lnew(void) {
         return;
     }
     zt.y++;
-    YASSERT(zt.y);
+    ASSERT(zt.y >= 0 && zt.y < zt.row);
     //YLIMIT(zt.y);
 }
 
@@ -230,20 +225,17 @@ lalloc(void) {
     char *p;
     int i, n;
 
-    zt.dirty = malloc(zt.row * sizeof(*zt.dirty));
-    ASSERT(zt.dirty != NULL, "");
+    ASSERT(zt.dirty = malloc(zt.row * sizeof(*zt.dirty)));
     ldirty_all();
 
-    zt.tabs = malloc(zt.col * sizeof(*zt.tabs));
-    ASSERT(zt.tabs != NULL, "");
+    ASSERT(zt.tabs = malloc(zt.col * sizeof(*zt.tabs)));
     ltab_reset();
 
     n = (sizeof(struct char_t*) +
         sizeof(struct char_t) * zt.col) * zt.row;
 
 #define X(x) \
-    zt.x.buffer = malloc(n); \
-    ASSERT(zt.x.buffer != NULL, ""); \
+    ASSERT(zt.x.buffer = malloc(n)); \
     zt.x.line = (struct char_t **)zt.x.buffer; \
     p = zt.x.buffer + sizeof(struct char_t*) * zt.row; \
     for (i = 0; i < zt.row; i++) { \
@@ -291,4 +283,3 @@ lresize(void) {
     YLIMIT(zt.top);
     YLIMIT(zt.bot);
 }
-

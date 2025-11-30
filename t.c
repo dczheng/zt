@@ -710,7 +710,7 @@ tesc(uint8_t *buf, int len) {
         return;
     }
 
-    ASSERT(len > 0, "");
+    ASSERT(len > 0);
     esc.seq = buf;
     esc.code = buf[0];
     esc.type = esc_type(esc.code);
@@ -824,7 +824,7 @@ tesc(uint8_t *buf, int len) {
 
 void
 tctrl(uint8_t *buf, int len) {
-    ASSERT(len > 0, "");
+    ASSERT(len > 0);
     switch (buf[0]) {
     case ESC: tesc(buf+1, len-1) ; break;
     case LF : lnew()             ; break;
@@ -858,7 +858,7 @@ twrite(uint8_t *buf, int len) {
     struct code_desc_t desc;
     static int retry = 0;
 
-    ASSERT(len >= 0, "");
+    ASSERT(len >= 0);
     if (!len) return 0;
 
     if (zt.debug.ctrl)
@@ -873,7 +873,7 @@ twrite(uint8_t *buf, int len) {
 
             if (status & NOTSUP) {
                 if (buf[nread] != ESC) {
-                    ASSERT(code_desc(&desc, buf[nread]) == 0, "");
+                    ASSERT(code_desc(&desc, buf[nread]) == 0);
                     LOG("unsupported: %s %s\n", desc.name, desc.desc);
                 } else {
                     LOG("unsupported: %s\n", esc_str());
@@ -888,7 +888,7 @@ twrite(uint8_t *buf, int len) {
 
             if (zt.debug.ctrl) {
                 if (buf[nread] != ESC) {
-                    ASSERT(code_desc(&desc, buf[nread]) == 0, "");
+                    ASSERT(code_desc(&desc, buf[nread]) == 0);
                     LOG("%s\n", desc.name);
                 } else {
                     LOG("%s\n", esc_str());

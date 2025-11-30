@@ -48,7 +48,7 @@ tty_read(void) {
     static int n = 0;
     int ret, m;
 
-    ASSERT(n >= 0 && n < (int)sizeof(buf), "");
+    ASSERT(n >= 0 && n < (int)sizeof(buf));
     if ((ret = read(tty, buf+n, sizeof(buf)-1)) < 0) {
         LOGERR("failed to read tty: %s", strerror(errno));
         return;
@@ -73,8 +73,7 @@ tty_write(char *s, int n) {
 
         FD_ZERO(&fds);
         FD_SET(tty, &fds);
-        ASSERT(pselect(tty+1, NULL, &fds, NULL, &tv, NULL) > 0,
-            "select failed: %s", strerror(errno));
+        ASSERT(pselect(tty+1, NULL, &fds, NULL, &tv, NULL) > 0);
 
         if ((ret = write(tty, s, n)) < 0)  {
             LOG("failed to read tty: %s\n", strerror(errno));
@@ -94,8 +93,7 @@ tty_resize(void) {
     ws.ws_col = zt.col;
     ws.ws_xpixel = zt.width;
     ws.ws_ypixel = zt.height;
-    ret = ioctl(tty, TIOCSWINSZ, &ws);
-    ASSERT(ret >= 0, "failed to set tty size: %s", strerror(errno));
+    ASSERT((ret = ioctl(tty, TIOCSWINSZ, &ws)) >= 0);
 }
 
 void
@@ -103,9 +101,7 @@ sigchld(int a __unused) {
     int stat;
     pid_t p;
 
-    p = waitpid(pid, &stat, WNOHANG);
-    ASSERT(p >= 0, "failed to wait pid %d: %s",
-        pid, strerror(errno));
+    ASSERT((p = waitpid(pid, &stat, WNOHANG)) >= 0);
     if (pid != p)
         return;
     clean();
@@ -117,17 +113,10 @@ tty_init(void) {
     struct passwd *pw;
     int ret, slave;
 
-    ret = openpty(&tty, &slave, NULL, NULL, NULL);
-    ASSERT(ret >= 0, "openpty failed: %s", strerror(errno));
-
-    sh = getenv("SHELL");
-    ASSERT(sh != NULL, "");
-
-    pw = getpwuid(getuid());
-    ASSERT(pw != NULL, "");
-
-    pid = fork();
-    ASSERT(pid != -1, "fork failed: %s", strerror(errno));
+    ASSERT((ret = openpty(&tty, &slave, NULL, NULL, NULL)) >= 0);
+    ASSERT(sh = getenv("SHELL"));
+    ASSERT(pw = getpwuid(getuid()));
+    ASSERT((pid = fork()) != -1);
 
     if (pid) {
         close(slave);
@@ -140,8 +129,7 @@ tty_init(void) {
     dup2(slave, 1);
     dup2(slave, 2);
 
-    ret = ioctl(slave, TIOCSCTTY, NULL);
-    ASSERT(ret >= 0, "ioctl TIOCSCTTY failed: %s", strerror(errno));
+    ASSERT((ret = ioctl(slave, TIOCSCTTY, NULL)) >= 0);
     if (slave > 2)
         close(slave);
     close(tty);
@@ -238,7 +226,7 @@ main(int argc, char **argv) {
         FD_SET(xfd, &fds);
         FD_SET(tty, &fds);
         ASSERT((ret = pselect(MAX(xfd, tty)+1, &fds, NULL, NULL,
-            ptv, NULL)) >= 0, "select failed: %s", strerror(errno));
+            ptv, NULL)) >= 0);
         if (!ret) continue;
 
         if (FD_ISSET(xfd, &fds) && xevent())
@@ -261,7 +249,6 @@ main(int argc, char **argv) {
         timeout = -1;
         xdraw();
         ldirty_reset();
-
     }
 
     clean();

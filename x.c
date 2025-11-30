@@ -284,7 +284,7 @@ xresize() {
     XftDrawChange(drawable, pixmap);
     XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
     specs = realloc(specs, zt.col * sizeof(XftGlyphFontSpec));
-    ASSERT(specs != NULL, "");
+    ASSERT(specs != NULL);
 }
 
 void
@@ -496,7 +496,7 @@ xfont_load(char *str, struct font_t *f) {
     FcPattern *p, *m;
     FcResult r;
 
-    ASSERT(p = FcNameParse((FcChar8*)str), "");
+    ASSERT(p = FcNameParse((FcChar8*)str));
     FcConfigSubstitute(NULL, p, FcMatchPattern);
     FcDefaultSubstitute(p);
     XftDefaultSubstitute(display, screen, p);
@@ -508,7 +508,7 @@ xfont_load(char *str, struct font_t *f) {
     FcPatternAddInteger(p, FC_SLANT, f->slant);
 
     m = FcFontMatch(NULL, p, &r);
-    ASSERT(f->font = XftFontOpenPattern(display, m), "");
+    ASSERT(f->font = XftFontOpenPattern(display, m));
     f->family = FcPatternFormat(m, (FcChar8*)"%{family}");
 
     FcPatternDestroy(m);
@@ -528,10 +528,10 @@ xfont_init(void) {
     }
     printable[j] = '\0';
 
-    ASSERT(FcInit(), "can't init fontconfig");
+    ASSERT(FcInit());
     nfont = LEN(font_list) * 4;
     fonts = malloc(nfont * sizeof(fonts[0]));
-    ASSERT(fonts != NULL, "");
+    ASSERT(fonts != NULL);
     for (i = 0; i < nfont; i++) {
         f = &fonts[i];
         f->weight = ((i%4) / 2 == 0 ? FC_WEIGHT_REGULAR : FC_WEIGHT_BOLD);
@@ -574,12 +574,11 @@ xcolor_init(void) {
 
     n = sizeof(XftGlyphFontSpec) * zt.col;
     specs = malloc(n);
-    ASSERT(specs != NULL, "");
+    ASSERT(specs != NULL);
 
     for (n = 0; n < 256; n++) {
         mc = c8_to_rgb(n);
-        ASSERT(!xcolor_alloc(&color8[n],
-            mc.rgb[0], mc.rgb[1], mc.rgb[2]), "n: %d", n);
+        ASSERT(!xcolor_alloc(&color8[n], mc.rgb[0], mc.rgb[1], mc.rgb[2]));
     }
 }
 
@@ -613,11 +612,10 @@ xim_init(void) {
         LOG("can't init xim\n");
         return 1;
     }
-    ASSERT(!XSetIMValues(xim.im, XNDestroyCallback, &cb, NULL),"");
-
+    ASSERT(!XSetIMValues(xim.im, XNDestroyCallback, &cb, NULL));
     ASSERT(xim.ic = XCreateIC(xim.im,
         XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-        XNClientWindow, window, NULL),);
+        XNClientWindow, window, NULL));
     XSetICFocus(xim.ic);
     return 0;
 }
@@ -633,7 +631,7 @@ xinit(void) {
     XSetLocaleModifiers("");
 
     display = XOpenDisplay(NULL);
-    ASSERT(display, "can't open display");
+    ASSERT(display);
 
     XSetErrorHandler(xerror);
     xfd = XConnectionNumber(display);
@@ -644,10 +642,10 @@ xinit(void) {
     colormap = XDefaultColormap(display, screen);
     depth = XDefaultDepth(display, screen);
     cursor = XCreateFontCursor(display, XC_xterm);
-    ret = XftColorAllocName(display, visual, colormap, BACKGROUND, &background);
-    ASSERT(ret, "can't allocate color for `%s`", BACKGROUND);
-    ret = XftColorAllocName(display, visual, colormap, FOREGROUND, &foreground);
-    ASSERT(ret, "can't allocate color for `%s`", FOREGROUND);
+    ASSERT(ret = XftColorAllocName(display, visual,
+        colormap, BACKGROUND, &background));
+    ASSERT(ret = XftColorAllocName(display, visual,
+        colormap, FOREGROUND, &foreground));
 
     xfont_init();
     xcolor_init();

@@ -86,10 +86,12 @@ extern struct zt_t zt;
     fflush(stderr); \
 } while(0)
 
-#define ASSERT(exp, fmt, arg...) do { \
+#define ASSERT(exp) do { \
     if (!(exp)) { \
-        LOG("Assert failed `%s` %s:%s:%d, "fmt"\n", \
-            #exp, __FILE__, __FUNCTION__, __LINE__, ##arg); \
+        LOG("Assert failed `%s` %s:%s:%d\n", \
+            #exp, __FILE__, __FUNCTION__, __LINE__); \
+        if (errno) \
+            LOG("errno: %s\n", strerror(errno)); \
         _exit(1);\
     }\
 } while(0)
