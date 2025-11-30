@@ -35,6 +35,7 @@ void xdraw(void);
 
 void
 clean(void) {
+    LOG("clean\n");
     xfree();
     tfree();
     close(tty);
@@ -103,7 +104,9 @@ sigchld(int a __unused) {
     int stat;
     pid_t p;
 
+    LOG("wait child\n");
     ASSERT((p = waitpid(pid, &stat, WNOHANG)) >= 0);
+    LOG("check pid\n");
     if (pid != p)
         return;
     clean();

@@ -284,20 +284,21 @@ tsgr(void) {
         }
 
         switch (n) {
-        case 0 : ATTR_RESET()                       ; break;
-        case 1 : zt.c.attr |= ATTR_BOLD             ; break;
-        case 2 : zt.c.attr |= ATTR_FAINT            ; break;
-        case 3 : zt.c.attr |= ATTR_ITALIC           ; break;
-        case 4 : zt.c.attr |= ATTR_UNDERLINE        ; break;
-        case 7 : zt.c.attr |= ATTR_COLOR_REVERSE    ; break;
-        case 9 : zt.c.attr |= ATTR_CROSSED_OUT      ; break;
-        case 22: zt.c.attr &= ~ATTR_BOLD|ATTR_FAINT ; break;
-        case 23: zt.c.attr &= ~ATTR_ITALIC          ; break;
-        case 24: zt.c.attr &= ~ATTR_UNDERLINE       ; break;
-        case 27: zt.c.attr &= ~ATTR_COLOR_REVERSE   ; break;
-        case 29: zt.c.attr &= ~ATTR_CROSSED_OUT     ; break;
-        case 39: zt.c.attr |= ATTR_DEFAULT_FG       ; break;
-        case 49: zt.c.attr |= ATTR_DEFAULT_BG       ; break;
+        case  0: ATTR_RESET()                                   ; break;
+        case  1: zt.c.attr |= ATTR_BOLD                         ; break;
+        case  2: zt.c.attr |= ATTR_FAINT                        ; break;
+        case  3: zt.c.attr |= ATTR_ITALIC                       ; break;
+        case  4: zt.c.attr |= ATTR_UNDERLINE                    ; break;
+        case  7: zt.c.attr |= ATTR_COLOR_REVERSE                ; break;
+        case  9: zt.c.attr |= ATTR_CROSSED_OUT                  ; break;
+        case 10: zt.c.attr &= ~ATTR_BOLD|ATTR_FAINT|ATTR_ITALIC ; break;
+        case 22: zt.c.attr &= ~ATTR_BOLD|ATTR_FAINT             ; break;
+        case 23: zt.c.attr &= ~ATTR_ITALIC                      ; break;
+        case 24: zt.c.attr &= ~ATTR_UNDERLINE                   ; break;
+        case 27: zt.c.attr &= ~ATTR_COLOR_REVERSE               ; break;
+        case 29: zt.c.attr &= ~ATTR_CROSSED_OUT                 ; break;
+        case 39: zt.c.attr |= ATTR_DEFAULT_FG                   ; break;
+        case 49: zt.c.attr |= ATTR_DEFAULT_BG                   ; break;
         case 38:
         case 48:
             GET_INT_PAR(i++, m, 0);
