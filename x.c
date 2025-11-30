@@ -19,7 +19,7 @@ XftColor background, foreground, color8[256];
 XftDraw *drawable;
 Pixmap pixmap;
 XftGlyphFontSpec *specs;
-int screen, depth, nspec;
+int screen, depth, nspec, xfd;
 
 void tresize(void);
 void lresize(void);
@@ -488,7 +488,7 @@ xfree(void) {
         xcolor_free(&color8[i]);
 
     free(specs);
-    close(zt.xfd);
+    close(xfd);
 }
 
 void
@@ -622,7 +622,7 @@ xim_init(void) {
     return 0;
 }
 
-void
+int
 xinit(void) {
     XSetWindowAttributes wa;
     XGCValues gcvalues;
@@ -636,7 +636,7 @@ xinit(void) {
     ASSERT(display, "can't open display");
 
     XSetErrorHandler(xerror);
-    zt.xfd = XConnectionNumber(display);
+    xfd = XConnectionNumber(display);
 
     screen = DefaultScreen(display);
     root = RootWindow(display, screen);
@@ -694,4 +694,5 @@ xinit(void) {
         if (e.type == MapNotify)
             break;
     }
+    return xfd;
 }

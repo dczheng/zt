@@ -45,7 +45,7 @@ struct char_t {
 struct zt_t {
     int *dirty, *tabs, top, bot, width ,height,
         x, y, x_saved, y_saved, row, col,
-        row_old, col_old, xfd, log;
+        row_old, col_old, log;
     struct {
         struct char_t **line;
         char *buffer;
@@ -129,6 +129,14 @@ get_time(void) {
     struct timespec tv;
     clock_gettime(CLOCK_MONOTONIC, &tv);
     return tv.tv_sec * SECOND + tv.tv_nsec;
+}
+
+static inline struct timespec
+to_timespec(long t) {
+    struct timespec tv;
+    tv.tv_sec = t / SECOND;
+    tv.tv_nsec = t % SECOND;
+    return tv;
 }
 
 static inline int

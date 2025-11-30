@@ -26,67 +26,11 @@ pid_t pid;
 void ldirty_reset(void);
 void cfree(void);
 void cinit();
-int ctrl(uint8_t*, int, int);
-void xinit(void);
+int ctrl(uint8_t*, int);
+int xinit(void);
 void xfree(void);
 int xevent(void);
 void xdraw(void);
-
-int
-io_wait(int *r, int nr, int *w, int nw, long nano) {
-    fd_set rfd, wfd, *prfd = NULL, *pwfd = NULL;
-    int m = -1, ret = 0, i;
-    struct timespec tv, *ptv;
-
-    if (nr <= 0 && nw <= 0)
-        return 0;
-
-    ptv = NULL;
-    if (nano > 0) {
-        tv.tv_sec = nano / SECOND;
-        tv.tv_nsec = nano % SECOND;
-        ptv = &tv;
-    }
-    if (nr > 0)
-        prfd = &rfd;
-    if (nw > 0)
-        pwfd = &wfd;
-
-    FD_ZERO(&rfd);
-    FD_ZERO(&wfd);
-
-    for (i = 0; i < nr; i++) {
-        if (r[i] > m)
-            m = r[i];
-        FD_SET(r[i], &rfd);
-    }
-
-    for (i = 0; i < nw; i++) {
-        if (w[i] > m)
-            m = w[i];
-        FD_SET(w[i], &wfd);
-    }
-
-    ret = pselect(m+1, prfd, pwfd, NULL, ptv, NULL);
-    if (ret < 0) {  //error
-        ASSERT(errno == EINTR, "select failed: %s", strerror(errno));
-        return 0;
-    }
-
-    if (ret == 0) // timeout
-        return 0;
-
-    for (i = 0; i < nr; i++)
-        if (FD_ISSET(r[i], prfd))
-            return -(i+1);
-
-    for (i = 0; i < nw; i++)
-        if (FD_ISSET(w[i], pwfd))
-            return i+1;
-
-    return 0;
-
-}
 
 void
 clean(void) {
@@ -98,42 +42,41 @@ clean(void) {
     _exit(0);
 }
 
-int
-tread(int wait) {
+void
+tread(void) {
     static uint8_t buf[BUFSIZ];
     static int n = 0;
     int ret, m;
 
     ASSERT(n >= 0 && n < (int)sizeof(buf), "");
-
-    if (wait > 0 && io_wait(&tty, 1, NULL, 0, wait) != -1)
-        return 1;
-
-    ret = read(tty, buf+n, sizeof(buf)-n);
-    if (ret < 0) {
-        LOG("failed to read tty: %s\n", strerror(errno));
-        return 0;
+    if ((ret = read(tty, buf+n, sizeof(buf)-1)) < 0) {
+        LOGERR("failed to read tty: %s", strerror(errno));
+        return;
     }
 
     n += ret;
-    m = ctrl(buf, n, 0);
+    m = ctrl(buf, n);
     n -= m;
-    if (n>0)
+    if (n > 0)
         memmove(buf, buf+m, n);
-    return 0;
 }
 
 void
 twrite(char *s, int n) {
     int ret;
+    fd_set fds;
+    struct timespec tv;
 
+    tv = to_timespec(SECOND);
     for (;;) {
         if (n <= 0) break;
 
-        ASSERT(io_wait(NULL, 0, &tty, 1, SECOND) == 1, "");
+        FD_ZERO(&fds);
+        FD_SET(tty, &fds);
+        ASSERT(pselect(tty+1, NULL, &fds, NULL, &tv, NULL) > 0,
+            "select failed: %s", strerror(errno));
 
-        ret = write(tty, s, n);
-        if (ret < 0)  {
+        if ((ret = write(tty, s, n)) < 0)  {
             LOG("failed to read tty: %s\n", strerror(errno));
             return;
         }
@@ -229,8 +172,10 @@ tinit(void) {
 
 int
 main(int argc, char **argv) {
-    int fd[2], ret, i;
+    int ret, i, xfd;
     long now, last, latency, timeout;
+    struct timespec tv, *ptv;
+    fd_set fds;
     struct option opts [] = {
         {"log",             required_argument, NULL, 1},
         {"font-size",       required_argument, NULL, 2},
@@ -275,26 +220,32 @@ main(int argc, char **argv) {
     }
 
     cinit();
-    xinit();
+    xfd = xinit();
     tinit();
     tresize();
 
     last = get_time();
-    fd[0] = zt.xfd;
-    fd[1] = tty;
-    latency = LATENCY * MICROSECOND;
     timeout = -1;
+    latency = LATENCY * MICROSECOND;
     for (;;){
-        ret = io_wait(fd, 2, NULL, 0, timeout);
+        ptv = NULL;
+        if (timeout > 0) {
+            tv = to_timespec(timeout);
+            ptv = &tv;
+        }
 
-        if (ret != -1 && ret != -2)
-            ASSERT(timeout > 0, "can't be");
+        FD_ZERO(&fds);
+        FD_SET(xfd, &fds);
+        FD_SET(tty, &fds);
+        ASSERT((ret = pselect(MAX(xfd, tty)+1, &fds, NULL, NULL,
+            ptv, NULL)) >= 0, "select failed: %s", strerror(errno));
+        if (!ret) continue;
 
-        if (ret == -1 && xevent())
+        if (FD_ISSET(xfd, &fds) && xevent())
             break;
 
-        if (ret == -2)
-            ASSERT(tread(-1) == 0, "can't be");
+        if (FD_ISSET(tty, &fds))
+            tread();
 
         now = get_time();
         latency -= now-last;
