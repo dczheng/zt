@@ -618,19 +618,19 @@ esc_str(void) {
         if (nf_esc_desc(&d, esc.code))
             _P("0x%02x", esc.code);
         else
-            _P("%s ", d.name);
-        break;
+            _P("%s(%c) ", d.name, esc.code);
+        return buf;
 
     case ESCFS:
         _P("0x%02x", esc.code);
-        break;
+        return buf;
 
     case ESCFP:
         if (fp_esc_desc(&d, esc.code))
             _P("0x%02x", esc.code);
         else
             _P("%s ", d.name);
-        break;
+        return buf;
 
     case ESCFE:
         break;
