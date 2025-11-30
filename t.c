@@ -209,7 +209,7 @@ get_int_par(int idx, int *v, int v0) {
     return stoi(v, p);
 }
 #define GET_INT_PAR(idx, v, v0) do { \
-    if (get_int_par(idx, &(v), v0)) { \
+    if (get_int_par(idx, v, v0)) { \
         status |= NOTSUP; \
         return; \
     } \
@@ -261,7 +261,7 @@ tsgr(void) {
     }
 
     for (i = 0; i < esc.npar;) {
-        GET_INT_PAR(i++, n, 0);
+        GET_INT_PAR(i++, &n, 0);
 
         if (n >= 30 && n <= 37) {
             ATTR_FG8(n-30);
@@ -301,14 +301,14 @@ tsgr(void) {
         case 49: zt.c.attr |= ATTR_DEFAULT_BG                   ; break;
         case 38:
         case 48:
-            GET_INT_PAR(i++, m, 0);
+            GET_INT_PAR(i++, &m, 0);
             if (m != 5 && m != 2) {
                 status |= NOTSUP;
                 return;
             }
 
             if (m == 5) {
-                GET_INT_PAR(i++, v, 0);
+                GET_INT_PAR(i++, &v, 0);
                 if (v < 0 || v > 255) {
                     status |= NOTSUP;
                     return;
@@ -318,19 +318,19 @@ tsgr(void) {
                 else
                     ATTR_BG8(v);
             } else {
-                GET_INT_PAR(i++, r, 0);
+                GET_INT_PAR(i++, &r, 0);
                 if (r < 0 || r > 255) {
                     status |= NOTSUP;
                     return;
                 }
 
-                GET_INT_PAR(i++, g, 0);
+                GET_INT_PAR(i++, &g, 0);
                 if (g < 0 || g > 255) {
                     status |= NOTSUP;
                     return;
                 }
 
-                GET_INT_PAR(i++, b, 0);
+                GET_INT_PAR(i++, &b, 0);
                 if (b < 0 || b > 255) {
                     status |= NOTSUP;
                     return;
@@ -481,35 +481,35 @@ tcsi(void) {
     case CBT:
     case ICH:
     case REP:
-        GET_INT_PAR(0, n, 1);
+        GET_INT_PAR(0, &n, 1);
         break;
 
     case ED:
     case EL:
     case TBC:
-        GET_INT_PAR(0, n, 0);
+        GET_INT_PAR(0, &n, 0);
         break;
 
     case DECSTBM:
-        GET_INT_PAR(0, n, 1);
-        GET_INT_PAR(1, m, zt.row);
+        GET_INT_PAR(0, &n, 1);
+        GET_INT_PAR(1, &m, zt.row);
         break;
 
     case CUP:
     case HVP:
         if (esc.npar == 1) {
             m = 1;
-            GET_INT_PAR(0, n, 1);
+            GET_INT_PAR(0, &n, 1);
             break;
         }
-        GET_INT_PAR(0, n, 1);
-        GET_INT_PAR(1, m, 1);
+        GET_INT_PAR(0, &n, 1);
+        GET_INT_PAR(1, &m, 1);
         break;
     case DA:
         if (esc.npar == 0)
             n = 0;
         else
-            GET_INT_PAR(0, n, 0);
+            GET_INT_PAR(0, &n, 0);
         break;
     case DECRC:
         if (esc.npar) {
@@ -550,7 +550,6 @@ tcsi(void) {
     case DECSC  : lcursor(1)                  ; break;
     case DECRC  : lcursor(0)                  ; break;
     case DSR    : tdsr()                      ; break;
-
     case DA:
         if (n == 0)
             tty_write(VT102, strlen(VT102));

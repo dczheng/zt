@@ -95,7 +95,7 @@ c8_to_rgb(uint8_t v) {
             c = _zt[v];
         }
     } else {
-        // 6 x 6 x 6 = 216 cube colors 
+        // 6 x 6 x 6 = 216 cube colors
         // 16 + 36*r + 6*g + b
         if (v >= 16 && v <= 231) {
             v -= 16;
