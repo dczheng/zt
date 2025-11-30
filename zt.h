@@ -93,8 +93,10 @@ extern struct zt_t zt;
     _exit(1);\
 } while(0)
 
-#define UBUNTU_COLOR    1
-#define XTERM_COLOR     2
+#define COLOR_ZT        0
+#define COLOR_UBUNTU    1
+#define COLOR_XTERM     2
+#define COLOR_VGA       3
 
 #define MODE_TEXT_CURSOR        (1<<0)
 #define MODE_SEND_FOCUS         (1<<1)

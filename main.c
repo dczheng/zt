@@ -223,7 +223,7 @@ main(int argc, char **argv) {
     zt.opt.bkg = "gray20";
     zt.opt.fg = "white";
     zt.opt.term = "xterm-256color";
-    zt.opt.color = UBUNTU_COLOR;
+    zt.opt.color = COLOR_ZT;
     while ((i = getopt_long_only(argc, argv, "", opts, NULL)) != -1) {
         switch(i) {
         case 1:
@@ -249,10 +249,14 @@ main(int argc, char **argv) {
             zt.opt.term = optarg;
             break;
         case 8:
+            if (!strcmp(optarg, "zt"))
+                zt.opt.color = COLOR_ZT;
             if (!strcmp(optarg, "ubuntu"))
-                zt.opt.color = UBUNTU_COLOR;
+                zt.opt.color = COLOR_UBUNTU;
             if (!strcmp(optarg, "xterm"))
-                zt.opt.color = XTERM_COLOR;
+                zt.opt.color = COLOR_XTERM;
+            if (!strcmp(optarg, "vga"))
+                zt.opt.color = COLOR_VGA;
             break;
         case 9:
             if (stod(&zt.fontsize, optarg))

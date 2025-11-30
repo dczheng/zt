@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo -en "\033[30m    black"
+echo -en "\033[31m     red"
+echo -en "\033[32m   green"
+echo -en "\033[33m  yellow"
+echo -en "\033[34m    blue"
+echo -en "\033[35m magenta"
+echo -en "\033[36m    cyan"
+echo -en "\033[37m   white"
+echo ""
+
+echo -en "\033[90m    black"
+echo -en "\033[91m     red"
+echo -en "\033[92m   green"
+echo -en "\033[93m  yellow"
+echo -en "\033[94m    blue"
+echo -en "\033[95m magenta"
+echo -en "\033[96m    cyan"
+echo -en "\033[97m   white"
+echo ""

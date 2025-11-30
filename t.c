@@ -60,7 +60,7 @@ dump(uint8_t *buf, int n) {
         }
         if (ISCTRL(buf[i])) {
             code_desc(&desc, buf[i]);
-            LOG("\033[33m%s", desc.name);
+            LOG("\033[93m%s", desc.name);
             continue;
         }
         LOG("\033[31m%02x", buf[i]);

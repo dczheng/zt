@@ -1,126 +1,118 @@
 #include "zt.h"
 
-struct color_t
-xterm_c8(uint8_t v) {
-    struct color_t c;
-    uint8_t r, g, b;
+struct color_t _xterm[] = {
+    {.rgb = {  0,   0,   0}}, // black
+    {.rgb = {205,   0,   0}}, // red
+    {.rgb = {  0, 205,   0}}, // green
+    {.rgb = {205, 205,   0}}, // yellow
+    {.rgb = {  0,   0, 238}}, // blue
+    {.rgb = {205,   0, 205}}, // magenta
+    {.rgb = {  0, 205, 205}}, // cyan
+    {.rgb = {229, 229, 229}}, // white
+    {.rgb = {127, 127, 127}}, // bright black(gray)
+    {.rgb = {255,   0,   0}}, // bright red
+    {.rgb = {  0, 255,   0}}, // bright green
+    {.rgb = {255, 255,   0}}, // bright yellow
+    {.rgb = { 92,  92, 255}}, // bright blue
+    {.rgb = {255,   0, 255}}, // bright magenta
+    {.rgb = {  0, 255, 255}}, // bright cyan
+    {.rgb = {255, 255, 255}}, // bright white
+};
 
-    r = g = b = 0;
-    /* standard colors */
-    if (v <= 7) {
-        switch (v) {
-        case  0: r =   0; g =   0; b =   0; break; // black
-        case  1: r = 205; g =   0; b =   0; break; // red
-        case  2: r =   0; g = 205; b =   0; break; // green
-        case  3: r = 205; g = 205; b =   0; break; // yellow
-        case  4: r =   0; g =   0; b = 238; break; // blue
-        case  5: r = 205; g =   0; b = 205; break; // magenta
-        case  6: r =   0; g = 205; b = 205; break; // cyan
-        case  7: r = 229; g = 229; b = 229; break; // white
-        }
-    }
+struct color_t _ubuntu[] = {
+    {.rgb = {  1,   1,   1}}, // black
+    {.rgb = {222,  56,  43}}, // red
+    {.rgb = { 57, 181,  74}}, // green
+    {.rgb = {255, 199,   6}}, // yellow
+    {.rgb = {  0, 111, 184}}, // blue
+    {.rgb = {118,  38, 113}}, // magenta
+    {.rgb = { 44, 181, 233}}, // cyan
+    {.rgb = {204, 204, 204}}, // white
+    {.rgb = {128, 128, 128}}, // bright black(gray)
+    {.rgb = {255,   0,   0}}, // bright red
+    {.rgb = {  0, 255,   0}}, // bright green
+    {.rgb = {255, 255,   0}}, // bright yellow
+    {.rgb = {  0,   0, 255}}, // bright blue
+    {.rgb = {255,   0, 255}}, // bright magenta
+    {.rgb = {  0, 255, 255}}, // bright cyan
+    {.rgb = {255, 255, 255}}, // bright white
+};
 
-    /* high intensity colors */
-    if (v >= 8 && v <= 15) {
-        switch (v) {
-        case  8: r = 127; g = 127; b = 127; break; // black (gray)
-        case  9: r = 255; g =   0; b =   0; break; // red
-        case 10: r =   0; g = 255; b =   0; break; // green
-        case 11: r = 255; g = 255; b =   0; break; // yellow
-        case 12: r =  92; g =  92; b = 255; break; // blue
-        case 13: r = 255; g =   0; b = 255; break; // magenta
-        case 14: r =   0; g = 255; b = 255; break; // cyan
-        case 15: r = 255; g = 255; b = 255; break; // white
-        }
-    }
+struct color_t _vga[] = {
+    {.rgb = {  0,   0,   0}}, // black
+    {.rgb = {170, 170,   0}}, // red
+    {.rgb = {  0, 170,   0}}, // green
+    {.rgb = {170,  85,   0}}, // yellow
+    {.rgb = {  0,   0, 170}}, // blue
+    {.rgb = {170,   0, 170}}, // magenta
+    {.rgb = {  0, 170, 170}}, // cyan
+    {.rgb = {170, 170, 170}}, // white
+    {.rgb = { 85,  85,  85}}, // bright black(gray)
+    {.rgb = {255,  85,  85}}, // bright red
+    {.rgb = { 85, 255,  85}}, // bright green
+    {.rgb = {255, 255,  85}}, // bright yellow
+    {.rgb = { 85,  85, 255}}, // bright blue
+    {.rgb = {255,  85, 255}}, // bright magenta
+    {.rgb = { 85, 255, 255}}, // bright cyan
+    {.rgb = {255, 255, 255}}, // bright white
+};
 
-    c.type = 24;
-    c.rgb[0] = r;
-    c.rgb[1] = g;
-    c.rgb[2] = b;
-    return c;
-}
-
-struct color_t
-ubuntu_c8(uint8_t v) {
-    struct color_t c;
-    uint8_t r, g, b;
-
-    r = g = b = 0;
-    /* standard colors */
-    if (v <= 7) {
-        switch (v) {
-        case  0: r =   1; g =   1; b =   1; break; // black
-        case  1: r = 222; g =  56; b =  43; break; // red
-        case  2: r =  57; g = 181; b =  74; break; // green
-        case  3: r = 255; g = 199; b =   6; break; // yellow
-        case  4: r =   0; g = 111; b = 184; break; // blue
-        case  5: r = 118; g =  38; b = 113; break; // magenta
-        case  6: r =  44; g = 181; b = 233; break; // cyan
-        case  7: r = 204; g = 204; b = 204; break; // white
-        }
-    }
-
-    /* high intensity colors */
-    if (v >= 8 && v <=15) {
-        switch (v) {
-        case  8: r = 128; g = 128; b = 128; break; // black (gray)
-        case  9: r = 255; g =   0; b =   0; break; // red
-        case 10: r =   0; g = 255; b =   0; break; // green
-        case 11: r = 255; g = 255; b =   0; break; // yellow
-        case 12: r =   0; g =   0; b = 255; break; // blue
-        case 13: r = 255; g =   0; b = 255; break; // magenta
-        case 14: r =   0; g = 255; b = 255; break; // cyan
-        case 15: r = 255; g = 255; b = 255; break; // white
-        }
-    }
-
-    c.type = 24;
-    c.rgb[0] = r;
-    c.rgb[1] = g;
-    c.rgb[2] = b;
-    return c;
-}
+struct color_t _zt[] = {
+    {.rgb = {  0,   0,   0}}, // black
+    {.rgb = {205,   0,   0}}, // red
+    {.rgb = {  0, 205,   0}}, // green
+    {.rgb = {205, 205,   0}}, // yellow
+    {.rgb = { 59, 120, 255}}, // blue
+    {.rgb = {205,   0, 205}}, // magenta
+    {.rgb = {  0, 205, 205}}, // cyan
+    {.rgb = {229, 229, 229}}, // white
+    {.rgb = {127, 127, 127}}, // bright black(gray)
+    {.rgb = {230,   0,   0}}, // bright red
+    {.rgb = {  0, 255,   0}}, // bright green
+    {.rgb = {255, 255,   0}}, // bright yellow
+    {.rgb = {  0,  0,  200}}, // bright blue
+    {.rgb = {255,   0, 255}}, // bright magenta
+    {.rgb = {  0, 255, 255}}, // bright cyan
+    {.rgb = {255, 255, 255}}, // bright white
+};
 
 struct color_t
 c8_to_rgb(uint8_t v) {
     struct color_t c;
-    uint8_t r, g, b;
+    int i;
 
     if (v <= 15) {
         switch (zt.opt.color) {
-        case UBUNTU_COLOR:
-            return ubuntu_c8(v);
-        case XTERM_COLOR:
-            return xterm_c8(v);
+        case COLOR_UBUNTU:
+            c = _ubuntu[v];
+            break;
+        case COLOR_XTERM:
+            c = _xterm[v];
+            break;
+        case COLOR_VGA:
+            c = _vga[v];
+            break;
         default:
-            return ubuntu_c8(v);
+            c = _zt[v];
+        }
+    } else {
+        /* 6 x 6 x 6 = 216 cube colors */
+        if (v >= 16 && v <= 231) {
+            v -= 16;
+            c.rgb[0] = v / 36;
+            c.rgb[1] = v / 6 % 6;
+            c.rgb[2] = v % 6;
+            for (int i = 0; i < 3; i++)
+                c.rgb[i] = c.rgb[i] == 0 ? 0x3737 : 0x2828 * c.rgb[i];
+        }
+
+        /* grayscale from black to white in 24 steps */
+        if (v >= 232) {
+            v -= 232;
+            c.rgb[0] = c.rgb[1] = c.rgb[2] = 0x0808 + 0x0a0a * v;
         }
     }
-
-    /* 6 x 6 x 6 = 216 cube colors */
-#define S(x) (x = (x == 0 ? 0 : 0x3737 + 0x2828 * x)) // copied from st.
-    if (v >= 16 && v <= 231) {
-        v -= 16;
-        r = v / 36;
-        g = (v / 6) % 6;
-        b = v % 6;
-        S(r);
-        S(g);
-        S(b);
-    }
-#undef S
-
-    /* grayscale from black to white in 24 steps */
-    if (v >= 232) {
-        v -= 232;
-        r = g = b = 0x0808 + 0x0a0a * v; // copied from st.
-    }
-
     c.type = 24;
-    c.rgb[0] = r;
-    c.rgb[1] = g;
-    c.rgb[2] = b;
     return c;
 }
 
