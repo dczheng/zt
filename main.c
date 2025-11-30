@@ -24,9 +24,9 @@ int tty = 0;
 pid_t pid;
 
 void ldirty_reset(void);
-void cfree(void);
-void cinit();
-int ctrl(uint8_t*, int);
+void tfree(void);
+void tinit();
+int twrite(uint8_t*, int);
 int xinit(void);
 void xfree(void);
 int xevent(void);
@@ -35,7 +35,7 @@ void xdraw(void);
 void
 clean(void) {
     xfree();
-    cfree();
+    tfree();
     close(tty);
     if (zt.log >= 0)
         close(zt.log);
@@ -43,7 +43,7 @@ clean(void) {
 }
 
 void
-tread(void) {
+tty_read(void) {
     static uint8_t buf[BUFSIZ];
     static int n = 0;
     int ret, m;
@@ -55,14 +55,14 @@ tread(void) {
     }
 
     n += ret;
-    m = ctrl(buf, n);
+    m = twrite(buf, n);
     n -= m;
     if (n > 0)
         memmove(buf, buf+m, n);
 }
 
 void
-twrite(char *s, int n) {
+tty_write(char *s, int n) {
     int ret;
     fd_set fds;
     struct timespec tv;
@@ -86,6 +86,19 @@ twrite(char *s, int n) {
 }
 
 void
+tty_resize(void) {
+    struct winsize ws;
+    int ret;
+
+    ws.ws_row = zt.row;
+    ws.ws_col = zt.col;
+    ws.ws_xpixel = zt.width;
+    ws.ws_ypixel = zt.height;
+    ret = ioctl(tty, TIOCSWINSZ, &ws);
+    ASSERT(ret >= 0, "failed to set tty size: %s", strerror(errno));
+}
+
+void
 sigchld(int a __unused) {
     int stat;
     pid_t p;
@@ -99,20 +112,7 @@ sigchld(int a __unused) {
 }
 
 void
-tresize(void) {
-    struct winsize ws;
-    int ret;
-
-    ws.ws_row = zt.row;
-    ws.ws_col = zt.col;
-    ws.ws_xpixel = zt.width;
-    ws.ws_ypixel = zt.height;
-    ret = ioctl(tty, TIOCSWINSZ, &ws);
-    ASSERT(ret >= 0, "failed to set tty size: %s", strerror(errno));
-}
-
-void
-tinit(void) {
+tty_init(void) {
     char *sh, *args[2];
     struct passwd *pw;
     int ret, slave;
@@ -219,10 +219,10 @@ main(int argc, char **argv) {
         }
     }
 
-    cinit();
-    xfd = xinit();
     tinit();
-    tresize();
+    xfd = xinit();
+    tty_init();
+    tty_resize();
 
     last = get_time();
     timeout = -1;
@@ -245,7 +245,7 @@ main(int argc, char **argv) {
             break;
 
         if (FD_ISSET(tty, &fds))
-            tread();
+            tty_read();
 
         now = get_time();
         latency -= now-last;

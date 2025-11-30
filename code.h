@@ -1,5 +1,5 @@
-#ifndef __CTRL_H__
-#define __CTRL_H__
+#ifndef __CODE_H__
+#define __CODE_H__
 
 #include "zt.h"
 
@@ -207,27 +207,27 @@ static uint8_t dcs_end_codes[] __unused = {
     C1TOA(ST), ESC
 };
 
-struct ctrl_desc_t {
+struct code_desc_t {
     int value;
     char *name, *desc;
 };
 
 #define _ADD(value, desc) {value,  #value, desc}
-static struct ctrl_desc_t fp_esc_desc_table[] __unused = {
+static struct code_desc_t fp_esc_desc_table[] __unused = {
     _ADD(FP_DECPAM, "ApplicationKeypad"),
     _ADD(FP_DECPNM, "NormalKeypad"),
     _ADD(FP_DECSC , "SaveCursor"),
     _ADD(FP_DECRC , "RestoreCursor"),
 };
 
-static struct ctrl_desc_t nf_esc_desc_table[] __unused = {
+static struct code_desc_t nf_esc_desc_table[] __unused = {
     _ADD(NF_GZD4, "CharsetG0"),
     _ADD(NF_G1D4, "CharsetG1"),
     _ADD(NF_G2D4, "CharsetG2"),
     _ADD(NF_G3D4, "CharsetG3"),
 };
 
-static struct ctrl_desc_t mode_desc_table[] __unused = {
+static struct code_desc_t mode_desc_table[] __unused = {
     _ADD(DECCKM   , "Cursorkeys"),
     _ADD(DECANM   , "ANSI"),
     _ADD(DECCOLM  , "Column"),
@@ -278,7 +278,7 @@ static struct ctrl_desc_t mode_desc_table[] __unused = {
     _ADD(M_SC_ALTS, "SaveCursorAlt"),
 };
 
-static struct ctrl_desc_t ctrl_desc_table[] __unused = {
+static struct code_desc_t code_desc_table[] __unused = {
     _ADD(NUL , "Null"),
     _ADD(SOH , "StartOfHeading"),
     _ADD(STX , "StartOfText"),
@@ -346,7 +346,7 @@ static struct ctrl_desc_t ctrl_desc_table[] __unused = {
     _ADD(APC , "ApplicationProgramCommand"),
 };
 
-static struct ctrl_desc_t csi_desc_table[] __unused = {
+static struct code_desc_t csi_desc_table[] __unused = {
     _ADD(ICH    , "InsertBlankChar"),
     _ADD(CUU    , "CursorUp"),
     _ADD(CUD    , "CursorDown"),
@@ -386,7 +386,7 @@ static struct ctrl_desc_t csi_desc_table[] __unused = {
     _ADD(WINMAN , "WindowManipulation"),
 };
 
-static struct ctrl_desc_t sgr_desc_table[] __unused = {
+static struct code_desc_t sgr_desc_table[] __unused = {
     _ADD(0  , "Reset"),
     _ADD(1  , "Bold"),
     _ADD(2  , "Faint"),
@@ -499,7 +499,7 @@ static struct ctrl_desc_t sgr_desc_table[] __unused = {
 #undef _ADD
 
 #define _ADD(value, desc) {value,  #value + 3, desc}
-static struct ctrl_desc_t esc_desc_table[] __unused = {
+static struct code_desc_t esc_desc_table[] __unused = {
     _ADD(ESCNF, "nF Esc"),
     _ADD(ESCFP, "Fp Esc"),
     _ADD(ESCFE, "Fe Esc"),
@@ -508,8 +508,8 @@ static struct ctrl_desc_t esc_desc_table[] __unused = {
 #undef _ADD
 
 static inline int
-_ctrl_desc(struct ctrl_desc_t *table, int len,
-    struct ctrl_desc_t *item, int value) {
+_code_desc(struct code_desc_t *table, int len,
+    struct code_desc_t *item, int value) {
     ZERO(*item);
     for (int i = 0; i < len; i++)
         if (table[i].value == value) {
@@ -519,16 +519,16 @@ _ctrl_desc(struct ctrl_desc_t *table, int len,
     return ENOENT;
 }
 
-#define _CTRL_DESC(table, item, value) \
-    _ctrl_desc(table, LEN(table), item, value)
+#define _CODE_DESC(table, item, value) \
+    _code_desc(table, LEN(table), item, value)
 
-#define fp_esc_desc(desc, value) _CTRL_DESC(fp_esc_desc_table, desc, value)
-#define nf_esc_desc(desc, value) _CTRL_DESC(nf_esc_desc_table, desc, value)
-#define mode_desc(desc, value)   _CTRL_DESC(mode_desc_table, desc, value)
-#define ctrl_desc(desc, value)   _CTRL_DESC(ctrl_desc_table, desc, value)
-#define csi_desc(desc, value)    _CTRL_DESC(csi_desc_table, desc, value)
-#define sgr_desc(desc, value)    _CTRL_DESC(sgr_desc_table, desc, value)
-#define esc_desc(desc, value)    _CTRL_DESC(esc_desc_table, desc, value)
+#define fp_esc_desc(desc, value) _CODE_DESC(fp_esc_desc_table, desc, value)
+#define nf_esc_desc(desc, value) _CODE_DESC(nf_esc_desc_table, desc, value)
+#define mode_desc(desc, value)   _CODE_DESC(mode_desc_table, desc, value)
+#define code_desc(desc, value)   _CODE_DESC(code_desc_table, desc, value)
+#define csi_desc(desc, value)    _CODE_DESC(csi_desc_table, desc, value)
+#define sgr_desc(desc, value)    _CODE_DESC(sgr_desc_table, desc, value)
+#define esc_desc(desc, value)    _CODE_DESC(esc_desc_table, desc, value)
 
 static inline int
 esc_type(uint8_t c) {

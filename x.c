@@ -21,9 +21,9 @@ Pixmap pixmap;
 XftGlyphFontSpec *specs;
 int screen, depth, nspec, xfd;
 
-void tresize(void);
+void tty_resize(void);
 void lresize(void);
-void twrite(char*, int);
+void tty_write(char*, int);
 int color_equal(struct color_t, struct color_t);
 struct color_t c8_to_rgb(uint8_t);
 
@@ -344,7 +344,7 @@ _Mouse(XEvent *ev) {
         n = snprintf(buf, sizeof(buf),
             "\033[M%c%c%c", 32+b, 32+c, 32+r);
     }
-    twrite(buf, n);
+    tty_write(buf, n);
 }
 
 void
@@ -354,11 +354,11 @@ _Focus(XEvent *ev) {
     if (ev->type == FocusIn) {
         if (xim.ic)
             XSetICFocus(xim.ic);
-        twrite("\033[I", 3);
+        tty_write("\033[I", 3);
     } else {
         if (xim.ic)
             XUnsetICFocus(xim.ic);
-        twrite("\033[O", 3);
+        tty_write("\033[O", 3);
     }
 }
 
@@ -387,7 +387,7 @@ _KeyPress(XEvent *ev) {
 
     xkeymap(ksym, e->state, buf, &n);
     //dump((uint8_t*)buf, n);
-    twrite(buf, n);
+    tty_write(buf, n);
 }
 
 void
@@ -416,7 +416,7 @@ _ConfigureNotify(XEvent *ev) {
         zt.row_old, zt.col_old, zt.row, zt.col);
 
     xresize();
-    tresize();
+    tty_resize();
     lresize();
 }
 

@@ -1,5 +1,5 @@
-#ifndef __zt_t_H__
-#define __zt_t_H__
+#ifndef __ZT_H__
+#define __ZT_H__
 
 #include <time.h>
 #include <errno.h>

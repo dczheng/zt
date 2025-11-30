@@ -38,7 +38,7 @@ void ldelete_char(int);
 void lcursor(int);
 void lalt(int);
 void ldirty_all(void);
-void twrite(char*, int);
+void tty_write(char*, int);
 
 #define NOTSUP (1 << 0)
 #define RETRY  (1 << 1)
@@ -51,7 +51,7 @@ struct esc_t {
 
 void
 dump(uint8_t *buf, int n) {
-    struct ctrl_desc_t desc;;
+    struct code_desc_t desc;;
     if (n == 0) return;
     for (int i = 0; i < n; i++) {
         if (isprint(buf[i])) {
@@ -59,7 +59,7 @@ dump(uint8_t *buf, int n) {
             continue;
         }
         if (ISCTRL(buf[i])) {
-            ctrl_desc(&desc, buf[i]);
+            code_desc(&desc, buf[i]);
             LOG(zt.log >= 0 ? "%s" : "\033[33m%s", desc.name);
             continue;
         }
@@ -253,7 +253,7 @@ get_int_par(int idx, int *v, int v0) {
 } while(0)
 
 void
-ctrl_sgr(void) {
+tsgr(void) {
     int n, m, v, r, g, b, i;
 
     if (esc.npar == 0) {
@@ -357,7 +357,7 @@ ctrl_sgr(void) {
 #undef ATTR_BG24
 
 void
-ctrl_mode(void) {
+tmode(void) {
     int i, n, s;
     char *p;
 
@@ -426,7 +426,7 @@ ctrl_mode(void) {
 }
 
 void
-ctrl_dsr(void) {
+tdsr(void) {
     int n, nw;
     char wbuf[32], *p;
 
@@ -452,11 +452,11 @@ ctrl_dsr(void) {
         status |= NOTSUP;
         return;
     }
-    twrite(wbuf, nw);
+    tty_write(wbuf, nw);
 }
 
 void
-ctrl_csi(void) {
+tcsi(void) {
     int n, m;
 
     switch (esc.csi) {
@@ -535,12 +535,12 @@ ctrl_csi(void) {
     case VPR    : lmoveto(zt.y+n, zt.y)       ; break;
     case IL     : linsert(n)                  ; break;
     case DL     : ldelete(n)                  ; break;
-    case SGR    : ctrl_sgr()                  ; break;
+    case SGR    : tsgr()                      ; break;
     case SU     : lscroll_up(zt.top, n)       ; break;
     case SD     : lscroll_down(zt.top, n)     ; break;
     case ECH    : lerase(zt.y, zt.x, zt.x+n-1); break;
-    case SM     : ctrl_mode()                 ; break;
-    case RM     : ctrl_mode()                 ; break;
+    case SM     : tmode()                     ; break;
+    case RM     : tmode()                     ; break;
     case DECSTBM: lsettb(n-1, m-1)            ; break;
     case CHT    : ltab(n)                     ; break;
     case CBT    : ltab(-n)                    ; break;
@@ -549,11 +549,11 @@ ctrl_csi(void) {
     case REP    : lrepeat_last(n)             ; break;
     case DECSC  : lcursor(1)                  ; break;
     case DECRC  : lcursor(0)                  ; break;
-    case DSR    : ctrl_dsr()                  ; break;
+    case DSR    : tdsr()                      ; break;
 
     case DA:
         if (n == 0)
-            twrite(VT102, strlen(VT102));
+            tty_write(VT102, strlen(VT102));
         break;
 
     case EL:
@@ -594,7 +594,7 @@ ctrl_csi(void) {
 
 char*
 esc_str(void) {
-    struct ctrl_desc_t d;
+    struct code_desc_t d;
     int i, pos, ret, v;
     char *p;
     static char buf[BUFSIZ];
@@ -637,7 +637,7 @@ esc_str(void) {
     default: DIE();
     }
 
-    if (ctrl_desc(&d, esc.c1)) {
+    if (code_desc(&d, esc.c1)) {
         _P("error fe esc type");
         return buf;
     }
@@ -702,7 +702,7 @@ esc_str(void) {
 }
 
 void
-ctrl_esc(uint8_t *buf, int len) {
+tesc(uint8_t *buf, int len) {
     int i, n;
 
     if (!len) {
@@ -797,7 +797,7 @@ ctrl_esc(uint8_t *buf, int len) {
     case ESCFE:
         switch (esc.c1) {
         case CSI:
-            ctrl_csi();
+            tcsi();
             break;
         case HTS:
             zt.tabs[zt.x] = 1;
@@ -823,13 +823,13 @@ ctrl_esc(uint8_t *buf, int len) {
 }
 
 void
-_ctrl(uint8_t *buf, int len) {
+tctrl(uint8_t *buf, int len) {
     ASSERT(len > 0, "");
     switch (buf[0]) {
-    case ESC: ctrl_esc(buf+1, len-1)  ; break;
-    case LF : lnew()                  ; break;
-    case CR : lmoveto(zt.y, 0)        ; break;
-    case HT : ltab(1)                 ; break;
+    case ESC: tesc(buf+1, len-1) ; break;
+    case LF : lnew()             ; break;
+    case CR : lmoveto(zt.y, 0)   ; break;
+    case HT : ltab(1)            ; break;
     case HTS: zt.tabs[zt.x] = 1       ; break;
     case BS:
     case CCH:     // CCH: Cancel character, intended to eliminate
@@ -852,10 +852,10 @@ _ctrl(uint8_t *buf, int len) {
 }
 
 int
-ctrl(uint8_t *buf, int len) {
+twrite(uint8_t *buf, int len) {
     uint32_t u;
     int nread = 0, n = 0, ulen = 0, retry_max = 3;
-    struct ctrl_desc_t desc;
+    struct code_desc_t desc;
     static int retry = 0;
 
     ASSERT(len >= 0, "");
@@ -869,11 +869,11 @@ ctrl(uint8_t *buf, int len) {
             status = 0;
             zt.lastc = 0;
             ZERO(esc);
-            _ctrl(buf+nread, len-nread);
+            tctrl(buf+nread, len-nread);
 
             if (status & NOTSUP) {
                 if (buf[nread] != ESC) {
-                    ASSERT(ctrl_desc(&desc, buf[nread]) == 0, "");
+                    ASSERT(code_desc(&desc, buf[nread]) == 0, "");
                     LOG("unsupported: %s %s\n", desc.name, desc.desc);
                 } else {
                     LOG("unsupported: %s\n", esc_str());
@@ -888,7 +888,7 @@ ctrl(uint8_t *buf, int len) {
 
             if (zt.debug.ctrl) {
                 if (buf[nread] != ESC) {
-                    ASSERT(ctrl_desc(&desc, buf[nread]) == 0, "");
+                    ASSERT(code_desc(&desc, buf[nread]) == 0, "");
                     LOG("%s\n", desc.name);
                 } else {
                     LOG("%s\n", esc_str());
@@ -935,7 +935,7 @@ ctrl(uint8_t *buf, int len) {
 }
 
 void
-cinit(void) {
+tinit(void) {
     zt.mode = MODE_TEXT_CURSOR;
     ATTR_RESET();
     zt.row = 24;
@@ -945,6 +945,6 @@ cinit(void) {
 }
 
 void
-cfree(void) {
+tfree(void) {
     lfree();
 }
