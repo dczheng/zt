@@ -860,7 +860,7 @@ twrite(uint8_t *buf, int len) {
     ASSERT(len >= 0);
     if (!len) return 0;
 
-    if (zt.debug.ctrl)
+    if (zt.opt.debug.ctrl)
         dump(buf, len);
 
     while (nread < len) {
@@ -885,7 +885,7 @@ twrite(uint8_t *buf, int len) {
             }
             n = esc.len + 1;
 
-            if (zt.debug.ctrl) {
+            if (zt.opt.debug.ctrl) {
                 if (buf[nread] != ESC) {
                     ASSERT(code_desc(&desc, buf[nread]) == 0);
                     LOG("%s\n", desc.name);
@@ -894,7 +894,7 @@ twrite(uint8_t *buf, int len) {
                 }
             }
 
-            if (zt.debug.term == 2)
+            if (zt.opt.debug.term == 2)
                 tdump();
         } else {
             if (utf8_decode(buf+nread, len-nread, &u, &ulen)) {
@@ -909,10 +909,10 @@ twrite(uint8_t *buf, int len) {
         nread += n;
     }
 
-    if (zt.debug.term == 1)
+    if (zt.opt.debug.term == 1)
         tdump();
 
-    if (zt.debug.retry) {
+    if (zt.opt.debug.retry) {
         if (retry) {
             LOG("retry: ");
             dump(buf + n, nread-n);

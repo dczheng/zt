@@ -88,7 +88,7 @@ c8_to_rgb(uint8_t v) {
     uint8_t r, g, b;
 
     if (v <= 15) {
-        switch (USED_COLOR) {
+        switch (zt.opt.color) {
         case UBUNTU_COLOR:
             return ubuntu_c8(v);
         case XTERM_COLOR:
@@ -114,7 +114,7 @@ c8_to_rgb(uint8_t v) {
     /* grayscale from black to white in 24 steps */
     if (v >= 232) {
         v -= 232;
-        r = g = b = 0x0808 + 0x0a0a * v; // copyed from st.
+        r = g = b = 0x0808 + 0x0a0a * v; // copied from st.
     }
 
     c.type = 24;

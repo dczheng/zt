@@ -88,7 +88,7 @@ xdraw_specs(struct char_t c) {
     if (t > 0 && t < font_width)
         w = zt.width-x;
 
-    if (zt.debug.x)
+    if (zt.opt.debug.x)
         LOG("(%d, %d, %d, %d, %d) ", nspec, c.width, x, w,
             specs[nspec-1].x);
 
@@ -173,7 +173,7 @@ xdraw_line(int k, int y) {
     r.width = zt.width;
     r.height = font_height;
 
-    if (zt.debug.x)
+    if (zt.opt.debug.x)
         LOG("[%3d] ", k);
 
     XftDrawSetClipRectangles(drawable, 0, y, &r, 1);
@@ -199,7 +199,7 @@ xdraw_line(int k, int y) {
         xdraw_specs(c0);
     }
 
-    if (zt.debug.x)
+    if (zt.opt.debug.x)
         LOG("\n");
 
     xdraw_specs(c0);
@@ -228,7 +228,7 @@ xdraw(void) {
     int y, i, nline=0;
 
     //XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
-    if (zt.debug.x) {
+    if (zt.opt.debug.x) {
         LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
         LOG("font size: %dx%d\n", font_width, font_height);
     }
@@ -529,7 +529,7 @@ xfont_init(void) {
     printable[j] = '\0';
 
     ASSERT(FcInit());
-    nfont = LEN(font_list) * 4;
+    nfont = zt.opt.nfont * 4;
     fonts = malloc(nfont * sizeof(fonts[0]));
     ASSERT(fonts != NULL);
     for (i = 0; i < nfont; i++) {
@@ -537,17 +537,17 @@ xfont_init(void) {
         f->weight = ((i%4) / 2 == 0 ? FC_WEIGHT_REGULAR : FC_WEIGHT_BOLD);
         f->slant = ((i%4) % 2 == 0 ? FC_SLANT_ROMAN : FC_SLANT_ITALIC);
 
-        size = font_list[i/4].pixelsize * zt.fontsize;
+        size = zt.opt.fonts[i/4].size * zt.fontsize;
         size = MAX(size, 1);
 
         snprintf(buf, sizeof(buf), "%s:pixelsize=%d",
-            font_list[i/4].name, size);
+            zt.opt.fonts[i/4].name, size);
         xfont_load(buf, f);
 
         if (i % 4 != 0)
             continue;
 
-        LOG("%s: %s (%d %d %d)\n", font_list[i/4].name,
+        LOG("%s: %s (%d %d %d)\n", zt.opt.fonts[i/4].name,
             f->family,
             f->font->max_advance_width,
             f->font->height,
@@ -624,7 +624,6 @@ int
 xinit(void) {
     XSetWindowAttributes wa;
     XGCValues gcvalues;
-    int ret;
     XEvent e;
 
     setlocale(LC_CTYPE, "");
@@ -642,10 +641,20 @@ xinit(void) {
     colormap = XDefaultColormap(display, screen);
     depth = XDefaultDepth(display, screen);
     cursor = XCreateFontCursor(display, XC_xterm);
-    ASSERT(ret = XftColorAllocName(display, visual,
-        colormap, BACKGROUND, &background));
-    ASSERT(ret = XftColorAllocName(display, visual,
-        colormap, FOREGROUND, &foreground));
+
+    if (!XftColorAllocName(display, visual,
+        colormap, zt.opt.fg, &foreground)) {
+        LOGERR("failed to open foreground color '%s'\n", zt.opt.fg);
+        ASSERT(XftColorAllocName(display, visual,
+            colormap, "white", &foreground));
+    }
+
+    if (!XftColorAllocName(display, visual,
+        colormap, zt.opt.bkg, &background)) {
+        LOGERR("failed to open background color '%s'\n", zt.opt.bkg);
+        ASSERT(XftColorAllocName(display, visual,
+            colormap, "gray20", &background));
+    }
 
     xfont_init();
     xcolor_init();

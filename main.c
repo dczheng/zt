@@ -38,6 +38,9 @@ clean(void) {
     xfree();
     tfree();
     close(tty);
+    for (int i = 0; i < zt.opt.nfont; i++)
+        free(zt.opt.fonts[i].name);
+    free(zt.opt.fonts);
     _exit(0);
 }
 
@@ -141,7 +144,7 @@ tty_init(void) {
     unsetenv("TERMCAP");
 
     setenv("SHELL", sh, 1);
-    setenv("TERM", TERM, 1);
+    setenv("TERM", zt.opt.term, 1);
     setenv("HOME", pw->pw_dir, 1);
     setenv("USER", pw->pw_name, 1);
     setenv("LONGNAME", pw->pw_name, 1);
@@ -157,42 +160,104 @@ tty_init(void) {
     _exit(1);
 }
 
+void
+parse_font(char *fonts) {
+    char *p, *sp, *fs, *c;
+    int s;
+
+    fs = strdup(fonts);
+    for(p = strtok_r(fs, ";", &sp); p;
+        p = strtok_r(NULL, ";", &sp)) {
+
+        c = strchr(p, ':');
+        if (!c) {
+            LOGERR("invliad font: '%s'\n", p);
+            continue;
+        }
+        c[0] = 0;
+        c++;
+
+        if (stoi(&s, c)) {
+            LOGERR("invliad font: '%s'\n", p);
+            continue;
+        }
+
+        zt.opt.fonts = realloc(zt.opt.fonts,
+            sizeof(zt.opt.fonts[0]) * (zt.opt.nfont + 1));
+
+        LOG("[%d] %s:%d\n", zt.opt.nfont, p, s);
+        zt.opt.fonts[zt.opt.nfont].name = strdup(p);
+        zt.opt.fonts[zt.opt.nfont].size = s;
+        zt.opt.nfont++;
+    }
+    free(fs);
+}
+
 int
 main(int argc, char **argv) {
     int ret, i, xfd;
     struct timespec tv;
     fd_set fds;
-    struct option opts [] = {
-        {"font-size",       required_argument, NULL, 1},
-        {"debug-ctrl",      no_argument,       NULL, 2},
-        {"debug-term",      required_argument, NULL, 3},
-        {"debug-retry",     no_argument,       NULL, 4},
-        {"debug-x",         no_argument,       NULL, 5},
+    struct option opts[] = {
+        {"debug-ctrl",      no_argument,       NULL, 1},
+        {"debug-term",      required_argument, NULL, 2},
+        {"debug-retry",     no_argument,       NULL, 3},
+        {"debug-x",         no_argument,       NULL, 4},
+        {"foreground",      required_argument, NULL, 5},
+        {"background",      required_argument, NULL, 6},
+        {"term",            required_argument, NULL, 7},
+        {"color",           required_argument, NULL, 8},
+        {"font-size",       required_argument, NULL, 9},
+        {"fonts",           required_argument, NULL, 10},
         {0, 0, 0, 0}
     };
 
     zt.fontsize = 1;
+    zt.opt.bkg = "gray20";
+    zt.opt.fg = "white";
+    zt.opt.term = "xterm-256color";
+    zt.opt.color = UBUNTU_COLOR;
     while ((i = getopt_long_only(argc, argv, "", opts, NULL)) != -1) {
         switch(i) {
         case 1:
+            zt.opt.debug.ctrl = 1;
+            break;
+        case 2:
+            if (stoi(&zt.opt.debug.term, optarg))
+                zt.opt.debug.term = 0;
+            break;
+        case 3:
+            zt.opt.debug.retry = 1;
+            break;
+        case 4:
+            zt.opt.debug.x = 1;
+            break;
+        case 5:
+            zt.opt.fg = optarg;
+            break;
+        case 6:
+            zt.opt.bkg = optarg;
+            break;
+        case 7:
+            zt.opt.term = optarg;
+            break;
+        case 8:
+            if (!strcmp(optarg, "ubuntu"))
+                zt.opt.color = UBUNTU_COLOR;
+            if (!strcmp(optarg, "xterm"))
+                zt.opt.color = XTERM_COLOR;
+            break;
+        case 9:
             if (stod(&zt.fontsize, optarg))
                 zt.fontsize = 1;
             break;
-        case 2:
-            zt.debug.ctrl = 1;
-            break;
-        case 3:
-            if (stoi(&zt.debug.term, optarg))
-                zt.debug.term = 0;
-            break;
-        case 4:
-            zt.debug.retry = 1;
-            break;
-        case 5:
-            zt.debug.x = 1;
+        case 10:
+            parse_font(optarg);
             break;
         }
     }
+    parse_font("Sarasa Mono CL:26;Noto Emoji:8;Unifont:18");
+    ASSERT(zt.opt.nfont);
 
     tinit();
     xfd = xinit();

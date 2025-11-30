@@ -9,23 +9,6 @@
 #include <unistd.h>
 #include <string.h>
 
-#define __unused __attribute__((unused))
-
-// config begin
-#define TERM "xterm-256color"
-#define BACKGROUND "gray20"
-#define FOREGROUND "white"
-#define USED_COLOR UBUNTU_COLOR
-static struct {
-    char *name;
-    int pixelsize;
-} font_list[] __unused = {
-    {"Sarasa Mono CL", 26},
-    {"Noto Emoji", 8},
-    {"Unifont", 18},
-};
-// config end
-
 struct color_t {
     uint8_t type;
     union {
@@ -54,10 +37,20 @@ struct zt_t {
     unsigned long mode;
     double fontsize;
     struct {
-        int x, ctrl, term, retry;
-    } debug;
+        char *fg, *bkg, *term;
+        int color, nfont;
+        struct {
+            char *name;
+            int size;
+        } *fonts;
+        struct {
+            int x, ctrl, term, retry;
+        } debug;
+    } opt;
 };
 extern struct zt_t zt;
+
+#define __unused __attribute__((unused))
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -125,6 +118,7 @@ extern struct zt_t zt;
 #define SECOND         1000000000L
 #define MILLISECOND    1000000L
 #define MICROSECOND    1000L
+
 static inline long
 get_time(void) {
     struct timespec tv;
