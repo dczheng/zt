@@ -44,7 +44,7 @@ struct char_t {
 struct zt_t {
     int *dirty, *tabs, top, bot, width ,height,
         x, y, x_saved, y_saved, row, col,
-        row_old, col_old, log;
+        row_old, col_old;;
     struct {
         struct char_t **line;
         char *buffer;

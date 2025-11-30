@@ -38,8 +38,6 @@ clean(void) {
     xfree();
     tfree();
     close(tty);
-    if (zt.log >= 0)
-        close(zt.log);
     _exit(0);
 }
 
@@ -165,43 +163,32 @@ main(int argc, char **argv) {
     struct timespec tv;
     fd_set fds;
     struct option opts [] = {
-        {"log",             required_argument, NULL, 1},
-        {"font-size",       required_argument, NULL, 2},
-        {"debug-ctrl",      no_argument,       NULL, 3},
-        {"debug-term",      required_argument, NULL, 4},
-        {"debug-retry",     no_argument,       NULL, 5},
-        {"debug-x",         no_argument,       NULL, 6},
+        {"font-size",       required_argument, NULL, 1},
+        {"debug-ctrl",      no_argument,       NULL, 2},
+        {"debug-term",      required_argument, NULL, 3},
+        {"debug-retry",     no_argument,       NULL, 4},
+        {"debug-x",         no_argument,       NULL, 5},
         {0, 0, 0, 0}
     };
 
     zt.fontsize = 1;
-    zt.log = -1;
     while ((i = getopt_long_only(argc, argv, "", opts, NULL)) != -1) {
         switch(i) {
         case 1:
-            if ((zt.log = open(optarg,
-                O_WRONLY | O_CREAT | O_TRUNC, 0644)) == -1) {
-                LOG("failed to open log: %s\n", optarg);
-                break;
-            }
-            dup2(zt.log, 1);
-            dup2(zt.log, 2);
-            break;
-        case 2:
             if (stod(&zt.fontsize, optarg))
                 zt.fontsize = 1;
             break;
-        case 3:
+        case 2:
             zt.debug.ctrl = 1;
             break;
-        case 4:
+        case 3:
             if (stoi(&zt.debug.term, optarg))
                 zt.debug.term = 0;
             break;
-        case 5:
+        case 4:
             zt.debug.retry = 1;
             break;
-        case 6:
+        case 5:
             zt.debug.x = 1;
             break;
         }

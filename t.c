@@ -55,17 +55,17 @@ dump(uint8_t *buf, int n) {
     if (n == 0) return;
     for (int i = 0; i < n; i++) {
         if (isprint(buf[i])) {
-            LOG(zt.log >= 0 ? "%c" : "\033[32m%c", buf[i]);
+            LOG("\033[32m%c", buf[i]);
             continue;
         }
         if (ISCTRL(buf[i])) {
             code_desc(&desc, buf[i]);
-            LOG(zt.log >= 0 ? "%s" : "\033[33m%s", desc.name);
+            LOG("\033[33m%s", desc.name);
             continue;
         }
-        LOG(zt.log >= 0? "%02x" : "\033[31m%02x", buf[i]);
+        LOG("\033[31m%02x", buf[i]);
     }
-    LOG(zt.log >= 0 ? "\n" : "\n\033[0m");
+    LOG("\n\033[0m");
 }
 
 void
