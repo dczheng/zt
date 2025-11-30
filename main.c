@@ -116,10 +116,22 @@ tty_init(void) {
     int ret, slave;
 
     ASSERT((ret = openpty(&tty, &slave, NULL, NULL, NULL)) >= 0);
-    ASSERT(sh = getenv("SHELL"));
     ASSERT(pw = getpwuid(getuid()));
-    ASSERT((pid = fork()) != -1);
 
+    if ((sh = getenv("SHELL"))) {
+        LOG("use SHELL\n");
+    } else {
+        if (pw->pw_shell[0]) {
+            sh = pw->pw_shell;
+            LOG("use pw_shell\n");
+        } else {
+            sh = "/bin/sh";
+            LOG("use /bin/sh\n");
+        }
+    }
+    LOG("shell: %s\n", sh);
+
+    ASSERT((pid = fork()) != -1);
     if (pid) {
         close(slave);
         signal(SIGCHLD, sigchld);
@@ -136,15 +148,8 @@ tty_init(void) {
         close(slave);
     close(tty);
 
-    args[0] = sh;
-    args[1] = NULL;
-
-    unsetenv("COLUMNS");
-    unsetenv("LINES");
-    unsetenv("TERMCAP");
-
-    setenv("SHELL", sh, 1);
     setenv("TERM", zt.opt.term, 1);
+    setenv("SHELL", sh, 1);
     setenv("HOME", pw->pw_dir, 1);
     setenv("USER", pw->pw_name, 1);
     setenv("LONGNAME", pw->pw_name, 1);
@@ -156,6 +161,8 @@ tty_init(void) {
     signal(SIGTERM, SIG_DFL);
     signal(SIGALRM, SIG_DFL);
 
+    args[0] = sh;
+    args[1] = NULL;
     execvp(sh, args);
     _exit(1);
 }
