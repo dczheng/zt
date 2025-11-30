@@ -160,6 +160,7 @@
 #define M_SC        1048
 #define M_SC_ALTS   1049
 #define M_ME        1006
+#define M_UM        1015
 
 // nf esc
 #define NF_GZD4        '('
@@ -276,6 +277,8 @@ static struct code_desc_t mode_desc_table[] __unused = {
     _ADD(M_ALTS   , "UseAlternateScreenBuffer"),
     _ADD(M_SC     , "SaveCursor"),
     _ADD(M_SC_ALTS, "SaveCursorAlt"),
+    _ADD(M_UM     , "urxvtMouseMode"),
+
 };
 
 static struct code_desc_t code_desc_table[] __unused = {
