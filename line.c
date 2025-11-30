@@ -159,6 +159,8 @@ _lwrite(uint32_t c) {
     zt.line[zt.y][zt.x] = zt.c;
     zt.line[zt.y][zt.x].c = c;
     zt.line[zt.y][zt.x].width = w;
+    zt.lastc = zt.line[zt.y][zt.x];
+
     ldirty(zt.y, zt.y);
     for (w--, zt.x++; w > 0; zt.x++, w--)
         zt.line[zt.y][zt.x] = zt.c;
@@ -204,10 +206,8 @@ ltab_reset(void)  {
 
 void
 lrepeat_last(int n) {
-    if (!zt.lastc)
-        return;
-    for (; n > 0; n--)
-        _lwrite(zt.lastc);
+    while (zt.lastc.c && n--)
+        _lwrite(zt.lastc.c);
 }
 
 void

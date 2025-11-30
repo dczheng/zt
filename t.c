@@ -876,7 +876,6 @@ twrite(uint8_t *buf, int len) {
         }
 
         status = 0;
-        zt.lastc = 0;
         ZERO(esc);
         tctrl(buf+nread, len-nread);
 
@@ -894,6 +893,8 @@ twrite(uint8_t *buf, int len) {
             break;
         }
         n = esc.len + 1;
+        if (c != ESC)
+            zt.lastc.c = 0;
 
         if (zt.opt.debug.ctrl) {
             if (c != ESC) {

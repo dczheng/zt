@@ -32,8 +32,7 @@ struct zt_t {
         struct char_t **line;
         char *buffer;
     } alt, normal;
-    struct char_t **line, c;
-    uint32_t lastc;
+    struct char_t **line, c, lastc;
     unsigned long mode;
     double fontsize;
     struct {
