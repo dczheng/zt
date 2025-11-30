@@ -104,7 +104,6 @@ tdump(void) {
         LOG("%c %3d ", zt.dirty[i] ? '*' : ' ', i);
         for (j = 0; j < zt.col; j++) {
             c = zt.line[i][j];
-            //printf("%d", c.width);
             if (isprint(c.c))
                 LOG("%c", c.c);
             else

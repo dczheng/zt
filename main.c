@@ -23,10 +23,11 @@ struct zt_t zt = {0};
 int tty = 0;
 pid_t pid;
 
-void ldirty_reset(void);
-void tfree(void);
 void tinit();
+void tfree(void);
 int twrite(uint8_t*, int);
+void ldirty_reset(void);
+
 int xinit(void);
 void xfree(void);
 int xevent(void);
@@ -50,7 +51,7 @@ tty_read(void) {
 
     ASSERT(n >= 0 && n < (int)sizeof(buf));
     if ((ret = read(tty, buf+n, sizeof(buf)-1)) < 0) {
-        LOGERR("failed to read tty: %s", strerror(errno));
+        LOGERR("failed to read tty: %s\n", strerror(errno));
         return;
     }
 
@@ -161,8 +162,7 @@ tty_init(void) {
 int
 main(int argc, char **argv) {
     int ret, i, xfd;
-    long now, last, latency, timeout;
-    struct timespec tv, *ptv;
+    struct timespec tv;
     fd_set fds;
     struct option opts [] = {
         {"log",             required_argument, NULL, 1},
@@ -212,43 +212,23 @@ main(int argc, char **argv) {
     tty_init();
     tty_resize();
 
-    last = get_time();
-    timeout = -1;
-    latency = LATENCY * MICROSECOND;
+    tv = to_timespec(SECOND);
     for (;;){
-        ptv = NULL;
-        if (timeout > 0) {
-            tv = to_timespec(timeout);
-            ptv = &tv;
-        }
-
         FD_ZERO(&fds);
         FD_SET(xfd, &fds);
         FD_SET(tty, &fds);
         ASSERT((ret = pselect(MAX(xfd, tty)+1, &fds, NULL, NULL,
-            ptv, NULL)) >= 0);
+            &tv, NULL)) >= 0);
         if (!ret) continue;
 
         if (FD_ISSET(xfd, &fds) && xevent())
             break;
 
-        if (FD_ISSET(tty, &fds))
+        if (FD_ISSET(tty, &fds)) {
             tty_read();
-
-        now = get_time();
-        latency -= now-last;
-        last = now;
-        //printf("%ld\n", latency);
-
-        if (latency >= 0) {
-            timeout = latency;
-            continue;
+            xdraw();
+            ldirty_reset();
         }
-
-        latency = LATENCY * MICROSECOND;
-        timeout = -1;
-        xdraw();
-        ldirty_reset();
     }
 
     clean();

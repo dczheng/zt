@@ -146,7 +146,7 @@ lwrite(uint32_t c) {
     int w;
 
     if ((w = wcwidth(c)) <= 0) {
-        //printf("can't find character width for %u\n", c);
+        //LOG("can't find character width for %u\n", c);
         w = 1;
     }
 

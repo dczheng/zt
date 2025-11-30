@@ -16,7 +16,6 @@
 #define BACKGROUND "gray20"
 #define FOREGROUND "white"
 #define USED_COLOR UBUNTU_COLOR
-#define LATENCY 1
 static struct {
     char *name;
     int pixelsize;

@@ -239,7 +239,7 @@ xdraw(void) {
         nline++;
         xdraw_line(i, y);
     }
-    //printf("drawed: %d lines\n", nline);
+    //LOG("drawed: %d lines\n", nline);
     xdraw_cursor();
     xflush();
 }
@@ -451,7 +451,7 @@ xevent(void) {
         case UnmapNotify:
             break;
         case DestroyNotify:
-            return 1;
+            return EOF;
         default:
             LOG("Unsupport event %d\n", e.type);
         }
