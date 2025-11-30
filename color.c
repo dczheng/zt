@@ -79,7 +79,6 @@ struct color_t _zt[] = {
 struct color_t
 c8_to_rgb(uint8_t v) {
     struct color_t c;
-    int i;
 
     if (v <= 15) {
         switch (zt.opt.color) {
@@ -96,21 +95,20 @@ c8_to_rgb(uint8_t v) {
             c = _zt[v];
         }
     } else {
-        /* 6 x 6 x 6 = 216 cube colors */
+        // 6 x 6 x 6 = 216 cube colors 
+        // 16 + 36*r + 6*g + b
         if (v >= 16 && v <= 231) {
             v -= 16;
             c.rgb[0] = v / 36;
-            c.rgb[1] = v / 6 % 6;
+            c.rgb[1] = v % 36 / 6;
             c.rgb[2] = v % 6;
             for (int i = 0; i < 3; i++)
-                c.rgb[i] = c.rgb[i] == 0 ? 0x3737 : 0x2828 * c.rgb[i];
+                c.rgb[i] = c.rgb[i] * 40 + 55;
         }
 
-        /* grayscale from black to white in 24 steps */
-        if (v >= 232) {
-            v -= 232;
-            c.rgb[0] = c.rgb[1] = c.rgb[2] = 0x0808 + 0x0a0a * v;
-        }
+        // 24-step grayscale
+        if (v >= 232)
+            c.rgb[0] = c.rgb[1] = c.rgb[2] = (v-232) * 11;
     }
     c.type = 24;
     return c;

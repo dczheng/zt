@@ -1,21 +1,28 @@
 #!/bin/bash
 
-echo -en "\033[30m    black"
-echo -en "\033[31m     red"
-echo -en "\033[32m   green"
-echo -en "\033[33m  yellow"
-echo -en "\033[34m    blue"
-echo -en "\033[35m magenta"
-echo -en "\033[36m    cyan"
-echo -en "\033[37m   white"
-echo ""
+printf "\033[30m    black"
+printf "\033[31m     red"
+printf "\033[32m   green"
+printf "\033[33m  yellow"
+printf "\033[34m    blue"
+printf "\033[35m magenta"
+printf "\033[36m    cyan"
+printf "\033[37m   white"
+printf "\n"
 
-echo -en "\033[90m    black"
-echo -en "\033[91m     red"
-echo -en "\033[92m   green"
-echo -en "\033[93m  yellow"
-echo -en "\033[94m    blue"
-echo -en "\033[95m magenta"
-echo -en "\033[96m    cyan"
-echo -en "\033[97m   white"
-echo ""
+printf "\033[90m    black"
+printf "\033[91m     red"
+printf "\033[92m   green"
+printf "\033[93m  yellow"
+printf "\033[94m    blue"
+printf "\033[95m magenta"
+printf "\033[96m    cyan"
+printf "\033[97m   white"
+printf "\n"
+
+for i in $(seq 16 255); do
+    printf "\033[38;5;%dm%03d " $i $i
+    if [ $((($i - 16) % 6)) -eq 5 ]; then
+        printf "\n"
+    fi
+done
