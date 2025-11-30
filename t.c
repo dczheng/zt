@@ -418,6 +418,7 @@ tmode(void) {
         case M_SBC:
         case M_MUTF8:
         case M_UM:
+        case M_SO:
             break;
         default:
             status |= NOTSUP;

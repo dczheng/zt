@@ -161,6 +161,7 @@
 #define M_SC_ALTS   1049
 #define M_ME        1006
 #define M_UM        1015
+#define M_SO        2026
 
 // nf esc
 #define NF_GZD4        '('
@@ -278,6 +279,7 @@ static struct code_desc_t mode_desc_table[] __unused = {
     _ADD(M_SC     , "SaveCursor"),
     _ADD(M_SC_ALTS, "SaveCursorAlt"),
     _ADD(M_UM     , "urxvtMouseMode"),
+    _ADD(M_SO     , "SynchronizedOutput"),
 
 };
 
