@@ -39,22 +39,18 @@ struct esc_t {
 } esc;
 
 char*
-to_string(uint8_t *buf, int n, int color) {
+to_string(uint8_t *buf, int n) {
     int i, p = 0;
-    static char s[BUFSIZ*8+1];
+    static char s[BUFSIZ*3+1];
 
     for (i = 0; i < n; i++) {
         if (isprint(buf[i]))
-            p += snprintf(s+p, sizeof(s)-p,
-                color ? "\033[32m%c" : "%c", buf[i]);
+            p += snprintf(s+p, sizeof(s)-p, "%c", buf[i]);
         else if (ISCTRL(buf[i]))
-            p += snprintf(s+p, sizeof(s)-p,
-                color ? "\033[93m%s" : "%s", ctrl_name(buf[i]));
+            p += snprintf(s+p, sizeof(s)-p, "%s", ctrl_name(buf[i]));
         else
-            p += snprintf(s+p, sizeof(s)-p,
-                color ? "\033[31m%02x" : "%02x", buf[i]);
+            p += snprintf(s+p, sizeof(s)-p, "%02x", buf[i]);
     }
-    p += snprintf(s+p, sizeof(s)-p, color ? "\033[0m": "");
     s[p] = 0;
     return s;
 }
@@ -737,7 +733,7 @@ twrite(uint8_t *buf, int len) {
     if (!len) return 0;
 
     if (zt.debug.t)
-        LOG("%s\n", to_string(buf, len, 1));
+        LOG("\n------\n%s\n------\n", to_string(buf, len));
 
     for (; len > 0; p += n, len -= n, retry = 0) {
         if (!ISCTRL(p[0])) {
@@ -762,7 +758,7 @@ twrite(uint8_t *buf, int len) {
             zt.lastc.c = 0;
 
         if (status & NOTSUP || zt.debug.t) {
-            s = to_string(p, esc.len+1, 0);
+            s = to_string(p, esc.len+1);
             if (status & NOTSUP)
                 LOG("%s unsupported\n", s);
             else if (status & SKIP)
@@ -782,7 +778,7 @@ twrite(uint8_t *buf, int len) {
             if (ISCTRL(p[0]))
                 break;
         }
-        LOGERR("drop: %s", to_string(p0, p-p0, 1));
+        LOGERR("drop: %s", to_string(p0, p-p0));
     }
 
     return p - buf;
