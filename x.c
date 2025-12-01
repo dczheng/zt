@@ -8,6 +8,11 @@
 #include "zt.h"
 #include "code.h"
 
+void tty_resize(void);
+void lresize(void);
+void tty_write(char*, int);
+int color_equal(struct color_t, struct color_t);
+
 Display *display;
 Window root, window;
 GC gc;
@@ -19,13 +24,8 @@ XftColor background, foreground, color8[256];
 XftDraw *drawable;
 Pixmap pixmap;
 XftGlyphFontSpec *specs;
-int screen, depth, nspec, xfd;
-
-void tty_resize(void);
-void lresize(void);
-void tty_write(char*, int);
-int color_equal(struct color_t, struct color_t);
-struct color_t c8_to_rgb(uint8_t);
+int screen, depth, nspec, xfd,
+    font_width, font_height, font_base, nfont;
 
 struct {
     XIM im;
@@ -37,7 +37,17 @@ struct font_t {
     int weight, slant;
     FcChar8 *family;
 } *fonts;
-int font_width, font_height, font_base, nfont;
+
+int
+color_equal(struct color_t a, struct color_t b) {
+    if (a.type != b.type)
+        return 0;
+    if (a.type == 8)
+        return a.c8 == b.c8;
+    return a.rgb[0] == b.rgb[0] &&
+           a.rgb[1] == b.rgb[1] &&
+           a.rgb[2] == b.rgb[2];
+}
 
 static inline void
 xflush(void) {
@@ -88,7 +98,7 @@ xdraw_specs(struct char_t c) {
     if (t > 0 && t < font_width)
         w = zt.width-x;
 
-    if (zt.opt.debug.x)
+    if (zt.debug.x)
         LOG("(%d, %d, %d, %d, %d) ", nspec, c.width, x, w,
             specs[nspec-1].x);
 
@@ -173,7 +183,7 @@ xdraw_line(int k, int y) {
     r.width = zt.width;
     r.height = font_height;
 
-    if (zt.opt.debug.x)
+    if (zt.debug.x)
         LOG("[%3d] ", k);
 
     XftDrawSetClipRectangles(drawable, 0, y, &r, 1);
@@ -199,7 +209,7 @@ xdraw_line(int k, int y) {
         xdraw_specs(c0);
     }
 
-    if (zt.opt.debug.x)
+    if (zt.debug.x)
         LOG("\n");
 
     xdraw_specs(c0);
@@ -225,10 +235,10 @@ xdraw_cursor(void) {
 
 void
 xdraw(void) {
-    int y, i, nline=0;
+    int y, i, nline = 0;
 
     //XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
-    if (zt.opt.debug.x) {
+    if (zt.debug.x) {
         LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
         LOG("font size: %dx%d\n", font_width, font_height);
     }
@@ -412,7 +422,7 @@ _ConfigureNotify(XEvent *ev) {
     zt.row = r;
     zt.col = c;
 
-    LOGV("resize: %dx%d -> %dx%d\n",
+    LOG("resize: %dx%d -> %dx%d\n",
         zt.row_old, zt.col_old, zt.row, zt.col);
 
     xresize();
@@ -529,25 +539,24 @@ xfont_init(void) {
     printable[j] = '\0';
 
     ASSERT(FcInit());
-    nfont = zt.opt.nfont * 4;
-    fonts = malloc(nfont * sizeof(fonts[0]));
-    ASSERT(fonts != NULL);
+    nfont = LEN(font_list) * 4;
+    ASSERT(fonts = malloc(nfont * sizeof(fonts[0])));
     for (i = 0; i < nfont; i++) {
         f = &fonts[i];
         f->weight = ((i%4) / 2 == 0 ? FC_WEIGHT_REGULAR : FC_WEIGHT_BOLD);
         f->slant = ((i%4) % 2 == 0 ? FC_SLANT_ROMAN : FC_SLANT_ITALIC);
 
-        size = zt.opt.fonts[i/4].size * zt.fontsize;
+        size = font_list[i/4].size * zt.fontsize;
         size = MAX(size, 1);
 
         snprintf(buf, sizeof(buf), "%s:pixelsize=%d",
-            zt.opt.fonts[i/4].name, size);
+            font_list[i/4].name, size);
         xfont_load(buf, f);
 
         if (i % 4 != 0)
             continue;
 
-        LOGV("%s: %s (%d %d %d)\n", zt.opt.fonts[i/4].name,
+        LOG("%s: %s (%d %d %d)\n", font_list[i/4].name,
             f->family,
             f->font->max_advance_width,
             f->font->height,
@@ -563,22 +572,32 @@ xfont_init(void) {
     zt.width = zt.col * font_width;
     zt.height = zt.row * font_height;
 
-    LOGV("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-    LOGV("font size: %dx%d\n", font_width, font_height);
+    LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
+    LOG("font size: %dx%d\n", font_width, font_height);
 }
 
 void
 xcolor_init(void) {
-    int n;
-    struct color_t mc;
+    int i;
+    uint8_t r, g, b;
 
-    n = sizeof(XftGlyphFontSpec) * zt.col;
-    specs = malloc(n);
-    ASSERT(specs != NULL);
-
-    for (n = 0; n < 256; n++) {
-        mc = c8_to_rgb(n);
-        ASSERT(!xcolor_alloc(&color8[n], mc.rgb[0], mc.rgb[1], mc.rgb[2]));
+    ASSERT(specs = malloc(sizeof(XftGlyphFontSpec) * zt.col));
+    for (i = 0; i < 256; i++) {
+        if (i <= 15) {
+            r = standard_colors[i].r;
+            g = standard_colors[i].g;
+            b = standard_colors[i].b;
+        } else if (i >= 16 && i <= 231) {
+            // 6 x 6 x 6 = 216 cube colors
+            // 16 + 36*r + 6*g + b
+            r = ((i-16) / 36)     * 40 + 55;
+            g = ((i-16) % 36 / 6) * 40 + 55;
+            b = ((i-16) % 6)      * 40 + 55;
+        } else {
+            // 24-step grayscale
+            r = g = b = (i-232) * 11;
+        }
+        ASSERT(!xcolor_alloc(&color8[i], r, g, b));
     }
 }
 
@@ -594,7 +613,7 @@ _xim_init(Display *dpy __unused, XPointer client __unused,
 void
 xim_destroy(XIM im __unused, XPointer client __unused,
     XPointer call __unused) {
-    LOGV("xim destroy\n");
+    LOG("xim destroy\n");
     if (xim.ic)
         XDestroyIC(xim.ic);
     xim.im = NULL;
@@ -607,7 +626,7 @@ int
 xim_init(void) {
     XIMCallback cb = {.client_data = NULL, .callback = xim_destroy};
 
-    LOGV("xim init\n");
+    LOG("xim init\n");
     if (!(xim.im = XOpenIM(display, NULL, NULL, NULL))) {
         LOGERR("can't init xim\n");
         return 1;
@@ -642,19 +661,10 @@ xinit(void) {
     depth = XDefaultDepth(display, screen);
     cursor = XCreateFontCursor(display, XC_xterm);
 
-    if (!XftColorAllocName(display, visual,
-        colormap, zt.opt.fg, &foreground)) {
-        LOGERR("failed to open foreground color '%s'\n", zt.opt.fg);
-        ASSERT(XftColorAllocName(display, visual,
-            colormap, "white", &foreground));
-    }
-
-    if (!XftColorAllocName(display, visual,
-        colormap, zt.opt.bkg, &background)) {
-        LOGERR("failed to open background color '%s'\n", zt.opt.bkg);
-        ASSERT(XftColorAllocName(display, visual,
-            colormap, "gray20", &background));
-    }
+    ASSERT(XftColorAllocName(display, visual, colormap,
+        FOREGROUND, &foreground));
+    ASSERT(XftColorAllocName(display, visual, colormap,
+        BACKGROUND, &background));
 
     xfont_init();
     xcolor_init();

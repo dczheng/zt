@@ -9,6 +9,42 @@
 #include <unistd.h>
 #include <string.h>
 
+#define __unused __attribute__((unused))
+
+#define FOREGROUND "white"
+#define BACKGROUND "gray20"
+#define TERM "xterm-256color"
+
+static struct {
+    char *name;
+    int size;
+} font_list[] __unused = {
+    {"Sarasa Mono CL", 26},
+    {"Noto Emoji",      8},
+    {"Unifont",        18}
+};
+
+static struct {
+    uint8_t r, g, b;
+} standard_colors[] __unused = {
+    {  0,   0,   0}, // black
+    {205,   0,   0}, // red
+    {  0, 205,   0}, // green
+    {205, 205,   0}, // yellow
+    { 59, 120, 255}, // blue
+    {205,   0, 205}, // magenta
+    {  0, 205, 205}, // cyan
+    {229, 229, 229}, // white
+    {127, 127, 127}, // bright black(gray)
+    {230,   0,   0}, // bright red
+    {  0, 255,   0}, // bright green
+    {255, 255,   0}, // bright yellow
+    {  0,  0,  200}, // bright blue
+    {255,   0, 255}, // bright magenta
+    {  0, 255, 255}, // bright cyan
+    {255, 255, 255}, // bright white
+};
+
 struct color_t {
     uint8_t type;
     union {
@@ -36,20 +72,10 @@ struct zt_t {
     unsigned long mode;
     double fontsize;
     struct {
-        char *fg, *bkg, *term;
-        int color, nfont, verbose;
-        struct {
-            char *name;
-            int size;
-        } *fonts;
-        struct {
-            int x, ctrl, term;
-        } debug;
-    } opt;
+        int t, x;
+    } debug;
 };
 extern struct zt_t zt;
-
-#define __unused __attribute__((unused))
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -72,11 +98,6 @@ extern struct zt_t zt;
     fflush(stdout); \
 } while(0)
 
-#define LOGV(arg...) do { \
-    if (zt.opt.verbose) \
-        LOG(arg); \
-} while(0)
-
 #define LOGERR(arg...) do { \
     fprintf(stderr, ##arg); \
     fflush(stderr); \
@@ -96,11 +117,6 @@ extern struct zt_t zt;
     LOG("DIE %s:%s:%d\n", __FILE__, __FUNCTION__, __LINE__); \
     _exit(1);\
 } while(0)
-
-#define COLOR_ZT        0
-#define COLOR_UBUNTU    1
-#define COLOR_XTERM     2
-#define COLOR_VGA       3
 
 #define MODE_TEXT_CURSOR        (1<<0)
 #define MODE_SEND_FOCUS         (1<<1)

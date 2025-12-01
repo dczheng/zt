@@ -735,7 +735,7 @@ twrite(uint8_t *buf, int len) {
     ASSERT(len >= 0);
     if (!len) return 0;
 
-    if (zt.opt.debug.ctrl)
+    if (zt.debug.t)
         LOG("%s\n", to_string(buf, len, 1));
 
     for (; len > 0; p += n, len -= n, retry = 0) {
@@ -755,8 +755,8 @@ twrite(uint8_t *buf, int len) {
             break;
         }
 
-        if (status & SKIP)
-            LOGV("skiped %s\n", to_string(p, esc.len+1, 0));
+        if (status & SKIP && zt.debug.t)
+            LOG("skiped %s\n", to_string(p, esc.len+1, 0));
 
         if (status & NOTSUP)
             LOGERR("unsupported %s\n", to_string(p, esc.len+1, 0));
@@ -766,18 +766,11 @@ twrite(uint8_t *buf, int len) {
         if (p[0] != ESC)
             zt.lastc.c = 0;
 
-        if (zt.opt.debug.ctrl)
-            LOG("%s\n", to_string(p, esc.len+1, 0));
+        LOG("%s\n", to_string(p, esc.len+1, 0));
 
-        if (zt.opt.debug.term == 2)
+        if (zt.debug.t > 2)
             tdump();
     }
-
-    if (zt.opt.debug.term == 1)
-        tdump();
-
-    if (retry)
-       LOGV("retry: %s", to_string(p, len, 1));
 
     if (retry == retry_max) {
         retry = 0;

@@ -35,13 +35,10 @@ void xdraw(void);
 
 void
 clean(void) {
-    LOGV("clean\n");
+    LOG("clean\n");
     xfree();
     tfree();
     close(tty);
-    for (int i = 0; i < zt.opt.nfont; i++)
-        free(zt.opt.fonts[i].name);
-    free(zt.opt.fonts);
     _exit(0);
 }
 
@@ -104,9 +101,9 @@ sigchld(int a __unused) {
     int stat;
     pid_t p;
 
-    LOGV("wait child\n");
+    LOG("wait child\n");
     ASSERT((p = waitpid(pid, &stat, WNOHANG)) >= 0);
-    LOGV("check pid\n");
+    LOG("check pid\n");
     if (pid != p)
         return;
     clean();
@@ -122,17 +119,17 @@ tty_init(void) {
     ASSERT(pw = getpwuid(getuid()));
 
     if ((sh = getenv("SHELL"))) {
-        LOGV("use SHELL\n");
+        LOG("use SHELL\n");
     } else {
         if (pw->pw_shell[0]) {
             sh = pw->pw_shell;
-            LOGV("use pw_shell\n");
+            LOG("use pw_shell\n");
         } else {
             sh = "/bin/sh";
-            LOGV("use /bin/sh\n");
+            LOG("use /bin/sh\n");
         }
     }
-    LOGV("shell: %s\n", sh);
+    LOG("shell: %s\n", sh);
 
     ASSERT((pid = fork()) != -1);
     if (pid) {
@@ -151,7 +148,6 @@ tty_init(void) {
         close(slave);
     close(tty);
 
-    setenv("TERM", zt.opt.term, 1);
     setenv("SHELL", sh, 1);
     setenv("HOME", pw->pw_dir, 1);
     setenv("USER", pw->pw_name, 1);
@@ -170,107 +166,32 @@ tty_init(void) {
     _exit(1);
 }
 
-void
-parse_font(char *fonts) {
-    char *p, *sp, *fs, *c;
-    int s;
-
-    fs = strdup(fonts);
-    for(p = strtok_r(fs, ";", &sp); p;
-        p = strtok_r(NULL, ";", &sp)) {
-
-        c = strchr(p, ':');
-        if (!c) {
-            LOGERR("invliad font: '%s'\n", p);
-            continue;
-        }
-        c[0] = 0;
-        c++;
-
-        if (stoi(&s, c)) {
-            LOGERR("invliad font: '%s'\n", p);
-            continue;
-        }
-
-        zt.opt.fonts = realloc(zt.opt.fonts,
-            sizeof(zt.opt.fonts[0]) * (zt.opt.nfont + 1));
-
-        zt.opt.fonts[zt.opt.nfont].name = strdup(p);
-        zt.opt.fonts[zt.opt.nfont].size = s;
-        zt.opt.nfont++;
-    }
-    free(fs);
-}
-
 int
 main(int argc, char **argv) {
     int ret, i, xfd;
     struct timespec tv;
     fd_set fds;
     struct option opts[] = {
-        {"debug-ctrl",      no_argument,       NULL, 1},
-        {"debug-term",      required_argument, NULL, 2},
-        {"debug-x",         no_argument,       NULL, 4},
-        {"foreground",      required_argument, NULL, 5},
-        {"background",      required_argument, NULL, 6},
-        {"term",            required_argument, NULL, 7},
-        {"color",           required_argument, NULL, 8},
-        {"font-size",       required_argument, NULL, 9},
-        {"fonts",           required_argument, NULL, 10},
-        {"verbose",         no_argument,       NULL, 11},
+        {"font-size",       required_argument, NULL, 1},
+        {"debug-t",         required_argument, NULL, 2},
+        {"debug-x",         no_argument,       NULL, 3},
         {0, 0, 0, 0}
     };
 
     zt.fontsize = 1;
-    zt.opt.bkg = "gray20";
-    zt.opt.fg = "white";
-    zt.opt.term = "xterm-256color";
-    zt.opt.color = COLOR_ZT;
     while ((i = getopt_long_only(argc, argv, "", opts, NULL)) != -1) {
         switch(i) {
         case 1:
-            zt.opt.debug.ctrl = 1;
-            break;
-        case 2:
-            if (stoi(&zt.opt.debug.term, optarg))
-                zt.opt.debug.term = 0;
-            break;
-        case 4:
-            zt.opt.debug.x = 1;
-            break;
-        case 5:
-            zt.opt.fg = optarg;
-            break;
-        case 6:
-            zt.opt.bkg = optarg;
-            break;
-        case 7:
-            zt.opt.term = optarg;
-            break;
-        case 8:
-            if (!strcmp(optarg, "zt"))
-                zt.opt.color = COLOR_ZT;
-            if (!strcmp(optarg, "ubuntu"))
-                zt.opt.color = COLOR_UBUNTU;
-            if (!strcmp(optarg, "xterm"))
-                zt.opt.color = COLOR_XTERM;
-            if (!strcmp(optarg, "vga"))
-                zt.opt.color = COLOR_VGA;
-            break;
-        case 9:
             if (stod(&zt.fontsize, optarg))
                 zt.fontsize = 1;
             break;
-        case 10:
-            parse_font(optarg);
+        case 2:
+            if (stoi(&zt.debug.t, optarg))
+                zt.debug.t = 0;
             break;
-        case 11:
-            zt.opt.verbose = 1;
-            break;
+        case 3: zt.debug.x = 1; break;
         }
     }
-    parse_font("Sarasa Mono CL:26;Noto Emoji:8;Unifont:18");
-    ASSERT(zt.opt.nfont);
 
     tinit();
     xfd = xinit();
