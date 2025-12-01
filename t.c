@@ -30,6 +30,7 @@ int lwrite(uint8_t*, int, int*);
 
 #define NOTSUP (1 << 0)
 #define RETRY  (1 << 1)
+#define SKIP   (1 << 2)
 
 int status;
 struct esc_t {
@@ -335,7 +336,8 @@ tsgr(void) {
 
         case 58:
         case 59:
-            break; // TODO
+            status |= SKIP;
+            break;
         default:
             status |= NOTSUP;
         }
@@ -409,6 +411,7 @@ tmode(void) {
         case M_MUTF8:
         case M_UM:
         case M_SO:
+            status |= SKIP;
             break;
         default:
             status |= NOTSUP;
@@ -577,7 +580,8 @@ tcsi(void) {
     case WINMAN:
     case DECLL:
     case MC:
-        break;   // TODO
+        status |= SKIP;
+        break;
     default:
         status |= NOTSUP;
     }
@@ -610,6 +614,7 @@ tesc(uint8_t *buf, int len) {
         case NF_G1D4:
         case NF_G2D4:
         case NF_G3D4:
+            status |= SKIP;
             break;
         default:
             status |= NOTSUP;
@@ -623,6 +628,7 @@ tesc(uint8_t *buf, int len) {
         case FP_DECRC: lcursor(0); break;
         case FP_DECPAM:
         case FP_DECPNM:
+            status |= SKIP;
             break;
         default:
             status |= NOTSUP;
@@ -698,11 +704,12 @@ tctrl(uint8_t *buf, int len) {
     case LF : lnew()             ; break;
     case CR : lmoveto(zt.y, 0)   ; break;
     case HT : ltab(1)            ; break;
-    case HTS: zt.tabs[zt.x] = 1       ; break;
+    case HTS: zt.tabs[zt.x] = 1  ; break;
     case BS:
     case CCH:
         lmoveto(zt.y, zt.x-1);
         break;
+
     case BEL:
     case SS2:
     case SS3:
@@ -712,7 +719,8 @@ tctrl(uint8_t *buf, int len) {
     case ST:
     case SO:
     case SI:
-        break;    // TODO
+        status |= SKIP;
+        break;
     default:
         status |= NOTSUP;
     }
@@ -742,14 +750,17 @@ twrite(uint8_t *buf, int len) {
         status = 0;
         ZERO(esc);
         tctrl(p, len);
-
-        if (status & NOTSUP)
-            LOG("unsupported: %s\n", to_string(p, esc.len+1, 0));
-
         if (status & RETRY) {
             retry++;
             break;
         }
+
+        if (status & SKIP)
+            LOGV("skiped %s\n", to_string(p, esc.len+1, 0));
+
+        if (status & NOTSUP)
+            LOGERR("unsupported %s\n", to_string(p, esc.len+1, 0));
+
         n = esc.len + 1;
 
         if (p[0] != ESC)
@@ -765,10 +776,8 @@ twrite(uint8_t *buf, int len) {
     if (zt.opt.debug.term == 1)
         tdump();
 
-    if (zt.opt.debug.retry) {
-        if (retry)
-            LOG("retry: %s", to_string(p, len, 1));
-    }
+    if (retry)
+       LOGV("retry: %s", to_string(p, len, 1));
 
     if (retry == retry_max) {
         retry = 0;
@@ -777,7 +786,7 @@ twrite(uint8_t *buf, int len) {
             if (ISCTRL(p[0]))
                 break;
         }
-        LOG("drop: %s", to_string(p0, p-p0, 1));
+        LOGERR("drop: %s", to_string(p0, p-p0, 1));
     }
 
     return p - buf;

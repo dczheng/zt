@@ -35,7 +35,7 @@ void xdraw(void);
 
 void
 clean(void) {
-    LOG("clean\n");
+    LOGV("clean\n");
     xfree();
     tfree();
     close(tty);
@@ -79,7 +79,7 @@ tty_write(char *s, int n) {
         ASSERT(pselect(tty+1, NULL, &fds, NULL, &tv, NULL) > 0);
 
         if ((ret = write(tty, s, n)) < 0)  {
-            LOG("failed to read tty: %s\n", strerror(errno));
+            LOGERR("failed to read tty: %s\n", strerror(errno));
             return;
         }
         n -= ret;
@@ -104,9 +104,9 @@ sigchld(int a __unused) {
     int stat;
     pid_t p;
 
-    LOG("wait child\n");
+    LOGV("wait child\n");
     ASSERT((p = waitpid(pid, &stat, WNOHANG)) >= 0);
-    LOG("check pid\n");
+    LOGV("check pid\n");
     if (pid != p)
         return;
     clean();
@@ -122,17 +122,17 @@ tty_init(void) {
     ASSERT(pw = getpwuid(getuid()));
 
     if ((sh = getenv("SHELL"))) {
-        LOG("use SHELL\n");
+        LOGV("use SHELL\n");
     } else {
         if (pw->pw_shell[0]) {
             sh = pw->pw_shell;
-            LOG("use pw_shell\n");
+            LOGV("use pw_shell\n");
         } else {
             sh = "/bin/sh";
-            LOG("use /bin/sh\n");
+            LOGV("use /bin/sh\n");
         }
     }
-    LOG("shell: %s\n", sh);
+    LOGV("shell: %s\n", sh);
 
     ASSERT((pid = fork()) != -1);
     if (pid) {
@@ -195,7 +195,6 @@ parse_font(char *fonts) {
         zt.opt.fonts = realloc(zt.opt.fonts,
             sizeof(zt.opt.fonts[0]) * (zt.opt.nfont + 1));
 
-        LOG("[%d] %s:%d\n", zt.opt.nfont, p, s);
         zt.opt.fonts[zt.opt.nfont].name = strdup(p);
         zt.opt.fonts[zt.opt.nfont].size = s;
         zt.opt.nfont++;
@@ -211,7 +210,6 @@ main(int argc, char **argv) {
     struct option opts[] = {
         {"debug-ctrl",      no_argument,       NULL, 1},
         {"debug-term",      required_argument, NULL, 2},
-        {"debug-retry",     no_argument,       NULL, 3},
         {"debug-x",         no_argument,       NULL, 4},
         {"foreground",      required_argument, NULL, 5},
         {"background",      required_argument, NULL, 6},
@@ -219,6 +217,7 @@ main(int argc, char **argv) {
         {"color",           required_argument, NULL, 8},
         {"font-size",       required_argument, NULL, 9},
         {"fonts",           required_argument, NULL, 10},
+        {"verbose",         no_argument,       NULL, 11},
         {0, 0, 0, 0}
     };
 
@@ -235,9 +234,6 @@ main(int argc, char **argv) {
         case 2:
             if (stoi(&zt.opt.debug.term, optarg))
                 zt.opt.debug.term = 0;
-            break;
-        case 3:
-            zt.opt.debug.retry = 1;
             break;
         case 4:
             zt.opt.debug.x = 1;
@@ -267,6 +263,9 @@ main(int argc, char **argv) {
             break;
         case 10:
             parse_font(optarg);
+            break;
+        case 11:
+            zt.opt.verbose = 1;
             break;
         }
     }

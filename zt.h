@@ -27,7 +27,7 @@ struct char_t {
 struct zt_t {
     int *dirty, *tabs, top, bot, width ,height,
         x, y, x_saved, y_saved, row, col,
-        row_old, col_old;;
+        row_old, col_old;
     struct {
         struct char_t **line;
         char *buffer;
@@ -37,13 +37,13 @@ struct zt_t {
     double fontsize;
     struct {
         char *fg, *bkg, *term;
-        int color, nfont;
+        int color, nfont, verbose;
         struct {
             char *name;
             int size;
         } *fonts;
         struct {
-            int x, ctrl, term, retry;
+            int x, ctrl, term;
         } debug;
     } opt;
 };
@@ -70,6 +70,11 @@ extern struct zt_t zt;
 #define LOG(arg...) do { \
     fprintf(stdout, ##arg); \
     fflush(stdout); \
+} while(0)
+
+#define LOGV(arg...) do { \
+    if (zt.opt.verbose) \
+        LOG(arg); \
 } while(0)
 
 #define LOGERR(arg...) do { \

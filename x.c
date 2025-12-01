@@ -58,7 +58,7 @@ xcolor_alloc(XftColor *c,
     rc.blue = b << 8;
     rc.alpha = 0xffff;
     if (!XftColorAllocValue(display, visual, colormap, &rc, c)) {
-        LOG("failed to allocate color for (%u %u %u)\n", r, b, g);
+        LOGERR("failed to allocate color for (%u %u %u)\n", r, b, g);
         return 1;
     }
     return 0;
@@ -157,7 +157,7 @@ xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
             return;
     }
 
-    LOG("can't find font for %x\n", c.c);
+    LOGERR("can't find font for %x\n", c.c);
     *f = fonts[0].font;
     *idx = XftCharIndex(display, *f, ' ');
 }
@@ -332,7 +332,7 @@ _Mouse(XEvent *ev) {
         break;
 
     default:
-        LOG("Unsupported button type: %d\n",
+        LOGERR("Unsupported button type: %d\n",
             ev->xbutton.type);
         return;
     }
@@ -378,7 +378,7 @@ _KeyPress(XEvent *ev) {
     if (xim.ic) {
         n = XmbLookupString(xim.ic, e, buf, sizeof(buf), &ksym, &status);
         if (status == XBufferOverflow) {
-            LOG("xim buffer overflow\n");
+            LOGERR("xim buffer overflow\n");
             return;
         }
     } else  {
@@ -412,7 +412,7 @@ _ConfigureNotify(XEvent *ev) {
     zt.row = r;
     zt.col = c;
 
-    LOG("resize: %dx%d -> %dx%d\n",
+    LOGV("resize: %dx%d -> %dx%d\n",
         zt.row_old, zt.col_old, zt.row, zt.col);
 
     xresize();
@@ -453,7 +453,7 @@ xevent(void) {
         case DestroyNotify:
             return EOF;
         default:
-            LOG("Unsupport event %d\n", e.type);
+            LOGERR("Unsupport event %d\n", e.type);
         }
     }
     return 0;
@@ -547,7 +547,7 @@ xfont_init(void) {
         if (i % 4 != 0)
             continue;
 
-        LOG("%s: %s (%d %d %d)\n", zt.opt.fonts[i/4].name,
+        LOGV("%s: %s (%d %d %d)\n", zt.opt.fonts[i/4].name,
             f->family,
             f->font->max_advance_width,
             f->font->height,
@@ -563,8 +563,8 @@ xfont_init(void) {
     zt.width = zt.col * font_width;
     zt.height = zt.row * font_height;
 
-    LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-    LOG("font size: %dx%d\n", font_width, font_height);
+    LOGV("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
+    LOGV("font size: %dx%d\n", font_width, font_height);
 }
 
 void
@@ -594,7 +594,7 @@ _xim_init(Display *dpy __unused, XPointer client __unused,
 void
 xim_destroy(XIM im __unused, XPointer client __unused,
     XPointer call __unused) {
-    LOG("xim destroy\n");
+    LOGV("xim destroy\n");
     if (xim.ic)
         XDestroyIC(xim.ic);
     xim.im = NULL;
@@ -607,9 +607,9 @@ int
 xim_init(void) {
     XIMCallback cb = {.client_data = NULL, .callback = xim_destroy};
 
-    LOG("xim init\n");
+    LOGV("xim init\n");
     if (!(xim.im = XOpenIM(display, NULL, NULL, NULL))) {
-        LOG("can't init xim\n");
+        LOGERR("can't init xim\n");
         return 1;
     }
     ASSERT(!XSetIMValues(xim.im, XNDestroyCallback, &cb, NULL));
