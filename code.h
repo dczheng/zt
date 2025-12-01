@@ -123,56 +123,61 @@
 #define HPA     '`' // Horizontal position absolute
 
 // mode
-#define DECCKM       1  // Cursor keys
-#define DECANM       2  // ANSI
-#define DECCOLM      3  // Column
-#define DECSCLM      4  // Scrolling
-#define DECSCNM      5  // Screen
-#define DECOM        6  // Origin
-#define DECAWM       7  // Autowrap
-#define DECARM       8  // Autorepeat
-#define DECPFF      18  // Print form feed
-#define DECPEX      19  // Printer extent
-#define DECTCEM     25  // Text cursor enable
-#define DECRLM      34  // Cursor direction right to left
-#define DECHEBM     35  // Hebrew keyboard mapping
-#define DECHEM      36  // Hebrew encoding mode
-#define DECNRCM     42  // National replacement charset
-#define DECNAKB     57  // Greek keyboard mapping
-#define DECHCCM     60  // Horizontal cursor coupling
-#define DECVCCM     61  // Vertical cursor coupling
-#define DECPCCM     64  // Page cursor coupling
-#define DECNKM      66  // Numeric keypad
-#define DECBKM      67  // Back arrow key
-#define DECKBUM     68  // Keyboard usage
-#define DECVSSM     69  // Vertical split screen
-#define DECLRMM     69  // Vertical split screen
-#define DECXRLM     73  // Transmit rate limiting
-#define DECKPM      81  // Key position
-#define DECNCSM     95  // No clearing screen on column change
-#define DECRLCM     96  // Cursor right to left
-#define DECCRTSM    97  // CRT save
-#define DECARSM     98  // Auto resize
-#define DECMCM      99  // Modem control
-#define DECAAM     100  // Auto answer back
-#define DECCANSM   101  // Conceal answer back message
-#define DECNULM    102  // Ignoring null
-#define DECHDPXM   103  // Half duplex
-#define DECESKM    104  // Secondary keyboard language
-#define DECOSCNM   106  // Overscan
-#define M_SBC       12  // Send focus events to TTY
-#define M_MP      1000  // Bracketed paste
-#define M_MMP     1002  // Start blinking cursor
-#define M_MMA     1003  // UTF8 mouse
-#define M_SF      1004  // Report button press
-#define M_MUTF8   1005  // Report motion on button press
-#define M_BP      2004  // Enalbe all mouse motions
-#define M_ALTS    1047  // Extened reporting
-#define M_SC      1048  // Use alternate screen buffer
-#define M_SC_ALTS 1049  // Save cursor
-#define M_ME      1006  // Save cursor alt
-#define M_UM      1015  // urxvt mouse mode
-#define M_SO      2026  // Synchronized output
+
+#define DECCKM         1 // Cursor keys
+#define DECANM         2 // Keyboard action mode or for vt52
+#define DECCOLM        3 // 80 column mode
+#define DECSCLM        4 // Jump (fast) scroll
+#define DECSCNM        5 // Normal video mode
+#define DECOM          6 // Normal cursor mode
+#define DECAWM         7 // No auto-wrap mode
+#define DECARM         8 // No auto-repeat mode
+#define DECPFF        18 // Do not print form feed
+#define DECPEX        19 // Limit print to scrolling region
+#define DECTCEM       25 // Hide cursor
+#define DECRLM        34 // Cursor direction right to left
+#define DECHEBM       35 // Hebrew keyboard mapping
+#define DECHEM        36 // Hebrew encoding mode
+#define DECNRCM       42 // National replacement charset
+#define DECGEPM       43 // Graphic expanded print mode
+#define DECGPCM       44 // Graphic print color mode
+#define DECGPCS       45 // Graphic print color syntax
+#define DECGRPM       47 // Graphic print rotated print mode
+#define DECNAKB       57 // Greek keyboard mapping
+#define DECHCCM       60 // Horizontal cursor coupling
+#define DECVCCM       61 // Vertical cursor coupling
+#define DECPCCM       64 // Page cursor coupling
+#define DECNKM        66 // Numeric keypad mode
+#define DECBKM        67 // Backarrow key sends delete
+#define DECKBUM       68 // Keyboard usage
+#define DECLRMM       69 // Left and right margin mode
+#define DECXRLM       73 // Transmit rate limiting
+#define DECSDM        80 // Sixel diaplay mode
+#define DECKPM        81 // Key position
+#define DECNCSM       95 // No clearing screen on column change
+#define DECRLCM       96 // Cursor right to left
+#define DECCRTSM      97 // CRT save
+#define DECARSM       98 // Auto resize
+#define DECMCM        99 // Modem control
+#define DECAAM       100 // Auto answer back
+#define DECCANSM     101 // Conceal answer back message
+#define DECNULM      102 // Ignoring null
+#define DECHDPXM     103 // Half duplex
+#define DECESKM      104 // Secondary keyboard language
+#define DECOSCNM     106 // Overscan
+#define MODE_SBC      12 // Start blinking cursor
+#define MODE_FFE    1004 // FocusIn/FocusOut events
+#define MODE_MPR    1000 // Mouse on button press and release
+#define MODE_MP     1002 // Motion on button press
+#define MODE_AMM    1003 // All mouse motions
+#define MODE_MUTF8  1005 // UTF8 mouse
+#define MODE_SMM    1006 // SGR mouse mode
+#define MODE_SC     1048 // Save cursor
+#define MODE_ALT    1047 // Alternate screen buffer
+#define MODE_SC_ALT 1049 // Save cursor and alternate screen buffer
+#define MODE_UM     1015 // urxvt mouse
+#define MODE_BP     2004 // Bracketed paste
+#define MODE_SO     2026 // Synchronized output
 
 // nf esc
 #define NF_GZD4 '(' // Charset G0

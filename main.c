@@ -2,7 +2,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
-#include <termios.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -35,7 +34,6 @@ void xdraw(void);
 
 void
 clean(void) {
-    LOG("clean\n");
     xfree();
     tfree();
     close(tty);
@@ -101,9 +99,7 @@ sigchld(int a __unused) {
     int stat;
     pid_t p;
 
-    LOG("wait child\n");
     ASSERT((p = waitpid(pid, &stat, WNOHANG)) >= 0);
-    LOG("check pid\n");
     if (pid != p)
         return;
     clean();
@@ -118,18 +114,12 @@ tty_init(void) {
     ASSERT((ret = openpty(&tty, &slave, NULL, NULL, NULL)) >= 0);
     ASSERT(pw = getpwuid(getuid()));
 
-    if ((sh = getenv("SHELL"))) {
-        LOG("use SHELL\n");
-    } else {
-        if (pw->pw_shell[0]) {
+    if (!(sh = getenv("SHELL"))) {
+        if (pw->pw_shell[0])
             sh = pw->pw_shell;
-            LOG("use pw_shell\n");
-        } else {
+        else
             sh = "/bin/sh";
-            LOG("use /bin/sh\n");
-        }
     }
-    LOG("shell: %s\n", sh);
 
     ASSERT((pid = fork()) != -1);
     if (pid) {

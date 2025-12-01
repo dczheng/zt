@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <locale.h>
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
@@ -422,9 +421,6 @@ _ConfigureNotify(XEvent *ev) {
     zt.row = r;
     zt.col = c;
 
-    LOG("resize: %dx%d -> %dx%d\n",
-        zt.row_old, zt.col_old, zt.row, zt.col);
-
     xresize();
     tty_resize();
     lresize();
@@ -555,12 +551,6 @@ xfont_init(void) {
 
         if (i % 4 != 0)
             continue;
-
-        LOG("%s: %s (%d %d %d)\n", font_list[i/4].name,
-            f->family,
-            f->font->max_advance_width,
-            f->font->height,
-            f->font->height - f->font->descent);
     }
 
     font_height = fonts[0].font->height;
@@ -571,9 +561,6 @@ xfont_init(void) {
 
     zt.width = zt.col * font_width;
     zt.height = zt.row * font_height;
-
-    LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-    LOG("font size: %dx%d\n", font_width, font_height);
 }
 
 void
@@ -613,7 +600,6 @@ _xim_init(Display *dpy __unused, XPointer client __unused,
 void
 xim_destroy(XIM im __unused, XPointer client __unused,
     XPointer call __unused) {
-    LOG("xim destroy\n");
     if (xim.ic)
         XDestroyIC(xim.ic);
     xim.im = NULL;
@@ -626,7 +612,6 @@ int
 xim_init(void) {
     XIMCallback cb = {.client_data = NULL, .callback = xim_destroy};
 
-    LOG("xim init\n");
     if (!(xim.im = XOpenIM(display, NULL, NULL, NULL))) {
         LOGERR("can't init xim\n");
         return 1;

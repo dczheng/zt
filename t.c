@@ -1,7 +1,3 @@
-#include <ctype.h>
-#include <limits.h>
-#include <stdarg.h>
-
 #include "zt.h"
 #include "code.h"
 
@@ -346,67 +342,64 @@ tsgr(void) {
 
 void
 tmode(void) {
-    int i, n, s;
+    int i, n, s, pri;
     char *p;
 
-    if (esc.seq[1] != '?') {
-        status |= NOTSUP;
-        return;
-    }
-
+    pri = esc.seq[1] == '?';
     s = (esc.csi == SM ? 1 : 0);
-#define _M(v) s ? (zt.mode |= v) : (zt.mode &= ~v)
 
+#define _M(v) s ? (zt.mode |= v) : (zt.mode &= ~v)
     for (i = 0; i < esc.npar; i++) {
         if (param(i, &p) || p == NULL)
             continue;
 
-        if (stoi(&n, i == 0 ? p+1 : p)) {
+        if (stoi(&n, i == 0 && pri ? p+1 : p)) {
             status |= NOTSUP;
             continue;
         }
 
         switch (n) {
-        case M_SF:
+        case MODE_FFE:
             _M(MODE_SEND_FOCUS);
             break;
         case DECTCEM:
             _M(MODE_TEXT_CURSOR);
             break;
-        case M_BP:
+        case MODE_BP:
             _M(MODE_BRACKETED_PASTE);
             break;
-        case M_MP:
+        case MODE_MP:
             _M(MODE_MOUSE|MODE_MOUSE_PRESS);
             break;
-        case M_MMP:
+        case MODE_MPR:
             _M(MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS);
             break;
-        case M_MMA:
+        case MODE_AMM:
             _M(MODE_MOUSE|MODE_MOUSE_MOTION_ANY);
             break;
-        case M_ME:
+        case MODE_SMM:
             _M(MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT);
             break;
-        case M_SC:
+        case MODE_SC:
             lcursor(s);
             break;
-        case M_ALTS:
+        case MODE_ALT:
             lalt(s);
             ldirty_all();
             break;
-        case M_SC_ALTS:
+        case MODE_SC_ALT:
             lcursor(s);
             lalt(s);
             if (s) lclear_all();
             ldirty_all();
             break;
+        case DECSCLM:
         case DECAWM:
         case DECCKM:
-        case M_SBC:
-        case M_MUTF8:
-        case M_UM:
-        case M_SO:
+        case MODE_SBC:
+        case MODE_MUTF8:
+        case MODE_UM:
+        case MODE_SO:
             status |= SKIP;
             break;
         default:

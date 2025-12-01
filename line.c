@@ -32,29 +32,30 @@ int
 utf8_validate(uint32_t *u, size_t i) {
     if ((*u < _utf8[i].min || *u > _utf8[i].max) ||
         (*u >= 0xd800 && *u <= 0xdfff))
-        return 1;
+        return EINVAL;
     return 0;
 }
 
 int
-utf8_decode(uint8_t *c, int len, uint32_t *u, int *ulen) {
+utf8_decode(void *buf, int len, uint32_t *u, int *ulen) {
     int i, j;
     uint32_t uu;
+    uint8_t *c = buf;
 
     if (!len)
-        return 1;
+        return EINVAL;
 
     if ((*ulen = utf8_byte_decode(c[0], u)) <= 0)
-        return 1;
+        return EINVAL;
 
     for (i = 1, j = 1; i < len && j < *ulen; i++, j++) {
         if (utf8_byte_decode(c[i], &uu) != 0)
-            return 1;
+            return EINVAL;
         *u = (*u << 6) | uu;
     }
 
     if (j < *ulen)
-        return 1;
+        return EINVAL;
 
     return utf8_validate(u, *ulen);
 }
@@ -198,7 +199,7 @@ _lwrite(uint32_t c) {
     int w;
 
     if ((w = wcwidth(c)) <= 0) {
-        //LOG("can't find character width for %u\n", c);
+        LOG("can't find character width for %u\n", c);
         w = 1;
     }
 
@@ -218,11 +219,14 @@ _lwrite(uint32_t c) {
 
 int
 lwrite(uint8_t *buf, int len, int *wlen) {
+    int ret = 0;
     uint32_t c;
-    if (utf8_decode(buf, len, &c, wlen))
-        return EAGAIN;
-    _lwrite(c);
-    return 0;
+
+    *wlen = 0;
+    if (len <= 0) return 0;
+    if (!(ret = utf8_decode(buf, len, &c, wlen)))
+        _lwrite(c);
+    return ret;
 }
 
 void
