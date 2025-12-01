@@ -139,6 +139,7 @@ tty_init(void) {
     close(tty);
 
     setenv("SHELL", sh, 1);
+    setenv("TERM", zt.term, 1);
     setenv("HOME", pw->pw_dir, 1);
     setenv("USER", pw->pw_name, 1);
     setenv("LONGNAME", pw->pw_name, 1);
@@ -163,12 +164,14 @@ main(int argc, char **argv) {
     fd_set fds;
     struct option opts[] = {
         {"font-size",       required_argument, NULL, 1},
-        {"debug-t",         required_argument, NULL, 2},
-        {"debug-x",         no_argument,       NULL, 3},
+        {"term",            required_argument, NULL, 2},
+        {"debug-t",         required_argument, NULL, 3},
+        {"debug-x",         no_argument,       NULL, 4},
         {0, 0, 0, 0}
     };
 
     zt.fontsize = 1;
+    zt.term = "xterm-256color";
     while ((i = getopt_long_only(argc, argv, "", opts, NULL)) != -1) {
         switch(i) {
         case 1:
@@ -176,10 +179,15 @@ main(int argc, char **argv) {
                 zt.fontsize = 1;
             break;
         case 2:
+            zt.term = optarg;
+            break;
+        case 3:
             if (stoi(&zt.debug.t, optarg))
                 zt.debug.t = 0;
             break;
-        case 3: zt.debug.x = 1; break;
+        case 4:
+            zt.debug.x = 1;
+            break;
         }
     }
 
@@ -188,7 +196,7 @@ main(int argc, char **argv) {
     tty_init();
     tty_resize();
 
-    tv = to_timespec(SECOND);
+    tv = to_timespec(500 * MILLISECOND);
     for (;;){
         FD_ZERO(&fds);
         FD_SET(xfd, &fds);
@@ -197,14 +205,14 @@ main(int argc, char **argv) {
             &tv, NULL)) >= 0);
         if (!ret) continue;
 
-        if (FD_ISSET(xfd, &fds) && xevent())
-            break;
-
         if (FD_ISSET(tty, &fds)) {
             tty_read();
             xdraw();
             ldirty_reset();
         }
+
+        if (FD_ISSET(xfd, &fds) && xevent())
+            break;
     }
 
     clean();

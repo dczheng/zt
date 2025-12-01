@@ -441,7 +441,7 @@ tdsr(void) {
 
 void
 tcsi(void) {
-    int n, m;
+    int n = 0, m = 0;
 
     switch (esc.csi) {
     case CUF:
@@ -724,7 +724,7 @@ twrite(uint8_t *buf, int len) {
     ASSERT(len >= 0);
     if (!len) return 0;
 
-    if (zt.debug.t)
+    if (zt.debug.t >= 2)
         LOG("\n------\n%s\n------\n", to_string(buf, len));
 
     for (; len > 0; p += n, len -= n, retry = 0) {
@@ -745,21 +745,30 @@ twrite(uint8_t *buf, int len) {
         }
 
         n = esc.len + 1;
-
         if (p[0] != ESC)
             zt.lastc.c = 0;
 
-        if (status & NOTSUP || zt.debug.t) {
-            s = to_string(p, esc.len+1);
-            if (status & NOTSUP)
-                LOG("%s unsupported\n", s);
-            else if (status & SKIP)
-                LOG("%s skip\n", s);
-            else
-                LOG("%s\n", s);
+        if (status & NOTSUP) {
+            LOG("%s unsupported\n", to_string(p, esc.len+1));
+            continue;
         }
 
-        if (zt.debug.t > 2)
+        if (zt.debug.t <= 0)
+            continue;
+
+        s = to_string(p, esc.len+1);
+        if (zt.debug.t == 1) {
+            if (status & SKIP)
+                LOG("%s skip\n", s);
+            continue;
+        }
+
+        if (status & SKIP)
+            LOG("%s skip\n", s);
+        else
+            LOG("%s\n", s);
+
+        if (zt.debug.t >= 3)
             tdump();
     }
 

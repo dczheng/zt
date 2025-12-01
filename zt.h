@@ -14,7 +14,6 @@
 
 #define FOREGROUND "white"
 #define BACKGROUND "gray20"
-#define TERM "xterm-256color"
 
 static struct {
     char *name;
@@ -70,6 +69,7 @@ struct zt_t {
         char *buffer;
     } alt, normal;
     struct char_t **line, c, lastc;
+    char *term;
     unsigned long mode;
     double fontsize;
     struct {
