@@ -84,7 +84,7 @@
 #define APC  0x9f // Application program command
 
 // CSI
-#define ICH     '@' // Insert Bbank char
+#define ICH     '@' // Insert Blank char
 #define CUU     'A' // Cursor up
 #define CUD     'B' // Cursor down
 #define CUF     'C' // Cursor forward
@@ -103,24 +103,24 @@
 #define SD      'T' // Scroll line down
 #define ECH     'X' // Erase char
 #define CBT     'Z' // Cursor backward tabulation
-#define HPR     'a' // Repeat print
-#define REP     'b' // Device attributes
-#define DA      'c' // Horizontal and vertical position
-#define VPA     'd' // Tab clear
-#define VPR     'e' // Set mode
-#define HVP     'f' // Media copy
-#define TBC     'g' // Reset mode
-#define SM      'h' // Select graphic rendition
-#define MC      'i' // Device status report
-#define RM      'l' // Load LEDs
-#define SGR     'm' // Set top and bottom margins
-#define DSR     'n' // Save cursor
-#define DECLL   'q' // Restore cursor
-#define DECSTBM 'r' // Vertical line position absolute
-#define DECSC   's' // Vertical position relative
-#define DECRC   'u' // Horizontal position absolute
-#define WINMAN  't' // Horizontal position relative
-#define HPA     '`' // Window manipulation
+#define HPR     'a' // Horizontal position relative
+#define REP     'b' // Repeat print
+#define DA      'c' // Device attributes
+#define VPA     'd' // Vertical position absolute
+#define VPR     'e' // Vertical position relative
+#define HVP     'f' // Horizontal and vertical position
+#define TBC     'g' // Tab clear
+#define SM      'h' // Set mode
+#define MC      'i' // Media copy
+#define RM      'l' // Reset mode
+#define SGR     'm' // Select graphic rendition
+#define DSR     'n' // Device status report
+#define DECLL   'q' // Load LEDs
+#define DECSTBM 'r' // Set top and bottom margins
+#define DECSC   's' // Save cursor
+#define WINMAN  't' // Window manipulation
+#define DECRC   'u' // Restore cursor
+#define HPA     '`' // Horizontal position absolute
 
 // mode
 #define DECCKM       1  // Cursor keys

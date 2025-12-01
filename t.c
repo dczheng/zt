@@ -764,9 +764,9 @@ twrite(uint8_t *buf, int len) {
         if (status & NOTSUP || zt.debug.t) {
             s = to_string(p, esc.len+1, 0);
             if (status & NOTSUP)
-                LOG("unsupported %s\n", s);
+                LOG("%s unsupported\n", s);
             else if (status & SKIP)
-                LOG("skiped %s\n", s);
+                LOG("%s skip\n", s);
             else
                 LOG("%s\n", s);
         }
