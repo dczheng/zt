@@ -484,15 +484,16 @@ xfree(void) {
     XFreeCursor(display, cursor);
     XftDrawDestroy(drawable);
 
-    for (i = 0; i < nfont; i++)
+    for (i = 0; i < nfont; i++) {
+        free(fonts[i].family);
         XftFontClose(display, fonts[i].font);
+    }
     free(fonts);
 
     xcolor_free(&background);
     xcolor_free(&foreground);
     for (i = 0; i < 256; i++)
         xcolor_free(&color8[i]);
-
     free(specs);
     close(xfd);
 }

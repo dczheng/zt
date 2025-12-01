@@ -1,4 +1,5 @@
 *.o
 *core*
 *.log
+run.sh
 zt

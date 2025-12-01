@@ -124,14 +124,13 @@ tty_init(void) {
     signal(SIGCHLD, sigchld);
 
     setsid();
+    close(tty);
     dup2(slave, 0);
     dup2(slave, 1);
     dup2(slave, 2);
-
     ASSERT((ret = ioctl(slave, TIOCSCTTY, NULL)) >= 0);
     if (slave > 2)
         close(slave);
-    close(tty);
 
     setenv("SHELL", sh, 1);
     setenv("TERM", zt.term, 1);
