@@ -186,17 +186,10 @@
 #define FP_DECSC  '7'
 #define FP_DECRC  '8'
 
-#define ESCNF_END_MIN 0x30
-#define ESCNF_END_MAX 0x7e
 #define ESC_IS_NF(c) ((c) >= 0x20 && (c) <= 0x2f)
 #define ESC_IS_FP(c) ((c) >= 0x30 && (c) <= 0x3f)
 #define ESC_IS_FE(c) ((c) >= 0x40 && (c) <= 0x5f)
 #define ESC_IS_FS(c) ((c) >= 0x60 && (c) <= 0x7e)
-
-#define CSI_MIN 0x40
-#define CSI_MAX 0x7e
-#define CSI_PAR_MIN 0x20
-#define CSI_PAR_MAX 0x3f
 
 #define ISCTRLC0(c) ((c) <= 0x1f)
 #define ISCTRLC1(c) ((c) >= 0x80 && (c) <= 0x9f)
@@ -205,6 +198,11 @@
 #define C1TOA(c)    ((c) - 0x80 + 0x40)
 
 #define VT102 "\033[?6c"
+
+static uint8_t csi_ending[] __unused = { 0x40, 0x7e };
+static uint8_t nf_ending[] __unused = { 0x30, 0x7e };
+static uint8_t dcs_ending[] __unused = { C1TOA(ST), ESC };
+static uint8_t osc_ending[] __unused = { BEL, ST, C1TOA(ST), ESC };
 
 /*
 SGR
@@ -288,14 +286,6 @@ SGR
  106 Background bright cyan
  107 Background bright white
 */
-
-static uint8_t osc_end_codes[] __unused = {
-    BEL, ST, C1TOA(ST), ESC
-};
-
-static uint8_t dcs_end_codes[] __unused = {
-    C1TOA(ST), ESC
-};
 
 static inline char*
 ctrl_name(uint8_t c) {

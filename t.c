@@ -105,11 +105,11 @@ tdump(void) {
 }
 
 int
-range_search(uint8_t *seq, int len, uint8_t a, uint8_t b, int mode) {
+range_search(uint8_t *seq, int len, uint8_t *e, int mode) {
     for (int i = 0; i < len; i++) {
-        if ((!mode) && (seq[i] >= a && seq[i] <= b))
+        if ((!mode) && (seq[i] >= e[0] && seq[i] <= e[1]))
             return i;
-        if ((mode) && (seq[i] < a && seq[i] > b))
+        if ((mode) && (seq[i] < e[0] && seq[i] > e[1]))
             return i;
     }
     return -1;
@@ -598,11 +598,10 @@ tesc(uint8_t *buf, int len) {
     esc.len = 1;
 
     if (ESC_IS_NF(esc.code)) {
-        if ((n = range_search(buf+1, len-1,
-            ESCNF_END_MIN, ESCNF_END_MAX, 0)) < 0) {
-                status |= RETRY;
-                return;
-            }
+        if ((n = range_search(buf+1, len-1, nf_ending, 0)) < 0) {
+            status |= RETRY;
+            return;
+        }
         esc.len += n+1;
 
         switch (esc.code) {
@@ -644,7 +643,7 @@ tesc(uint8_t *buf, int len) {
 
     switch (ATOC1(esc.code)) {
     case CSI:
-        if ((n = range_search(buf+1, len-1, CSI_MIN, CSI_MAX, 0)) < 0) {
+        if ((n = range_search(buf+1, len-1, csi_ending, 0)) < 0) {
             status |= RETRY;
             return;
         }
@@ -659,7 +658,7 @@ tesc(uint8_t *buf, int len) {
         break;
 
     case OSC:
-        if ((n = SEARCH(buf+1, len-1, osc_end_codes)) < 0) {
+        if ((n = SEARCH(buf+1, len-1, osc_ending)) < 0) {
             status |= RETRY;
             return;
         }
@@ -667,7 +666,7 @@ tesc(uint8_t *buf, int len) {
         break;
 
     case DCS:
-        if ((n = SEARCH(buf+1, len-1, dcs_end_codes)) < 0) {
+        if ((n = SEARCH(buf+1, len-1, dcs_ending)) < 0) {
             status |= RETRY;
             return;
         }
