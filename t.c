@@ -5,17 +5,6 @@
 #include "zt.h"
 #include "code.h"
 
-/*
-  References
-  https://en.wikipedia.org/wiki/ANSI_escape_code
-  https://en.wikipedia.org/wiki/C0_and_C1_control_codes
-  https://vt100.net/docs
-  https://vt100.net/docs/vt102-ug/contents.html
-  https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
-*/
-
-#define VT102 "\033[?6c"
-
 void lalloc(void);
 void lfree(void);
 void lclear(int, int, int, int);
@@ -48,23 +37,25 @@ struct esc_t {
     uint8_t *seq, code, csi;
 } esc;
 
-void
-dump(uint8_t *buf, int n) {
-    struct code_desc_t desc;;
-    if (n == 0) return;
-    for (int i = 0; i < n; i++) {
-        if (isprint(buf[i])) {
-            LOG("\033[32m%c", buf[i]);
-            continue;
-        }
-        if (ISCTRL(buf[i])) {
-            code_desc(&desc, buf[i]);
-            LOG("\033[93m%s", desc.name);
-            continue;
-        }
-        LOG("\033[31m%02x", buf[i]);
+char*
+to_string(uint8_t *buf, int n, int color) {
+    int i, p = 0;
+    static char s[BUFSIZ*8+1];
+
+    for (i = 0; i < n; i++) {
+        if (isprint(buf[i]))
+            p += snprintf(s+p, sizeof(s)-p,
+                color ? "\033[32m%c" : "%c", buf[i]);
+        else if (ISCTRL(buf[i]))
+            p += snprintf(s+p, sizeof(s)-p,
+                color ? "\033[93m%s" : "%s", ctrl_name(buf[i]));
+        else
+            p += snprintf(s+p, sizeof(s)-p,
+                color ? "\033[31m%02x" : "%02x", buf[i]);
     }
-    LOG("\n\033[0m");
+    p += snprintf(s+p, sizeof(s)-p, color ? "\033[0m": "");
+    s[p] = 0;
+    return s;
 }
 
 void
@@ -142,7 +133,7 @@ search(uint8_t *seq, int len, int n, uint8_t *c) {
     search(seq, len, (int)sizeof(codes), codes)
 
 int
-get_par(int idx, char **p) {
+param(int idx, char **p) {
     static char buf[BUFSIZ];
     int i, a = 1, b = 1, n;
 
@@ -184,19 +175,19 @@ get_par(int idx, char **p) {
     return 0;
 
 }
-#define GET_PAR(idx, p) do { \
-    if (get_par(idx, p)) { \
+#define PARAM(idx, p) do { \
+    if (param(idx, p)) { \
         status |= NOTSUP; \
         return; \
     } \
 } while(0)
 
 int
-get_int_par(int idx, int *v, int v0) {
+param_int(int idx, int *v, int v0) {
     int ret;
     char *p;
 
-    ret = get_par(idx, &p);
+    ret = param(idx, &p);
     if (ret)
         return ret;
 
@@ -207,26 +198,26 @@ get_int_par(int idx, int *v, int v0) {
 
     return stoi(v, p);
 }
-#define GET_INT_PAR(idx, v, v0) do { \
-    if (get_int_par(idx, v, v0)) { \
+#define PARAM_INT(idx, v, v0) do { \
+    if (param_int(idx, v, v0)) { \
         status |= NOTSUP; \
         return; \
     } \
 } while(0)
 
-#define ATTR_FG8(v) do { \
+#define _FG8(v) do { \
     zt.c.fg.type = 8; \
     zt.c.fg.c8 = v; \
     zt.c.attr &= ~ATTR_DEFAULT_FG; \
 } while(0)
 
-#define ATTR_BG8(v) do { \
+#define _BG8(v) do { \
     zt.c.bg.type = 8; \
     zt.c.bg.c8 = v; \
     zt.c.attr &= ~ATTR_DEFAULT_BG; \
 } while(0)
 
-#define ATTR_FG24(r, g, b) do { \
+#define _FG24(r, g, b) do { \
     zt.c.fg.type = 24; \
     zt.c.fg.rgb[0] = r; \
     zt.c.fg.rgb[1] = g; \
@@ -234,7 +225,7 @@ get_int_par(int idx, int *v, int v0) {
     zt.c.attr &= ~ATTR_DEFAULT_FG; \
 } while(0)
 
-#define ATTR_BG24(r, g, b) do { \
+#define _BG24(r, g, b) do { \
     zt.c.bg.type = 24; \
     zt.c.bg.rgb[0] = r; \
     zt.c.bg.rgb[1] = g; \
@@ -260,25 +251,25 @@ tsgr(void) {
     }
 
     for (i = 0; i < esc.npar;) {
-        GET_INT_PAR(i++, &n, 0);
+        PARAM_INT(i++, &n, 0);
 
         if (n >= 30 && n <= 37) {
-            ATTR_FG8(n-30);
+            _FG8(n-30);
             return;
         }
 
         if (n >= 40 && n <= 47) {
-            ATTR_BG8(n-40);
+            _BG8(n-40);
             return;
         }
 
         if (n >= 90 && n <= 97) {
-            ATTR_FG8(n-90+8);
+            _FG8(n-90+8);
             return;
         }
 
         if (n >= 100 && n <= 107) {
-            ATTR_BG8(n-100+8);
+            _BG8(n-100+8);
             return;
         }
 
@@ -300,60 +291,60 @@ tsgr(void) {
         case 49: zt.c.attr |= ATTR_DEFAULT_BG                   ; break;
         case 38:
         case 48:
-            GET_INT_PAR(i++, &m, 0);
+            PARAM_INT(i++, &m, 0);
             if (m != 5 && m != 2) {
                 status |= NOTSUP;
                 return;
             }
 
             if (m == 5) {
-                GET_INT_PAR(i++, &v, 0);
+                PARAM_INT(i++, &v, 0);
                 if (v < 0 || v > 255) {
                     status |= NOTSUP;
                     return;
                 }
                 if (n == 38)
-                    ATTR_FG8(v);
+                    _FG8(v);
                 else
-                    ATTR_BG8(v);
+                    _BG8(v);
             } else {
-                GET_INT_PAR(i++, &r, 0);
+                PARAM_INT(i++, &r, 0);
                 if (r < 0 || r > 255) {
                     status |= NOTSUP;
                     return;
                 }
 
-                GET_INT_PAR(i++, &g, 0);
+                PARAM_INT(i++, &g, 0);
                 if (g < 0 || g > 255) {
                     status |= NOTSUP;
                     return;
                 }
 
-                GET_INT_PAR(i++, &b, 0);
+                PARAM_INT(i++, &b, 0);
                 if (b < 0 || b > 255) {
                     status |= NOTSUP;
                     return;
                 }
 
                 if (n == 38)
-                    ATTR_FG24(r, g, b);
+                    _FG24(r, g, b);
                 else
-                    ATTR_BG24(r, g, b);
+                    _BG24(r, g, b);
             }
             break;
 
-        case 58:   // Set underline color
-        case 59:   // Default underline color
+        case 58:
+        case 59:
             break; // TODO
         default:
             status |= NOTSUP;
         }
     }
 }
-#undef ATTR_FG8
-#undef ATTR_BG8
-#undef ATTR_FG24
-#undef ATTR_BG24
+#undef _FG8
+#undef _BG8
+#undef _FG24
+#undef _BG24
 
 void
 tmode(void) {
@@ -369,7 +360,7 @@ tmode(void) {
 #define _M(v) s ? (zt.mode |= v) : (zt.mode &= ~v)
 
     for (i = 0; i < esc.npar; i++) {
-        if (get_par(i, &p) || p == NULL)
+        if (param(i, &p) || p == NULL)
             continue;
 
         if (stoi(&n, i == 0 ? p+1 : p)) {
@@ -431,7 +422,7 @@ tdsr(void) {
     int n, nw;
     char wbuf[32], *p;
 
-    if (esc.npar == 0 || get_par(0, &p) || p == NULL) {
+    if (esc.npar == 0 || param(0, &p) || p == NULL) {
         status |= NOTSUP;
         return;
     }
@@ -482,35 +473,35 @@ tcsi(void) {
     case CBT:
     case ICH:
     case REP:
-        GET_INT_PAR(0, &n, 1);
+        PARAM_INT(0, &n, 1);
         break;
 
     case ED:
     case EL:
     case TBC:
-        GET_INT_PAR(0, &n, 0);
+        PARAM_INT(0, &n, 0);
         break;
 
     case DECSTBM:
-        GET_INT_PAR(0, &n, 1);
-        GET_INT_PAR(1, &m, zt.row);
+        PARAM_INT(0, &n, 1);
+        PARAM_INT(1, &m, zt.row);
         break;
 
     case CUP:
     case HVP:
         if (esc.npar == 1) {
             m = 1;
-            GET_INT_PAR(0, &n, 1);
+            PARAM_INT(0, &n, 1);
             break;
         }
-        GET_INT_PAR(0, &n, 1);
-        GET_INT_PAR(1, &m, 1);
+        PARAM_INT(0, &n, 1);
+        PARAM_INT(1, &m, 1);
         break;
     case DA:
         if (esc.npar == 0)
             n = 0;
         else
-            GET_INT_PAR(0, &n, 0);
+            PARAM_INT(0, &n, 0);
         break;
     case DECRC:
         if (esc.npar) {
@@ -583,117 +574,13 @@ tcsi(void) {
         }
         break;
 
-    case WINMAN: // Window Manipulation
-    case DECLL:  // load LEDs
-    case MC:     // Media Copy
+    case WINMAN:
+    case DECLL:
+    case MC:
         break;   // TODO
     default:
         status |= NOTSUP;
     }
-}
-
-char*
-esc_str(void) {
-    struct code_desc_t d;
-    int i, pos, ret, v;
-    char *p;
-    static char buf[BUFSIZ];
-
-#define _P(fmt, ...) \
-    pos += snprintf(buf+pos, sizeof(buf)-pos, fmt, ##__VA_ARGS__)
-
-    pos = 0;
-    buf[0] = 0;
-    if (!esc.len) {
-        buf[0] = 0;
-        return buf;
-    }
-
-    _P("ESC ");
-
-    if (ESC_IS_NF(esc.code)) {
-        if (nf_esc_desc(&d, esc.code))
-            _P("0x%02x", esc.code);
-        else
-            _P("%s(%c) ", d.name, esc.code);
-        return buf;
-    }
-
-    if (ESC_IS_FS(esc.code)) {
-        _P("0x%02x", esc.code);
-        return buf;
-    }
-
-    if (ESC_IS_FP(esc.code)) {
-        if (fp_esc_desc(&d, esc.code))
-            _P("0x%02x", esc.code);
-        else
-            _P("%s ", d.name);
-        return buf;
-    }
-
-    if (!ESC_IS_FE(esc.code) || code_desc(&d, ATOC1(esc.code))) {
-        _P("unsupported esc code `0x02x`");
-        return buf;
-    }
-
-    _P("%s(%c) ", d.name, esc.code);
-    switch (ATOC1(esc.code)) {
-    case OSC:
-        break;
-
-    case CSI:
-        if (csi_desc(&d, esc.csi))
-            _P("%c ", esc.csi);
-        else
-            _P("%s(%c) ", d.name, esc.csi);
-
-        _P("[");
-        for (i = 0; i < esc.npar; i++) {
-            if (get_par(i, &p) || p == NULL)
-                _P("%s", "-");
-            else
-                _P("%s", p);
-
-            if (i < esc.npar-1)
-                _P(",");
-        }
-        _P("] ");
-
-        switch (esc.csi) {
-        case RM:
-        case SM:
-            if (esc.seq[1] != '?') {
-                _P("unknown ");
-                break;
-            }
-            for (i = 0; i < esc.npar; i++) {
-                if (get_par(i, &p) || p == NULL) {
-                    _P("unknown ");
-                    continue;
-                }
-                ret = stoi(&v, i == 0 ? p+1 : p);
-                if (ret || (ret = mode_desc(&d, v))) {
-                    _P("unknown ");
-                    continue;
-                }
-                _P("%s ", d.name);
-            }
-            break;
-        case SGR:
-            for (i = 0; i < esc.npar; i++) {
-                if (get_int_par(i, &v, 0))
-                    _P("unknown ");
-                else
-                    _P("%s ", sgr_desc(&d, v) ? "unknown" : d.desc);
-            }
-            break;
-        }
-        break;
-
-    }
-    return buf;
-#undef _P
 }
 
 void
@@ -813,19 +700,18 @@ tctrl(uint8_t *buf, int len) {
     case HT : ltab(1)            ; break;
     case HTS: zt.tabs[zt.x] = 1       ; break;
     case BS:
-    case CCH:     // CCH: Cancel character, intended to eliminate
-                  //      ambiguity about meaning of BS.
+    case CCH:
         lmoveto(zt.y, zt.x-1);
         break;
-    case BEL:     // bell, allert
+    case BEL:
     case SS2:
     case SS3:
-    case BPH:     // break permitted here
-    case PAD:     // padding character
-    case SOS:     // Followed by a control string terminated by ST
+    case BPH:
+    case PAD:
+    case SOS:
     case ST:
-    case SO:      // Switch to an alternative character set.
-    case SI:      // Return to regular character set after Shift Out.
+    case SO:
+    case SI:
         break;    // TODO
     default:
         status |= NOTSUP;
@@ -834,22 +720,19 @@ tctrl(uint8_t *buf, int len) {
 
 int
 twrite(uint8_t *buf, int len) {
-    uint8_t c;
-    int nread, n, retry_max = 3;
-    struct code_desc_t desc;
+    uint8_t *p = buf, *p0;
+    int n, retry_max = 3;
     static int retry = 0;
 
     ASSERT(len >= 0);
     if (!len) return 0;
 
     if (zt.opt.debug.ctrl)
-        dump(buf, len);
+        LOG("%s\n", to_string(buf, len, 1));
 
-    for (nread = 0; nread < len; nread += n, retry = 0) {
-        c = buf[nread];
-
-        if (!ISCTRL(c)) {
-            if (lwrite(buf+nread, len-nread, &n)) {
+    for (; len > 0; p += n, len -= n, retry = 0) {
+        if (!ISCTRL(p[0])) {
+            if (lwrite(p, len, &n)) {
                 retry++;
                 break;
             }
@@ -858,33 +741,23 @@ twrite(uint8_t *buf, int len) {
 
         status = 0;
         ZERO(esc);
-        tctrl(buf+nread, len-nread);
+        tctrl(p, len);
 
-        if (status & NOTSUP) {
-            if (c != ESC) {
-                ASSERT(code_desc(&desc, c) == 0);
-                LOG("unsupported: %s %s\n", desc.name, desc.desc);
-            } else {
-                LOG("unsupported: %s\n", esc_str());
-            }
-        }
+        if (status & NOTSUP)
+            LOG("unsupported: %s\n", to_string(p, esc.len+1, 0));
 
         if (status & RETRY) {
             retry++;
             break;
         }
         n = esc.len + 1;
-        if (c != ESC)
+
+        if (p[0] != ESC)
             zt.lastc.c = 0;
 
-        if (zt.opt.debug.ctrl) {
-            if (c != ESC) {
-                ASSERT(code_desc(&desc, c) == 0);
-                LOG("%s\n", desc.name);
-            } else {
-                LOG("%s\n", esc_str());
-            }
-        }
+        if (zt.opt.debug.ctrl)
+            LOG("%s\n", to_string(p, esc.len+1, 0));
+
         if (zt.opt.debug.term == 2)
             tdump();
     }
@@ -893,24 +766,21 @@ twrite(uint8_t *buf, int len) {
         tdump();
 
     if (zt.opt.debug.retry) {
-        if (retry) {
-            LOG("retry: ");
-            dump(buf + n, nread-n);
-        }
+        if (retry)
+            LOG("retry: %s", to_string(p, len, 1));
     }
 
     if (retry == retry_max) {
         retry = 0;
-        n = nread++;
-        for (; nread < len; nread++) {
-            if (ISCTRL(buf[nread]))
+        p0 = p;
+        for (; len > 0; p++, len--) {
+            if (ISCTRL(p[0]))
                 break;
         }
-        LOG("drop: ");
-        dump(buf + n, nread-n);
+        LOG("drop: %s", to_string(p0, p-p0, 1));
     }
 
-    return nread;
+    return p - buf;
 }
 
 void

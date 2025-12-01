@@ -3,173 +3,182 @@
 
 #include "zt.h"
 
+/*
+  References
+  https://en.wikipedia.org/wiki/ANSI_escape_code
+  https://en.wikipedia.org/wiki/C0_and_C1_control_codes
+  https://vt100.net/docs
+  https://vt100.net/docs/vt102-ug/contents.html
+  https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+*/
+
 // C0
-#define NUL 0x00
-#define SOH 0x01
-#define STX 0x02
-#define ETX 0x03
-#define EOT 0x04
-#define ENQ 0x05
-#define ACK 0x06
-#define BEL 0x07
-#define BS  0x08
-#define HT  0x09
-#define LF  0x0a
-#define VT  0x0b
-#define FF  0x0c
-#define CR  0x0d
-#define SO  0x0e
-#define SI  0x0f
-#define DLE 0x10
-#define DC1 0x11
-#define DC2 0x12
-#define DC3 0x13
-#define DC4 0x14
-#define NAK 0x15
-#define SYN 0x16
-#define ETB 0x17
-#define CAN 0x18
-#define EM  0x19
-#define SUB 0x1a
-#define ESC 0x1b
-#define FS  0x1c
-#define GS  0x1d
-#define RS  0x1e
-#define US  0x1f
+#define NUL 0x00 // Null
+#define SOH 0x01 // Start of Heading
+#define STX 0x02 // Start of text
+#define ETX 0x03 // End of text
+#define EOT 0x04 // End of transmission
+#define ENQ 0x05 // Enquiry
+#define ACK 0x06 // Acknowledge
+#define BEL 0x07 // Bell
+#define BS  0x08 // Backspace
+#define HT  0x09 // Horizontal aabulation
+#define LF  0x0a // Line feed
+#define VT  0x0b // Vertical tabulation
+#define FF  0x0c // Form feed
+#define CR  0x0d // Carriage return
+#define SO  0x0e // Shift out
+#define SI  0x0f // Shift in
+#define DLE 0x10 // DataLink escape
+#define DC1 0x11 // DeviceControl 1
+#define DC2 0x12 // DeviceControl 2
+#define DC3 0x13 // DeviceControl 3
+#define DC4 0x14 // DeviceControl 4
+#define NAK 0x15 // Negative acknowledge
+#define SYN 0x16 // Synchronous idle
+#define ETB 0x17 // End of transmission block
+#define CAN 0x18 // Cancel
+#define EM  0x19 // End of medium
+#define SUB 0x1a // Substitute
+#define ESC 0x1b // Escape
+#define FS  0x1c // File separator
+#define GS  0x1d // Group separator
+#define RS  0x1e // Record separator
+#define US  0x1f // Unit separator
 
 // other
-#define DEL  0x7f
+#define DEL  0x7f // Delete
 
 // C1
-#define PAD  0x80
-#define HOP  0x81
-#define BPH  0x82
-#define NBH  0x83
-#define IND  0x84
-#define NEL  0x85
-#define SSA  0x86
-#define ESA  0x87
-#define HTS  0x88
-#define HTJ  0x89
-#define VTS  0x8a
-#define PLD  0x8b
-#define PLU  0x8c
-#define RI   0x8d
-#define SS2  0x8e
-#define SS3  0x8f
-#define DCS  0x90
-#define PU1  0x91
-#define PU2  0x92
-#define STS  0x93
-#define CCH  0x94
-#define MW   0x95
-#define SPA  0x96
-#define EPA  0x97
-#define SOS  0x98
-#define SGCI 0x99
-#define SCI  0x9a
-#define CSI  0x9b
-#define ST   0x9c
-#define OSC  0x9d
-#define PM   0x9e
-#define APC  0x9f
+#define PAD  0x80 // Padding character
+#define HOP  0x81 // High octet preset
+#define BPH  0x82 // Break permitted here
+#define NBH  0x83 // No break here
+#define IND  0x84 // Index
+#define NEL  0x85 // Next line
+#define SSA  0x86 // Start of selected area
+#define ESA  0x87 // End of selected area
+#define HTS  0x88 // Horizontal tabulationSet
+#define HTJ  0x89 // Horizontal tabulation with justification
+#define VTS  0x8a // Vertical tabulationSet
+#define PLD  0x8b // Partial line down
+#define PLU  0x8c // Partial line up
+#define RI   0x8d // Reverse index
+#define SS2  0x8e // Single shift 2
+#define SS3  0x8f // Single shift 3
+#define DCS  0x90 // Device control string
+#define PU1  0x91 // Private use 1
+#define PU2  0x92 // Private use 2
+#define STS  0x93 // Transmit state
+#define CCH  0x94 // Cancel character
+#define MW   0x95 // Message waiting
+#define SPA  0x96 // Start of protected area
+#define EPA  0x97 // End of protected area
+#define SOS  0x98 // Start of string
+#define SGCI 0x99 // Single graphic character introducer
+#define SCI  0x9a // Single character introducer
+#define CSI  0x9b // Control sequence introducer
+#define ST   0x9c // String terminator
+#define OSC  0x9d // Operating system command
+#define PM   0x9e // Privacy message
+#define APC  0x9f // Application program command
 
 // CSI
-#define ICH     '@'
-#define CUU     'A'
-#define CUD     'B'
-#define CUF     'C'
-#define CUB     'D'
-#define CNL     'E'
-#define CPL     'F'
-#define CHA     'G'
-#define CUP     'H'
-#define CHT     'I'
-#define ED      'J'
-#define EL      'K'
-#define IL      'L'
-#define DL      'M'
-#define DCH     'P'
-#define SU      'S'
-#define SD      'T'
-#define ECH     'X'
-#define CBT     'Z'
-#define HPR     'a'
-#define REP     'b'
-#define DA      'c'
-#define VPA     'd'
-#define VPR     'e'
-#define HVP     'f'
-#define TBC     'g'
-#define SM      'h'
-#define MC      'i'
-#define RM      'l'
-#define SGR     'm'
-#define DSR     'n'
-#define DECLL   'q'
-#define DECSTBM 'r'
-#define DECSC   's'
-#define DECRC   'u'
-#define WINMAN  't'
-#define HPA     '`'
+#define ICH     '@' // Insert Bbank char
+#define CUU     'A' // Cursor up
+#define CUD     'B' // Cursor down
+#define CUF     'C' // Cursor forward
+#define CUB     'D' // Cursor backward
+#define CNL     'E' // Cursor next line
+#define CPL     'F' // Cursor previous line
+#define CHA     'G' // Cursor horizontal absolute
+#define CUP     'H' // Cursor position
+#define CHT     'I' // Cursor forward tabulation
+#define ED      'J' // Erase in display
+#define EL      'K' // Erase in line
+#define IL      'L' // Insert line
+#define DL      'M' // Delete line
+#define DCH     'P' // Delect char
+#define SU      'S' // Scroll line up
+#define SD      'T' // Scroll line down
+#define ECH     'X' // Erase char
+#define CBT     'Z' // Cursor backward tabulation
+#define HPR     'a' // Repeat print
+#define REP     'b' // Device attributes
+#define DA      'c' // Horizontal and vertical position
+#define VPA     'd' // Tab clear
+#define VPR     'e' // Set mode
+#define HVP     'f' // Media copy
+#define TBC     'g' // Reset mode
+#define SM      'h' // Select graphic rendition
+#define MC      'i' // Device status report
+#define RM      'l' // Load LEDs
+#define SGR     'm' // Set top and bottom margins
+#define DSR     'n' // Save cursor
+#define DECLL   'q' // Restore cursor
+#define DECSTBM 'r' // Vertical line position absolute
+#define DECSC   's' // Vertical position relative
+#define DECRC   'u' // Horizontal position absolute
+#define WINMAN  't' // Horizontal position relative
+#define HPA     '`' // Window manipulation
 
 // mode
-#define DECCKM       1
-#define DECANM       2
-#define DECCOLM      3
-#define DECSCLM      4
-#define DECSCNM      5
-#define DECOM        6
-#define DECAWM       7
-#define DECARM       8
-#define DECPFF      18
-#define DECPEX      19
-#define DECTCEM     25
-#define DECRLM      34
-#define DECHEBM     35
-#define DECHEM      36
-#define DECNRCM     42
-#define DECNAKB     57
-#define DECHCCM     60
-#define DECVCCM     61
-#define DECPCCM     64
-#define DECNKM      66
-#define DECBKM      67
-#define DECKBUM     68
-#define DECVSSM     69
-#define DECLRMM     69
-#define DECXRLM     73
-#define DECKPM      81
-#define DECNCSM     95
-#define DECRLCM     96
-#define DECCRTSM    97
-#define DECARSM     98
-#define DECMCM      99
-#define DECAAM     100
-#define DECCANSM   101
-#define DECNULM    102
-#define DECHDPXM   103
-#define DECESKM    104
-#define DECOSCNM   106
-#define M_SBC       12
-#define M_MP      1000
-#define M_MMP     1002
-#define M_MMA     1003
-#define M_SF      1004
-#define M_MUTF8   1005
-#define M_BP      2004
-#define M_ALTS    1047
-#define M_SC      1048
-#define M_SC_ALTS 1049
-#define M_ME      1006
-#define M_UM      1015
-#define M_SO      2026
+#define DECCKM       1  // Cursor keys
+#define DECANM       2  // ANSI
+#define DECCOLM      3  // Column
+#define DECSCLM      4  // Scrolling
+#define DECSCNM      5  // Screen
+#define DECOM        6  // Origin
+#define DECAWM       7  // Autowrap
+#define DECARM       8  // Autorepeat
+#define DECPFF      18  // Print form feed
+#define DECPEX      19  // Printer extent
+#define DECTCEM     25  // Text cursor enable
+#define DECRLM      34  // Cursor direction right to left
+#define DECHEBM     35  // Hebrew keyboard mapping
+#define DECHEM      36  // Hebrew encoding mode
+#define DECNRCM     42  // National replacement charset
+#define DECNAKB     57  // Greek keyboard mapping
+#define DECHCCM     60  // Horizontal cursor coupling
+#define DECVCCM     61  // Vertical cursor coupling
+#define DECPCCM     64  // Page cursor coupling
+#define DECNKM      66  // Numeric keypad
+#define DECBKM      67  // Back arrow key
+#define DECKBUM     68  // Keyboard usage
+#define DECVSSM     69  // Vertical split screen
+#define DECLRMM     69  // Vertical split screen
+#define DECXRLM     73  // Transmit rate limiting
+#define DECKPM      81  // Key position
+#define DECNCSM     95  // No clearing screen on column change
+#define DECRLCM     96  // Cursor right to left
+#define DECCRTSM    97  // CRT save
+#define DECARSM     98  // Auto resize
+#define DECMCM      99  // Modem control
+#define DECAAM     100  // Auto answer back
+#define DECCANSM   101  // Conceal answer back message
+#define DECNULM    102  // Ignoring null
+#define DECHDPXM   103  // Half duplex
+#define DECESKM    104  // Secondary keyboard language
+#define DECOSCNM   106  // Overscan
+#define M_SBC       12  // Send focus events to TTY
+#define M_MP      1000  // Bracketed paste
+#define M_MMP     1002  // Start blinking cursor
+#define M_MMA     1003  // UTF8 mouse
+#define M_SF      1004  // Report button press
+#define M_MUTF8   1005  // Report motion on button press
+#define M_BP      2004  // Enalbe all mouse motions
+#define M_ALTS    1047  // Extened reporting
+#define M_SC      1048  // Use alternate screen buffer
+#define M_SC_ALTS 1049  // Save cursor
+#define M_ME      1006  // Save cursor alt
+#define M_UM      1015  // urxvt mouse mode
+#define M_SO      2026  // Synchronized output
 
 // nf esc
-#define NF_GZD4 '('
-#define NF_G1D4 ')'
-#define NF_G2D4 '*'
-#define NF_G3D4 '+'
+#define NF_GZD4 '(' // Charset G0
+#define NF_G1D4 ')' // Charset G1
+#define NF_G2D4 '*' // Charset G2
+#define NF_G3D4 '+' // Charset G3
 
 // fp esc
 #define FP_DECPAM '='
@@ -195,6 +204,91 @@
 #define ATOC1(c)    ((c) - 0x40 + 0x80)
 #define C1TOA(c)    ((c) - 0x80 + 0x40)
 
+#define VT102 "\033[?6c"
+
+/*
+SGR
+   0 Reset
+   1 Bold
+   2 Faint
+   3 Italic
+   4 Underline
+   5 Slow blink
+   6 Rapid blink
+   7 Reverse videoor invert
+   8 Conceal
+   9 Crossed out
+  10 Primary font
+  11-19 Alt font
+  20 Fraktur
+  21 Double underlined
+  22 Normal intensity
+  23 Neither italic nor black letter
+  24 Not underlined
+  25 Not blinking
+  26 Proportional spacing
+  27 Not reversed
+  28 Reveal
+  29 Not crossed out
+  30 Foreground black
+  31 Foreground red
+  32 Foreground green
+  33 Foreground yellow
+  34 Foreground blue
+  35 Foreground magenta
+  36 Foreground cyan
+  37 Foreground white
+  38 Foreground RGB
+  39 Foreground reset
+  40 Background black
+  41 Background red
+  42 Background green
+  43 Background yellow
+  44 Background blue
+  45 Background magenta
+  46 Background cyan
+  47 Background white
+  48 Background RGB
+  49 Background reset
+  50 Disable proportional spacing
+  51 Framed
+  52 Encircled
+  53 Overlined
+  54 Neither framed nor encircled
+  55 Not overlined
+  56-57 Unknown
+  58 Underline color
+  59 Underline color reset
+  60 Ideogram underline
+  61 Ideogram double underline
+  62 Ideogram overline
+  63 Ideogram double over line
+  64 Ideogram stress marking
+  65 No ideogram attributes
+  66-72 Unknown
+  73 Superscript
+  74 Subscript
+  75 Neither superscript nor subscript
+  76-89 Unknown
+  90 Foreground bright black
+  91 Foreground bright red
+  92 Foreground bright green
+  93 Foreground bright yellow
+  94 Foreground bright blue
+  95 Foreground bright magenta
+  96 Foreground bright cyan
+  97 Foreground bright white
+  98-99 Unknown
+ 100 Background bright black
+ 101 Background bright red
+ 102 Background bright green
+ 103 Background bright yellow
+ 104 Background bright blue
+ 105 Background bright magenta
+ 106 Background bright cyan
+ 107 Background bright white
+*/
+
 static uint8_t osc_end_codes[] __unused = {
     BEL, ST, C1TOA(ST), ESC
 };
@@ -203,320 +297,78 @@ static uint8_t dcs_end_codes[] __unused = {
     C1TOA(ST), ESC
 };
 
-struct code_desc_t {
-    int value;
-    char *name, *desc;
-};
-
-#define _ADD(value, desc) {value,  #value, desc}
-static struct code_desc_t fp_esc_desc_table[] __unused = {
-    _ADD(FP_DECPAM, "ApplicationKeypad"),
-    _ADD(FP_DECPNM, "NormalKeypad"),
-    _ADD(FP_DECSC , "SaveCursor"),
-    _ADD(FP_DECRC , "RestoreCursor"),
-};
-
-static struct code_desc_t nf_esc_desc_table[] __unused = {
-    _ADD(NF_GZD4, "CharsetG0"),
-    _ADD(NF_G1D4, "CharsetG1"),
-    _ADD(NF_G2D4, "CharsetG2"),
-    _ADD(NF_G3D4, "CharsetG3"),
-};
-
-static struct code_desc_t mode_desc_table[] __unused = {
-    _ADD(DECCKM   , "Cursorkeys"),
-    _ADD(DECANM   , "ANSI"),
-    _ADD(DECCOLM  , "Column"),
-    _ADD(DECSCLM  , "Scrolling"),
-    _ADD(DECSCNM  , "Screen"),
-    _ADD(DECOM    , "Origin"),
-    _ADD(DECAWM   , "Autowrap"),
-    _ADD(DECARM   , "Autorepeat"),
-    _ADD(DECPFF   , "PrintFormFeed"),
-    _ADD(DECPEX   , "PrinterExtent"),
-    _ADD(DECTCEM  , "TextCursorEnable"),
-    _ADD(DECRLM   , "CursorDirectionRightToLeft"),
-    _ADD(DECHEBM  , "HebrewKeyboardMapping"),
-    _ADD(DECHEM   , "HebrewEncodingMode"),
-    _ADD(DECNRCM  , "NationalReplacementCharacterSet"),
-    _ADD(DECNAKB  , "GreekKeyboardMapping"),
-    _ADD(DECHCCM  , "HorizontalCursorCoupling"),
-    _ADD(DECVCCM  , "VerticalCursorCoupling"),
-    _ADD(DECPCCM  , "PageCursorCoupling"),
-    _ADD(DECNKM   , "NumericKeypad"),
-    _ADD(DECBKM   , "BackarrowKey"),
-    _ADD(DECKBUM  , "KeyboardUsage"),
-    _ADD(DECVSSM  , "VerticalSplitScreen"),
-    _ADD(DECLRMM  , "VerticalSplitScreen"),
-    _ADD(DECXRLM  , "TransmitRateLimiting"),
-    _ADD(DECKPM   , "KeyPosition"),
-    _ADD(DECNCSM  , "NoClearingScreenOnColumnChange"),
-    _ADD(DECRLCM  , "CursorRightToLeft"),
-    _ADD(DECCRTSM , "CRTSave"),
-    _ADD(DECARSM  , "AutoResize"),
-    _ADD(DECMCM   , "ModemControl"),
-    _ADD(DECAAM   , "AutoAnswerBack"),
-    _ADD(DECCANSM , "ConcealAnswerbackMessage"),
-    _ADD(DECNULM  , "IgnoringNull"),
-    _ADD(DECHDPXM , "HalfDuplex"),
-    _ADD(DECESKM  , "SecondaryKeyboardLanguage"),
-    _ADD(DECOSCNM , "Overscan"),
-    _ADD(M_SF     , "SendFocusEventsToTTY"),
-    _ADD(M_BP     , "BracketedPaste"),
-    _ADD(M_SBC    , "StartBlinkingCursor"),
-    _ADD(M_MUTF8  , "UTF8Mouse"),
-    _ADD(M_MP     , "ReportButtonPress"),
-    _ADD(M_MMP    , "ReportMotionOnButtonPress"),
-    _ADD(M_MMA    , "EnalbeAllMouseMotions"),
-    _ADD(M_ME     , "ExtenedReporting"),
-    _ADD(M_ALTS   , "UseAlternateScreenBuffer"),
-    _ADD(M_SC     , "SaveCursor"),
-    _ADD(M_SC_ALTS, "SaveCursorAlt"),
-    _ADD(M_UM     , "urxvtMouseMode"),
-    _ADD(M_SO     , "SynchronizedOutput"),
-
-};
-
-static struct code_desc_t code_desc_table[] __unused = {
-    _ADD(NUL , "Null"),
-    _ADD(SOH , "StartOfHeading"),
-    _ADD(STX , "StartOfText"),
-    _ADD(ETX , "EndOfText"),
-    _ADD(EOT , "EndOfTransmission"),
-    _ADD(ENQ , "Enquiry"),
-    _ADD(ACK , "Acknowledge"),
-    _ADD(BEL , "Bell"),
-    _ADD(BS  , "Backspace"),
-    _ADD(HT  , "HorizontalTabulation"),
-    _ADD(LF  , "LineFeed"),
-    _ADD(VT  , "VerticalTabulation"),
-    _ADD(FF  , "FormFeed"),
-    _ADD(CR  , "CarriageReturn"),
-    _ADD(SO  , "ShiftOut"),
-    _ADD(SI  , "ShiftIn"),
-    _ADD(DLE , "DataLinkEscape"),
-    _ADD(DC1 , "DeviceControlOne"),
-    _ADD(DC2 , "DeviceControlTwo"),
-    _ADD(DC3 , "DeviceControlThree"),
-    _ADD(DC4 , "DeviceControlFour"),
-    _ADD(NAK , "NegativeAcknowledge"),
-    _ADD(SYN , "SynchronousIdle"),
-    _ADD(ETB , "EndOfTransmissionBlock"),
-    _ADD(CAN , "Cancel"),
-    _ADD(EM  , "EndOfmedium"),
-    _ADD(SUB , "Substitute"),
-    _ADD(ESC , "Escape"),
-    _ADD(FS  , "FileSeparator"),
-    _ADD(GS  , "GroupSeparator"),
-    _ADD(RS  , "RecordSeparator"),
-    _ADD(US  , "UnitSeparator"),
-    _ADD(DEL , "Delete"),
-    _ADD(PAD , "PaddingCharacter"),
-    _ADD(HOP , "HighOctetPreset"),
-    _ADD(BPH , "BreakPermittedHere"),
-    _ADD(NBH , "NoBreakHere"),
-    _ADD(IND , "Index"),
-    _ADD(NEL , "NextLine"),
-    _ADD(SSA , "StartOfSelectedArea"),
-    _ADD(ESA , "EndOfSelectedArea"),
-    _ADD(HTS , "HorizontalTabulationSet"),
-    _ADD(HTJ , "HorizontalTabulationWithJustification"),
-    _ADD(VTS , "VerticalTabulationSet"),
-    _ADD(PLD , "PartialLineDown"),
-    _ADD(PLU , "PartialLineUp"),
-    _ADD(RI  , "ReverseIndex"),
-    _ADD(SS2 , "SingleShift2"),
-    _ADD(SS3 , "SingleShift3"),
-    _ADD(DCS , "DeviceControlString"),
-    _ADD(PU1 , "PrivateUse1"),
-    _ADD(PU2 , "PrivateUse2"),
-    _ADD(STS , "TransmitState"),
-    _ADD(CCH , "CancelCharacter"),
-    _ADD(MW  , "MessageWaiting"),
-    _ADD(SPA , "StartOfProtectedArea"),
-    _ADD(EPA , "EndOfProtectedArea"),
-    _ADD(SOS , "StartOfString"),
-    _ADD(SGCI, "SingleGraphicCharacterIntroducer"),
-    _ADD(SCI , "SingleCharacterIntroducer"),
-    _ADD(CSI , "ControlSequenceIntroducer"),
-    _ADD(ST  , "StringTerminator"),
-    _ADD(OSC , "OperatingSystemCommand"),
-    _ADD(PM  , "PrivacyMessage"),
-    _ADD(APC , "ApplicationProgramCommand"),
-};
-
-static struct code_desc_t csi_desc_table[] __unused = {
-    _ADD(ICH    , "InsertBlankChar"),
-    _ADD(CUU    , "CursorUp"),
-    _ADD(CUD    , "CursorDown"),
-    _ADD(CUF    , "CursorForward"),
-    _ADD(CUB    , "CursorBackward"),
-    _ADD(CNL    , "CursorNextLine"),
-    _ADD(CPL    , "CursorPreviousLine"),
-    _ADD(CHA    , "CursorHorizontalAbsolute"),
-    _ADD(CUP    , "CursorPosition"),
-    _ADD(CHT    , "CursorForwardTabulation"),
-    _ADD(ED     , "EraseInDisplay"),
-    _ADD(EL     , "EraseInLine"),
-    _ADD(IL     , "InsertLine"),
-    _ADD(DL     , "DeleteLine"),
-    _ADD(DCH    , "DelectChar"),
-    _ADD(SU     , "ScrollLineUp"),
-    _ADD(SD     , "ScrollLineDown"),
-    _ADD(ECH    , "EraseChar"),
-    _ADD(CBT    , "CursorBackwardTabulation"),
-    _ADD(REP    , "RepeatPrint"),
-    _ADD(DA     , "DeviceAttributes"),
-    _ADD(HVP    , "HorizontalAndVerticalPosition"),
-    _ADD(TBC    , "TabClear"),
-    _ADD(SM     , "SetMode"),
-    _ADD(MC     , "MediaCopy"),
-    _ADD(RM     , "ResetMode"),
-    _ADD(SGR    , "SelectGraphicRendition"),
-    _ADD(DSR    , "DeviceStatusReport"),
-    _ADD(DECLL  , "LoadLEDs"),
-    _ADD(DECSTBM, "SetTopAndBottomMargins"),
-    _ADD(DECSC  , "SaveCursor"),
-    _ADD(DECRC  , "RestoreCursor"),
-    _ADD(VPA    , "VerticalLinePositionAbsolute"),
-    _ADD(VPR    , "VerticalPositionRelative"),
-    _ADD(HPA    , "HorizontalPositionAbsolute"),
-    _ADD(HPR    , "HorizontalPositionRelative"),
-    _ADD(WINMAN , "WindowManipulation"),
-};
-
-static struct code_desc_t sgr_desc_table[] __unused = {
-    _ADD(0  , "Reset"),
-    _ADD(1  , "Bold"),
-    _ADD(2  , "Faint"),
-    _ADD(3  , "Italic"),
-    _ADD(4  , "Underline"),
-    _ADD(5  , "SlowBlink"),
-    _ADD(6  , "RapidBlink"),
-    _ADD(7  , "ReverseVideoorInvert"),
-    _ADD(8  , "Conceal"),
-    _ADD(9  , "CrossedOut"),
-    _ADD(10 , "PrimaryFont"),
-    _ADD(11 , "AltFont1"),
-    _ADD(12 , "AltFont2"),
-    _ADD(13 , "AltFont3"),
-    _ADD(14 , "AltFont4"),
-    _ADD(15 , "AltFont5"),
-    _ADD(16 , "AltFont6"),
-    _ADD(17 , "AltFont7"),
-    _ADD(18 , "AltFont8"),
-    _ADD(19 , "AltFont9"),
-    _ADD(20 , "Fraktur"),
-    _ADD(21 , "DoubleUnderlined"),
-    _ADD(22 , "NormalIntensity"),
-    _ADD(23 , "NeitherItalicNorBlackletter"),
-    _ADD(24 , "NotUnderlined"),
-    _ADD(25 , "NotBlinking"),
-    _ADD(26 , "ProportionalSpacing"),
-    _ADD(27 , "NotReversed"),
-    _ADD(28 , "Reveal"),
-    _ADD(29 , "NotCrossedOut"),
-    _ADD(30 , "FgBlack"),
-    _ADD(31 , "FgRed"),
-    _ADD(32 , "FgGreen"),
-    _ADD(33 , "FgYellow"),
-    _ADD(34 , "FgBlue"),
-    _ADD(35 , "FgMagenta"),
-    _ADD(36 , "FgCyan"),
-    _ADD(37 , "FgWhite"),
-    _ADD(38 , "FgRGB"),
-    _ADD(39 , "FgReset"),
-    _ADD(40 , "BgBlack"),
-    _ADD(41 , "BgRed"),
-    _ADD(42 , "BgGreen"),
-    _ADD(43 , "BgYellow"),
-    _ADD(44 , "BgBlue"),
-    _ADD(45 , "BgMagenta"),
-    _ADD(46 , "BgCyan"),
-    _ADD(47 , "BgWhite"),
-    _ADD(48 , "BgRGB"),
-    _ADD(49 , "BgReset"),
-    _ADD(50 , "DisableProportionalSpacing"),
-    _ADD(51 , "Framed"),
-    _ADD(52 , "Encircled"),
-    _ADD(53 , "Overlined"),
-    _ADD(54 , "NeitherFramedNorEncircled"),
-    _ADD(55 , "NotOverlined"),
-    _ADD(56 , "Unknown"),
-    _ADD(57 , "Unknown"),
-    _ADD(58 , "UnderlineColor"),
-    _ADD(59 , "UnderlineColorReset"),
-    _ADD(60 , "IdeogramUnderline"),
-    _ADD(61 , "IdeogramDoubleUnderline"),
-    _ADD(62 , "IdeogramOverline"),
-    _ADD(63 , "IdeogramDoubleOverline"),
-    _ADD(64 , "IdeogramStressMarking"),
-    _ADD(65 , "NoIdeogramAttributes"),
-    _ADD(66 , "Unknown"),
-    _ADD(67 , "Unknown"),
-    _ADD(68 , "Unknown"),
-    _ADD(69 , "Unknown"),
-    _ADD(70 , "Unknown"),
-    _ADD(71 , "Unknown"),
-    _ADD(72 , "Unknown"),
-    _ADD(73 , "Superscript"),
-    _ADD(74 , "Subscript"),
-    _ADD(75 , "NeitherSuperscriptNorSubscript"),
-    _ADD(76 , "Unknown"),
-    _ADD(77 , "Unknown"),
-    _ADD(78 , "Unknown"),
-    _ADD(79 , "Unknown"),
-    _ADD(80 , "Unknown"),
-    _ADD(81 , "Unknown"),
-    _ADD(82 , "Unknown"),
-    _ADD(83 , "Unknown"),
-    _ADD(84 , "Unknown"),
-    _ADD(85 , "Unknown"),
-    _ADD(86 , "Unknown"),
-    _ADD(87 , "Unknown"),
-    _ADD(88 , "Unknown"),
-    _ADD(89 , "Unknown"),
-    _ADD(90 , "FgBrightBlack"),
-    _ADD(91 , "FgBrightRed"),
-    _ADD(92 , "FgBrightGreen"),
-    _ADD(93 , "FgBrightYellow"),
-    _ADD(94 , "FgBrightBlue"),
-    _ADD(95 , "FgBrightMagenta"),
-    _ADD(96 , "FgBrightCyan"),
-    _ADD(97 , "FgBrightWhite"),
-    _ADD(98 , "Unknown"),
-    _ADD(99 , "Unknown"),
-    _ADD(100, "BgBrightBlack"),
-    _ADD(101, "BgBrightRed"),
-    _ADD(102, "BgBrightGreen"),
-    _ADD(103, "BgBrightYellow"),
-    _ADD(104, "BgBrightBlue"),
-    _ADD(105, "BgBrightMagenta"),
-    _ADD(106, "BgBrightCyan"),
-    _ADD(107, "BgBrightWhite"),
-};
-#undef _ADD
-
-static inline int
-_code_desc(struct code_desc_t *table, int len,
-    struct code_desc_t *item, int value) {
-    ZERO(*item);
-    for (int i = 0; i < len; i++)
-        if (table[i].value == value) {
-            *item = table[i];
-            return 0;
-        }
-    return ENOENT;
+static inline char*
+ctrl_name(uint8_t c) {
+#define _case(a) case a: return #a;
+    switch(c){
+    _case(NUL);
+    _case(SOH);
+    _case(STX);
+    _case(ETX);
+    _case(EOT);
+    _case(ENQ);
+    _case(ACK);
+    _case(BEL);
+    _case(BS);
+    _case(HT);
+    _case(LF);
+    _case(VT);
+    _case(FF);
+    _case(CR);
+    _case(SO);
+    _case(SI);
+    _case(DLE);
+    _case(DC1);
+    _case(DC2);
+    _case(DC3);
+    _case(DC4);
+    _case(NAK);
+    _case(SYN);
+    _case(ETB);
+    _case(CAN);
+    _case(EM);
+    _case(SUB);
+    _case(ESC);
+    _case(FS);
+    _case(GS);
+    _case(RS);
+    _case(US);
+    _case(DEL);
+    _case(PAD);
+    _case(HOP);
+    _case(BPH);
+    _case(NBH);
+    _case(IND);
+    _case(NEL);
+    _case(SSA);
+    _case(ESA);
+    _case(HTS);
+    _case(HTJ);
+    _case(VTS);
+    _case(PLD);
+    _case(PLU);
+    _case(RI);
+    _case(SS2);
+    _case(SS3);
+    _case(DCS);
+    _case(PU1);
+    _case(PU2);
+    _case(STS);
+    _case(CCH);
+    _case(MW);
+    _case(SPA);
+    _case(EPA);
+    _case(SOS);
+    _case(SGCI);
+    _case(SCI);
+    _case(CSI);
+    _case(ST);
+    _case(OSC);
+    _case(PM);
+    _case(APC);
+    }
+#undef _case
+    return "XXX";
 }
-
-#define _CODE_DESC(table, item, value) \
-    _code_desc(table, LEN(table), item, value)
-
-#define fp_esc_desc(desc, value) _CODE_DESC(fp_esc_desc_table, desc, value)
-#define nf_esc_desc(desc, value) _CODE_DESC(nf_esc_desc_table, desc, value)
-#define mode_desc(desc, value)   _CODE_DESC(mode_desc_table, desc, value)
-#define code_desc(desc, value)   _CODE_DESC(code_desc_table, desc, value)
-#define csi_desc(desc, value)    _CODE_DESC(csi_desc_table, desc, value)
-#define sgr_desc(desc, value)    _CODE_DESC(sgr_desc_table, desc, value)
 
 #endif
