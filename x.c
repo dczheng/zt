@@ -600,8 +600,6 @@ _xim_init(Display *dpy __unused, XPointer client __unused,
 void
 xim_destroy(XIM im __unused, XPointer client __unused,
     XPointer call __unused) {
-    if (xim.ic)
-        XDestroyIC(xim.ic);
     xim.im = NULL;
     xim.ic = NULL;
     XRegisterIMInstantiateCallback(display, NULL, NULL, NULL,
