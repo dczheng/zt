@@ -196,6 +196,8 @@
 #define ESCNF_END_MAX 0x7e
 #define CSI_MIN 0x40
 #define CSI_MAX 0x7e
+#define CSI_PAR_MIN 0x20
+#define CSI_PAR_MAX 0x3f
 
 #define ISCTRLC0(c) ((c) <= 0x1f)
 #define ISCTRLC1(c) ((c) >= 0x80 && (c) <= 0x9f)
