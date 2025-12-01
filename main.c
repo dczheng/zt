@@ -19,8 +19,8 @@
 #include "code.h"
 
 struct zt_t zt = {0};
-int tty = 0;
-pid_t pid;
+int tty = 0, running;
+pid_t tty_pid;
 
 void tinit();
 void tfree(void);
@@ -33,14 +33,6 @@ int xevent(void);
 void xdraw(void);
 
 void
-clean(void) {
-    xfree();
-    tfree();
-    close(tty);
-    _exit(0);
-}
-
-void
 tty_read(void) {
     static uint8_t buf[BUFSIZ];
     static int n = 0;
@@ -48,7 +40,8 @@ tty_read(void) {
 
     ASSERT(n >= 0 && n < (int)sizeof(buf));
     if ((ret = read(tty, buf+n, sizeof(buf)-1)) < 0) {
-        LOGERR("failed to read tty: %s\n", strerror(errno));
+        if (errno != EIO)
+            LOGERR("failed to read tty: %s\n", strerror(errno));
         return;
     }
 
@@ -74,7 +67,8 @@ tty_write(char *s, int n) {
         ASSERT(pselect(tty+1, NULL, &fds, NULL, &tv, NULL) > 0);
 
         if ((ret = write(tty, s, n)) < 0)  {
-            LOGERR("failed to read tty: %s\n", strerror(errno));
+            if (errno != EIO)
+                LOGERR("failed to read tty: %s\n", strerror(errno));
             return;
         }
         n -= ret;
@@ -99,10 +93,10 @@ sigchld(int a __unused) {
     int stat;
     pid_t p;
 
-    ASSERT((p = waitpid(pid, &stat, WNOHANG)) >= 0);
-    if (pid != p)
+    ASSERT((p = waitpid(tty_pid, &stat, WNOHANG)) >= 0);
+    if (tty_pid != p)
         return;
-    clean();
+    running = 0;
 }
 
 void
@@ -121,12 +115,13 @@ tty_init(void) {
             sh = "/bin/sh";
     }
 
-    ASSERT((pid = fork()) != -1);
-    if (pid) {
+    ASSERT((tty_pid = fork()) != -1);
+    if (tty_pid) {
         close(slave);
         signal(SIGCHLD, sigchld);
         return;
     }
+    signal(SIGCHLD, sigchld);
 
     setsid();
     dup2(slave, 0);
@@ -143,13 +138,6 @@ tty_init(void) {
     setenv("HOME", pw->pw_dir, 1);
     setenv("USER", pw->pw_name, 1);
     setenv("LONGNAME", pw->pw_name, 1);
-
-    signal(SIGCHLD, SIG_DFL);
-    signal(SIGHUP, SIG_DFL);
-    signal(SIGINT, SIG_DFL);
-    signal(SIGQUIT, SIG_DFL);
-    signal(SIGTERM, SIG_DFL);
-    signal(SIGALRM, SIG_DFL);
 
     args[0] = sh;
     args[1] = NULL;
@@ -197,7 +185,8 @@ main(int argc, char **argv) {
     tty_resize();
 
     tv = to_timespec(500 * MILLISECOND);
-    for (;;){
+    running = 1;
+    while (running) {
         FD_ZERO(&fds);
         FD_SET(xfd, &fds);
         FD_SET(tty, &fds);
@@ -215,6 +204,8 @@ main(int argc, char **argv) {
             break;
     }
 
-    clean();
+    xfree();
+    tfree();
+    close(tty);
     return 0;
 }
