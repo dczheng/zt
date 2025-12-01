@@ -44,8 +44,8 @@ int lwrite(uint8_t*, int, int*);
 
 int status;
 struct esc_t {
-    int len, npar, type;
-    uint8_t *seq, code, c1, csi;
+    int len, npar;
+    uint8_t *seq, code, csi;
 } esc;
 
 void
@@ -604,46 +604,41 @@ esc_str(void) {
 
     pos = 0;
     buf[0] = 0;
-    if (!esc.len)
-        return buf;
-
-    if (esc_desc(&d, esc.type)) {
-        _P("Unknown esc type");
+    if (!esc.len) {
+        buf[0] = 0;
         return buf;
     }
 
-    _P("%s ESC ", d.name);
-    switch (esc.type) {
-    case ESCNF:
+    _P("ESC ");
+
+    if (ESC_IS_NF(esc.code)) {
         if (nf_esc_desc(&d, esc.code))
             _P("0x%02x", esc.code);
         else
             _P("%s(%c) ", d.name, esc.code);
         return buf;
+    }
 
-    case ESCFS:
+    if (ESC_IS_FS(esc.code)) {
         _P("0x%02x", esc.code);
         return buf;
+    }
 
-    case ESCFP:
+    if (ESC_IS_FP(esc.code)) {
         if (fp_esc_desc(&d, esc.code))
             _P("0x%02x", esc.code);
         else
             _P("%s ", d.name);
         return buf;
-
-    case ESCFE:
-        break;
-    default: DIE();
     }
 
-    if (code_desc(&d, esc.c1)) {
-        _P("error fe esc type");
+    if (!ESC_IS_FE(esc.code) || code_desc(&d, ATOC1(esc.code))) {
+        _P("unsupported esc code `0x02x`");
         return buf;
     }
-    _P("%s(%c) ", d.name, esc.code);
 
-    switch (esc.c1) {
+    _P("%s(%c) ", d.name, esc.code);
+    switch (ATOC1(esc.code)) {
     case OSC:
         break;
 
@@ -713,60 +708,16 @@ tesc(uint8_t *buf, int len) {
     ASSERT(len > 0);
     esc.seq = buf;
     esc.code = buf[0];
-    esc.type = esc_type(esc.code);
     esc.len = 1;
 
-    switch (esc.type) {
-    default: DIE();
-    case ESCNF:
+    if (ESC_IS_NF(esc.code)) {
         if ((n = range_search(buf+1, len-1,
             ESCNF_END_MIN, ESCNF_END_MAX, 0)) < 0) {
                 status |= RETRY;
                 return;
             }
         esc.len += n+1;
-        break;
 
-    case ESCFP:
-    case ESCFS:
-        break;
-
-    case ESCFE:
-        esc.c1 = ATOC1(esc.code);
-        switch (esc.c1) {
-        case CSI:
-            if ((n = range_search(buf+1, len-1, CSI_MIN, CSI_MAX, 0)) < 0) {
-                status |= RETRY;
-                return;
-            }
-            esc.len += n+1;
-            esc.csi = buf[esc.len-1];
-            for (i = 1; i < esc.len-1; i++) {
-                if (esc.seq[i] == ';')
-                    esc.npar++;
-            }
-            esc.npar++;
-            break;
-
-        case OSC:
-            if ((n = SEARCH(buf+1, len-1, osc_end_codes)) < 0) {
-                status |= RETRY;
-                return;
-            }
-            esc.len += n+1;
-            break;
-        case DCS:
-            if ((n = SEARCH(buf+1, len-1, dcs_end_codes)) < 0) {
-                status |= RETRY;
-                return;
-            }
-            esc.len += n+1;
-            break;
-        }
-    }
-
-    switch (esc.type) {
-    case ESCNF:
         switch (esc.code) {
         case NF_GZD4:
         case NF_G1D4:
@@ -776,9 +727,10 @@ tesc(uint8_t *buf, int len) {
         default:
             status |= NOTSUP;
         }
-        break;
+        return;
+    }
 
-    case ESCFP:
+    if (ESC_IS_FP(esc.code)) {
         switch (esc.code) {
         case FP_DECSC: lcursor(1); break;
         case FP_DECRC: lcursor(0); break;
@@ -788,37 +740,66 @@ tesc(uint8_t *buf, int len) {
         default:
             status |= NOTSUP;
         }
-        break;
+        return;
+    }
 
-    case ESCFS:
+    if (ESC_IS_FS(esc.code)) {
         status |= NOTSUP;
+        return;
+    }
+
+    if (!ESC_IS_FE(esc.code)) {
+        status |= NOTSUP;
+        return;
+    }
+
+    switch (ATOC1(esc.code)) {
+    case CSI:
+        if ((n = range_search(buf+1, len-1, CSI_MIN, CSI_MAX, 0)) < 0) {
+            status |= RETRY;
+            return;
+        }
+        esc.len += n+1;
+        esc.csi = buf[esc.len-1];
+        for (i = 1; i < esc.len-1; i++) {
+            if (esc.seq[i] == ';')
+                esc.npar++;
+        }
+        esc.npar++;
+        tcsi();
         break;
 
-    case ESCFE:
-        switch (esc.c1) {
-        case CSI:
-            tcsi();
-            break;
-        case HTS:
-            zt.tabs[zt.x] = 1;
-            break;
-        case RI:
-            if (zt.y == zt.top) {
-                lscroll_down(zt.top, 1);
-                zt.y = zt.top;
-            }
-            else
-                lmoveto(zt.y-1, zt.x);
-            break;
-        case OSC:
-            break;
-        case DCS:
-            break;
-        default:
-            status |= NOTSUP;
+    case OSC:
+        if ((n = SEARCH(buf+1, len-1, osc_end_codes)) < 0) {
+            status |= RETRY;
+            return;
         }
+        esc.len += n+1;
         break;
-    default: DIE();
+
+    case DCS:
+        if ((n = SEARCH(buf+1, len-1, dcs_end_codes)) < 0) {
+            status |= RETRY;
+            return;
+        }
+        esc.len += n+1;
+        break;
+
+    case HTS:
+        zt.tabs[zt.x] = 1;
+        break;
+
+    case RI:
+        if (zt.y == zt.top) {
+            lscroll_down(zt.top, 1);
+            zt.y = zt.top;
+        }
+        else
+            lmoveto(zt.y-1, zt.x);
+        break;
+
+    default:
+        status |= NOTSUP;
     }
 }
 
