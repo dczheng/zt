@@ -36,6 +36,8 @@
 #define GS   0x1d
 #define RS   0x1e
 #define US   0x1f
+
+// other
 #define DEL  0x7f
 
 // C1
@@ -195,9 +197,9 @@
 #define CSI_MIN 0x40
 #define CSI_MAX 0x7e
 
-#define ISCTRLC0(c) ((c) <= 0x1f || (c) == 0x7f)
+#define ISCTRLC0(c) ((c) <= 0x1f)
 #define ISCTRLC1(c) ((c) >= 0x80 && (c) <= 0x9f)
-#define ISCTRL(c)   (ISCTRLC0(c) || ISCTRLC1(c))
+#define ISCTRL(c)   (ISCTRLC0(c) || ISCTRLC1(c) || (c) == 0x7f)
 #define ATOC1(c)    ((c) - 0x40 + 0x80)
 #define C1TOA(c)    ((c) - 0x80 + 0x40)
 
