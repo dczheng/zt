@@ -24,9 +24,8 @@ void ldirty_all(void);
 void tty_write(char*, int);
 int lwrite(uint8_t*, int, int*);
 
-#define NOTSUP (1 << 0)
-#define RETRY  (1 << 1)
-#define SKIP   (1 << 2)
+#define RETRY  (1 << 0)
+#define SKIP   (1 << 1)
 
 int status;
 struct esc_t {
@@ -170,7 +169,7 @@ param(int idx, char **p) {
 }
 #define PARAM(idx, p) do { \
     if (param(idx, p)) { \
-        status |= NOTSUP; \
+        status |= SKIP; \
         return; \
     } \
 } while(0)
@@ -193,7 +192,7 @@ param_int(int idx, int *v, int v0) {
 }
 #define PARAM_INT(idx, v, v0) do { \
     if (param_int(idx, v, v0)) { \
-        status |= NOTSUP; \
+        status |= SKIP; \
         return; \
     } \
 } while(0)
@@ -286,14 +285,14 @@ tsgr(void) {
         case 48:
             PARAM_INT(i++, &m, 0);
             if (m != 5 && m != 2) {
-                status |= NOTSUP;
+                status |= SKIP;
                 return;
             }
 
             if (m == 5) {
                 PARAM_INT(i++, &v, 0);
                 if (v < 0 || v > 255) {
-                    status |= NOTSUP;
+                    status |= SKIP;
                     return;
                 }
                 if (n == 38)
@@ -303,19 +302,19 @@ tsgr(void) {
             } else {
                 PARAM_INT(i++, &r, 0);
                 if (r < 0 || r > 255) {
-                    status |= NOTSUP;
+                    status |= SKIP;
                     return;
                 }
 
                 PARAM_INT(i++, &g, 0);
                 if (g < 0 || g > 255) {
-                    status |= NOTSUP;
+                    status |= SKIP;
                     return;
                 }
 
                 PARAM_INT(i++, &b, 0);
                 if (b < 0 || b > 255) {
-                    status |= NOTSUP;
+                    status |= SKIP;
                     return;
                 }
 
@@ -326,12 +325,7 @@ tsgr(void) {
             }
             break;
 
-        case 58:
-        case 59:
-            status |= SKIP;
-            break;
-        default:
-            status |= NOTSUP;
+        default: status |= SKIP;
         }
     }
 }
@@ -354,7 +348,7 @@ tmode(void) {
             continue;
 
         if (stoi(&n, i == 0 && pri ? p+1 : p)) {
-            status |= NOTSUP;
+            status |= SKIP;
             continue;
         }
 
@@ -393,17 +387,7 @@ tmode(void) {
             if (s) lclear_all();
             ldirty_all();
             break;
-        case DECSCLM:
-        case DECAWM:
-        case DECCKM:
-        case MODE_SBC:
-        case MODE_MUTF8:
-        case MODE_UM:
-        case MODE_SO:
-            status |= SKIP;
-            break;
-        default:
-            status |= NOTSUP;
+        default: status |= SKIP;
         }
     }
 #undef _M
@@ -415,12 +399,12 @@ tdsr(void) {
     char wbuf[32], *p;
 
     if (esc.npar == 0 || param(0, &p) || p == NULL) {
-        status |= NOTSUP;
+        status |= SKIP;
         return;
     }
 
     if (stoi(&n, p[0] == '?' ? p+1 : p)) {
-        status |= NOTSUP;
+        status |= SKIP;
         return;
     }
 
@@ -433,7 +417,7 @@ tdsr(void) {
             zt.y+1, zt.x+1);
         break;
     default:
-        status |= NOTSUP;
+        status |= SKIP;
         return;
     }
     tty_write(wbuf, nw);
@@ -497,7 +481,7 @@ tcsi(void) {
         break;
     case DECRC:
         if (esc.npar) {
-            status |= NOTSUP;
+            status |= SKIP;
             return;
         }
         break;
@@ -544,7 +528,7 @@ tcsi(void) {
         case 0: lerase(zt.y, zt.x, zt.col-1); break;
         case 1: lerase(zt.y, 0, zt.x)       ; break;
         case 2: lerase(zt.y, 0, zt.col-1)   ; break;
-        default: status |= NOTSUP;
+        default: status |= SKIP;
         }
         break;
 
@@ -554,7 +538,7 @@ tcsi(void) {
         case 1: lclear(0, 0, zt.y , zt.x)             ; break;
         case 2: lclear_all(); lmoveto(0,0)            ; break;
         case 3: lclear_all(); lmoveto(0,0)            ; break;
-        default: status |= NOTSUP;
+        default: status |= SKIP;
         }
         break;
 
@@ -562,17 +546,10 @@ tcsi(void) {
         switch (n) {
         case 0: zt.tabs[zt.x] = 0; break;
         case 3: ltab_clear()     ; break;
-        default: status |= NOTSUP;
+        default: status |= SKIP;
         }
         break;
-
-    case WINMAN:
-    case DECLL:
-    case MC:
-        status |= SKIP;
-        break;
-    default:
-        status |= NOTSUP;
+    default: status |= SKIP;
     }
 }
 
@@ -602,10 +579,7 @@ tesc(uint8_t *buf, int len) {
         case NF_G1D4:
         case NF_G2D4:
         case NF_G3D4:
-            status |= SKIP;
-            break;
-        default:
-            status |= NOTSUP;
+        default: status |= SKIP;
         }
         return;
     }
@@ -614,23 +588,18 @@ tesc(uint8_t *buf, int len) {
         switch (esc.code) {
         case FP_DECSC: lcursor(1); break;
         case FP_DECRC: lcursor(0); break;
-        case FP_DECPAM:
-        case FP_DECPNM:
-            status |= SKIP;
-            break;
-        default:
-            status |= NOTSUP;
+        default: status |= SKIP;
         }
         return;
     }
 
     if (ESC_IS_FS(esc.code)) {
-        status |= NOTSUP;
+        status |= SKIP;
         return;
     }
 
     if (!ESC_IS_FE(esc.code)) {
-        status |= NOTSUP;
+        status |= SKIP;
         return;
     }
 
@@ -679,8 +648,7 @@ tesc(uint8_t *buf, int len) {
             lmoveto(zt.y-1, zt.x);
         break;
 
-    default:
-        status |= NOTSUP;
+    default: status |= SKIP;
     }
 }
 
@@ -697,20 +665,7 @@ tctrl(uint8_t *buf, int len) {
     case CCH:
         lmoveto(zt.y, zt.x-1);
         break;
-
-    case BEL:
-    case SS2:
-    case SS3:
-    case BPH:
-    case PAD:
-    case SOS:
-    case ST:
-    case SO:
-    case SI:
-        status |= SKIP;
-        break;
-    default:
-        status |= NOTSUP;
+    default: status |= SKIP;
     }
 }
 
@@ -748,23 +703,18 @@ twrite(uint8_t *buf, int len) {
         if (p[0] != ESC)
             zt.lastc.c = 0;
 
-        if (status & NOTSUP) {
-            LOG("%s unsupported\n", to_string(p, esc.len+1));
-            continue;
-        }
-
         if (zt.debug.t <= 0)
             continue;
 
         s = to_string(p, esc.len+1);
         if (zt.debug.t == 1) {
             if (status & SKIP)
-                LOG("%s skip\n", s);
+                LOG("%s ?????\n", s);
             continue;
         }
 
         if (status & SKIP)
-            LOG("%s skip\n", s);
+            LOG("%s ?????\n", s);
         else
             LOG("%s\n", s);
 
