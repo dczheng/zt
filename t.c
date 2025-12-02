@@ -24,10 +24,6 @@ void ldirty_all(void);
 void tty_write(char*, int);
 int lwrite(uint8_t*, int, int*);
 
-#define RETRY  (1 << 0)
-#define SKIP   (1 << 1)
-
-int status;
 struct esc_t {
     int len, npar;
     uint8_t *seq, code, csi;
@@ -167,12 +163,6 @@ param(int idx, char **p) {
     return 0;
 
 }
-#define PARAM(idx, p) do { \
-    if (param(idx, p)) { \
-        status |= SKIP; \
-        return; \
-    } \
-} while(0)
 
 int
 param_int(int idx, int *v, int v0) {
@@ -190,12 +180,9 @@ param_int(int idx, int *v, int v0) {
 
     return stoi(v, p);
 }
-#define PARAM_INT(idx, v, v0) do { \
-    if (param_int(idx, v, v0)) { \
-        status |= SKIP; \
-        return; \
-    } \
-} while(0)
+#define PARAM_INT(idx, v, v0) \
+    if (param_int(idx, v, v0)) \
+        return EPROTO;
 
 #define _FG8(v) do { \
     zt.c.fg.type = 8; \
@@ -233,13 +220,13 @@ param_int(int idx, int *v, int v0) {
     zt.c.c = ' ';\
 } while(0)
 
-void
+int
 tsgr(void) {
     int n, m, v, r, g, b, i;
 
     if (esc.npar == 0) {
         ATTR_RESET();
-        return;
+        return 0;
     }
 
     for (i = 0; i < esc.npar;) {
@@ -247,22 +234,22 @@ tsgr(void) {
 
         if (n >= 30 && n <= 37) {
             _FG8(n-30);
-            return;
+            continue;
         }
 
         if (n >= 40 && n <= 47) {
             _BG8(n-40);
-            return;
+            continue;
         }
 
         if (n >= 90 && n <= 97) {
             _FG8(n-90+8);
-            return;
+            continue;
         }
 
         if (n >= 100 && n <= 107) {
             _BG8(n-100+8);
-            return;
+            continue;
         }
 
         switch (n) {
@@ -284,39 +271,29 @@ tsgr(void) {
         case 38:
         case 48:
             PARAM_INT(i++, &m, 0);
-            if (m != 5 && m != 2) {
-                status |= SKIP;
-                return;
-            }
+            if (m != 5 && m != 2)
+                return EPROTO;
 
             if (m == 5) {
                 PARAM_INT(i++, &v, 0);
-                if (v < 0 || v > 255) {
-                    status |= SKIP;
-                    return;
-                }
+                if (v < 0 || v > 255)
+                    return EPROTO;
                 if (n == 38)
                     _FG8(v);
                 else
                     _BG8(v);
             } else {
                 PARAM_INT(i++, &r, 0);
-                if (r < 0 || r > 255) {
-                    status |= SKIP;
-                    return;
-                }
+                if (r < 0 || r > 255)
+                    return EPROTO;
 
                 PARAM_INT(i++, &g, 0);
-                if (g < 0 || g > 255) {
-                    status |= SKIP;
-                    return;
-                }
+                if (g < 0 || g > 255)
+                    return EPROTO;
 
                 PARAM_INT(i++, &b, 0);
-                if (b < 0 || b > 255) {
-                    status |= SKIP;
-                    return;
-                }
+                if (b < 0 || b > 255)
+                    return EPROTO;
 
                 if (n == 38)
                     _FG24(r, g, b);
@@ -324,17 +301,17 @@ tsgr(void) {
                     _BG24(r, g, b);
             }
             break;
-
-        default: status |= SKIP;
+        default: return EPROTO;
         }
     }
+    return 0;
 }
 #undef _FG8
 #undef _BG8
 #undef _FG24
 #undef _BG24
 
-void
+int
 tmode(void) {
     int i, n, s, pri;
     char *p;
@@ -347,10 +324,8 @@ tmode(void) {
         if (param(i, &p) || p == NULL)
             continue;
 
-        if (stoi(&n, i == 0 && pri ? p+1 : p)) {
-            status |= SKIP;
-            continue;
-        }
+        if (stoi(&n, i == 0 && pri ? p+1 : p))
+            return EPROTO;
 
         switch (n) {
         case MODE_FFE:
@@ -387,26 +362,23 @@ tmode(void) {
             if (s) lclear_all();
             ldirty_all();
             break;
-        default: status |= SKIP;
+        default: return EPROTO;
         }
     }
+    return 0;
 #undef _M
 }
 
-void
+int
 tdsr(void) {
     int n, nw;
     char wbuf[32], *p;
 
-    if (esc.npar == 0 || param(0, &p) || p == NULL) {
-        status |= SKIP;
-        return;
-    }
+    if (esc.npar == 0 || param(0, &p) || p == NULL)
+        return EPROTO;
 
-    if (stoi(&n, p[0] == '?' ? p+1 : p)) {
-        status |= SKIP;
-        return;
-    }
+    if (stoi(&n, p[0] == '?' ? p+1 : p))
+        return EPROTO;
 
     switch (n) {
     case 5:
@@ -416,14 +388,13 @@ tdsr(void) {
         nw = snprintf(wbuf, sizeof(wbuf), "\033[%d;%dR",
             zt.y+1, zt.x+1);
         break;
-    default:
-        status |= SKIP;
-        return;
+    default: return EPROTO;
     }
     tty_write(wbuf, nw);
+    return 0;
 }
 
-void
+int
 tcsi(void) {
     int n = 0, m = 0;
 
@@ -480,14 +451,15 @@ tcsi(void) {
             PARAM_INT(0, &n, 0);
         break;
     case DECRC:
-        if (esc.npar) {
-            status |= SKIP;
-            return;
-        }
+        if (esc.npar)
+            return EPROTO;
         break;
     }
 
     switch (esc.csi) {
+    case SGR    : return tsgr();
+    case SM     : return tmode();
+    case RM     : return tmode();
     case CUF    : lmoveto(zt.y  , zt.x+n)     ; break;
     case CUB    : lmoveto(zt.y  , zt.x-n)     ; break;
     case CUU    : lmoveto(zt.y-n, zt.x)       ; break;
@@ -503,12 +475,9 @@ tcsi(void) {
     case VPR    : lmoveto(zt.y+n, zt.y)       ; break;
     case IL     : linsert(n)                  ; break;
     case DL     : ldelete(n)                  ; break;
-    case SGR    : tsgr()                      ; break;
     case SU     : lscroll_up(zt.top, n)       ; break;
     case SD     : lscroll_down(zt.top, n)     ; break;
     case ECH    : lerase(zt.y, zt.x, zt.x+n-1); break;
-    case SM     : tmode()                     ; break;
-    case RM     : tmode()                     ; break;
     case DECSTBM: lsettb(n-1, m-1)            ; break;
     case CHT    : ltab(n)                     ; break;
     case CBT    : ltab(-n)                    ; break;
@@ -528,7 +497,7 @@ tcsi(void) {
         case 0: lerase(zt.y, zt.x, zt.col-1); break;
         case 1: lerase(zt.y, 0, zt.x)       ; break;
         case 2: lerase(zt.y, 0, zt.col-1)   ; break;
-        default: status |= SKIP;
+        default: return EPROTO;
         }
         break;
 
@@ -538,7 +507,7 @@ tcsi(void) {
         case 1: lclear(0, 0, zt.y , zt.x)             ; break;
         case 2: lclear_all(); lmoveto(0,0)            ; break;
         case 3: lclear_all(); lmoveto(0,0)            ; break;
-        default: status |= SKIP;
+        default: return EPROTO;
         }
         break;
 
@@ -546,21 +515,20 @@ tcsi(void) {
         switch (n) {
         case 0: zt.tabs[zt.x] = 0; break;
         case 3: ltab_clear()     ; break;
-        default: status |= SKIP;
+        default: return EPROTO;
         }
         break;
-    default: status |= SKIP;
+    default: return EPROTO;
     }
+    return 0;
 }
 
-void
+int
 tesc(uint8_t *buf, int len) {
     int i, n;
 
-    if (!len) {
-        status |= RETRY;
-        return;
-    }
+    if (!len)
+        return EAGAIN;
 
     ASSERT(len > 0);
     esc.seq = buf;
@@ -568,47 +536,39 @@ tesc(uint8_t *buf, int len) {
     esc.len = 1;
 
     if (ESC_IS_NF(esc.code)) {
-        if ((n = range_search(buf+1, len-1, nf_ending, 0)) < 0) {
-            status |= RETRY;
-            return;
-        }
+        if ((n = range_search(buf+1, len-1, nf_ending, 0)) < 0)
+            return EAGAIN;
         esc.len += n+1;
-
         switch (esc.code) {
         case NF_GZD4:
         case NF_G1D4:
         case NF_G2D4:
         case NF_G3D4:
-        default: status |= SKIP;
+        default: return EPROTO;
         }
-        return;
+        return 0;
     }
 
     if (ESC_IS_FP(esc.code)) {
         switch (esc.code) {
         case FP_DECSC: lcursor(1); break;
         case FP_DECRC: lcursor(0); break;
-        default: status |= SKIP;
+        default: return EPROTO;
         }
-        return;
+        return 0;
     }
 
-    if (ESC_IS_FS(esc.code)) {
-        status |= SKIP;
-        return;
-    }
+    if (ESC_IS_FS(esc.code))
+        return EPROTO;
 
-    if (!ESC_IS_FE(esc.code)) {
-        status |= SKIP;
-        return;
-    }
+    if (!ESC_IS_FE(esc.code))
+        return EPROTO;
 
     switch (ATOC1(esc.code)) {
     case CSI:
-        if ((n = range_search(buf+1, len-1, csi_ending, 0)) < 0) {
-            status |= RETRY;
-            return;
-        }
+        if ((n = range_search(buf+1, len-1, csi_ending, 0)) < 0)
+            return EAGAIN;
+
         esc.len += n+1;
         esc.csi = buf[esc.len-1];
         for (i = 1; i < esc.len-1; i++) {
@@ -616,24 +576,19 @@ tesc(uint8_t *buf, int len) {
                 esc.npar++;
         }
         esc.npar++;
-        tcsi();
-        break;
+        return tcsi();
 
     case OSC:
-        if ((n = SEARCH(buf+1, len-1, osc_ending)) < 0) {
-            status |= RETRY;
-            return;
-        }
+        if ((n = SEARCH(buf+1, len-1, osc_ending)) < 0)
+            return EAGAIN;
         esc.len += n+1;
-        break;
+        return 0;
 
     case DCS:
-        if ((n = SEARCH(buf+1, len-1, dcs_ending)) < 0) {
-            status |= RETRY;
-            return;
-        }
+        if ((n = SEARCH(buf+1, len-1, dcs_ending)) < 0)
+            return EAGAIN;
         esc.len += n+1;
-        break;
+        return 0;
 
     case HTS:
         zt.tabs[zt.x] = 1;
@@ -648,15 +603,16 @@ tesc(uint8_t *buf, int len) {
             lmoveto(zt.y-1, zt.x);
         break;
 
-    default: status |= SKIP;
+    default: return EPROTO;
     }
+    return 0;
 }
 
-void
+int
 tctrl(uint8_t *buf, int len) {
     ASSERT(len > 0);
     switch (buf[0]) {
-    case ESC: tesc(buf+1, len-1) ; break;
+    case ESC: return tesc(buf+1, len-1);
     case LF : lnew()             ; break;
     case CR : lmoveto(zt.y, 0)   ; break;
     case HT : ltab(1)            ; break;
@@ -665,14 +621,15 @@ tctrl(uint8_t *buf, int len) {
     case CCH:
         lmoveto(zt.y, zt.x-1);
         break;
-    default: status |= SKIP;
+    default: return EPROTO;
     }
+    return 0;
 }
 
 int
 twrite(uint8_t *buf, int len) {
     uint8_t *p = buf, *p0;
-    int n, retry_max = 3;
+    int n, retry_max = 3, ret;
     static int retry = 0;
     char *s;
 
@@ -691,10 +648,9 @@ twrite(uint8_t *buf, int len) {
             continue;
         }
 
-        status = 0;
         ZERO(esc);
-        tctrl(p, len);
-        if (status & RETRY) {
+        ret = tctrl(p, len);
+        if (ret == EAGAIN) {
             retry++;
             break;
         }
@@ -708,12 +664,12 @@ twrite(uint8_t *buf, int len) {
 
         s = to_string(p, esc.len+1);
         if (zt.debug.t == 1) {
-            if (status & SKIP)
+            if (ret == EPROTO)
                 LOG("%s ?????\n", s);
             continue;
         }
 
-        if (status & SKIP)
+        if (ret == EPROTO)
             LOG("%s ?????\n", s);
         else
             LOG("%s\n", s);
