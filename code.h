@@ -365,4 +365,18 @@ ctrl_name(uint8_t c) {
     return "???";
 }
 
+// Table 5-15: https://vt100.net/docs/vt102-ug/chapter5.html#T5-13
+// https://en.wikipedia.org/wiki/DEC_Special_Graphics
+// https://en.wikipedia.org/wiki/ISO/IEC_2022
+// 0x5f - 0x7e
+#define VT100_G0_MIN 0x5f
+#define VT100_G0_MAX 0x7e
+static char *vt100_g0[] __unused = {
+                                       " ", // 0x5f
+    "◆", "▒", "␉", "␌", "␍", "␊", "°", "±", // 0x60 - 0x67
+    "␤", "␋", "┘", "┐", "┌", "└", "┼", "⎺", // 0x68 - 0x6f
+    "⎻", "─", "⎼", "⎽", "├", "┤", "┴", "┬", // 0x70 - 0x77
+    "│", "≤", "≥", "π", "≠", "£", "·",      // 0x78 - 0x7e
+};
+
 #endif

@@ -131,6 +131,7 @@ extern struct zt_t zt;
 #define MODE_MOUSE_MOTION_PRESS (1<<6)
 #define MODE_MOUSE_MOTION_ANY   (1<<7)
 #define MODE_MOUSE_EXT          (1<<8)
+#define MODE_VT100_G0           (1<<9)
 
 #define ATTR_DEFAULT_FG     (1<<0)
 #define ATTR_DEFAULT_BG     (1<<1)

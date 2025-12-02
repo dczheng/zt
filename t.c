@@ -518,6 +518,13 @@ tesc(uint8_t *buf, int len) {
         esc.len += n+1;
         switch (esc.code) {
         case NF_GZD4:
+            if (len < 2) return EPROTO;
+            switch (buf[1]) {
+            case 'B': zt.mode &= ~MODE_VT100_G0; break;
+            case '0': zt.mode |= MODE_VT100_G0; break;
+            default: return EPROTO;
+            }
+            break;
         case NF_G1D4:
         case NF_G2D4:
         case NF_G3D4:
