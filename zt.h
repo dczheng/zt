@@ -19,9 +19,9 @@ static struct {
     char *name;
     int size;
 } font_list[] __unused = {
-    {"Sarasa Mono CL", 26},
-    {"Noto Emoji",      8},
-    {"Unifont",        18}
+    {"Sarasa Term CL",  26},
+    {"Noto Emoji",       8},
+    {"Unifont",         18},
 };
 
 static struct {
@@ -66,7 +66,7 @@ struct char_t {
 struct zt_t {
     int *dirty, *tabs, top, bot, width ,height,
         x, y, x_saved, y_saved, row, col,
-        row_old, col_old;
+        row_old, col_old, debug;
     struct {
         struct char_t **line;
         char *buffer;
@@ -75,9 +75,6 @@ struct zt_t {
     char *term;
     unsigned long mode;
     double fontsize;
-    struct {
-        int t, x;
-    } debug;
 };
 extern struct zt_t zt;
 
@@ -124,18 +121,19 @@ extern struct zt_t zt;
 
 #define SET(a, b) (a |= (b))
 #define UNSET(a, b) (a &= ~(b))
-#define ISSET(a, b) (a & (b))
+#define ISSET(a, b) (!!(a & (b)))
 
-#define MODE_TEXT_CURSOR        (1<<0)
-#define MODE_SEND_FOCUS         (1<<1)
-#define MODE_BRACKETED_PASTE    (1<<2)
-#define MODE_MOUSE              (1<<3)
-#define MODE_MOUSE_PRESS        (1<<4)
-#define MODE_MOUSE_RELEASE      (1<<5)
-#define MODE_MOUSE_MOTION_PRESS (1<<6)
-#define MODE_MOUSE_MOTION_ANY   (1<<7)
-#define MODE_MOUSE_EXT          (1<<8)
-#define MODE_VT100_G0           (1<<9)
+#define MODE_CURSOR             (1<<0)
+#define MODE_FOCUS              (1<<1)
+#define MODE_MOUSE_PRESS        (1<<2)
+#define MODE_MOUSE_RELEASE      (1<<3)
+#define MODE_MOUSE_MOTION       (1<<4)
+#define MODE_MOUSE_SGR          (1<<5)
+#define MODE_VT100_G0           (1<<6)
+#define MODE_MOUSE              (MODE_MOUSE_PRESS | \
+                                 MODE_MOUSE_RELEASE | \
+                                 MODE_MOUSE_MOTION | \
+                                 MODE_MOUSE_SGR)
 
 #define ATTR_DEFAULT_FG     (1<<0)
 #define ATTR_DEFAULT_BG     (1<<1)

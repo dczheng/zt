@@ -152,8 +152,7 @@ main(int argc, char **argv) {
     struct option opts[] = {
         {"font-size",       required_argument, NULL, 1},
         {"term",            required_argument, NULL, 2},
-        {"debug-t",         required_argument, NULL, 3},
-        {"debug-x",         no_argument,       NULL, 4},
+        {"debug",           required_argument, NULL, 3},
         {0, 0, 0, 0}
     };
 
@@ -169,11 +168,8 @@ main(int argc, char **argv) {
             zt.term = optarg;
             break;
         case 3:
-            if (stoi(&zt.debug.t, optarg))
-                zt.debug.t = 0;
-            break;
-        case 4:
-            zt.debug.x = 1;
+            if (stoi(&zt.debug, optarg))
+                zt.debug = 0;
             break;
         }
     }

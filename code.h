@@ -290,79 +290,39 @@ static uint8_t osc_ending[] __unused = { BEL, ST, C1TOFE(ST), ESC };
 100-107 Bright background color
 */
 
-#define CTRL_NAME_SIZE_MAX 3
 static inline char*
-ctrl_name(uint8_t c) {
-#define _case(a) case a: return #a;
-    switch(c){
-    _case(NUL);
-    _case(SOH);
-    _case(STX);
-    _case(ETX);
-    _case(EOT);
-    _case(ENQ);
-    _case(ACK);
-    _case(BEL);
-    _case(BS);
-    _case(HT);
-    _case(LF);
-    _case(VT);
-    _case(FF);
-    _case(CR);
-    _case(SO);
-    _case(SI);
-    _case(DLE);
-    _case(DC1);
-    _case(DC2);
-    _case(DC3);
-    _case(DC4);
-    _case(NAK);
-    _case(SYN);
-    _case(ETB);
-    _case(CAN);
-    _case(EM);
-    _case(SUB);
-    _case(ESC);
-    _case(FS);
-    _case(GS);
-    _case(RS);
-    _case(US);
-    _case(DEL);
-    _case(PAD);
-    _case(HOP);
-    _case(BPH);
-    _case(NBH);
-    _case(IND);
-    _case(NEL);
-    _case(SSA);
-    _case(ESA);
-    _case(HTS);
-    _case(HTJ);
-    _case(VTS);
-    _case(PLD);
-    _case(PLU);
-    _case(RI);
-    _case(SS2);
-    _case(SS3);
-    _case(DCS);
-    _case(PU1);
-    _case(PU2);
-    _case(STS);
-    _case(CCH);
-    _case(MW);
-    _case(SPA);
-    _case(EPA);
-    _case(SOS);
-    _case(SGC);
-    _case(SCI);
-    _case(CSI);
-    _case(ST);
-    _case(OSC);
-    _case(PM);
-    _case(APC);
-    }
+ctrl_str(void *buf, int n) {
+    int i, p = 0;
+    static char s[BUFSIZ*3+1];
+    uint8_t *b = buf;
+
+    for (i = 0; i < n; i++) {
+        if (isprint(b[i])) {
+            p += snprintf(s+p, sizeof(s)-p, "%c", b[i]);
+            continue;
+        }
+        if (!ISCTRL(b[i])) {
+            p += snprintf(s+p, sizeof(s)-p, "%02x", b[i]);
+            continue;
+        }
+#define _case(a) case a: p += snprintf(s+p, sizeof(s)-p, "%s", #a); break;
+        switch(b[i]){
+        _case(NUL); _case(SOH); _case(STX); _case(ETX); _case(EOT); _case(ENQ);
+        _case(ACK); _case(BEL); _case(BS);  _case(HT);  _case(LF);  _case(VT);
+        _case(FF);  _case(CR);  _case(SO);  _case(SI);  _case(DLE); _case(DC1);
+        _case(DC2); _case(DC3); _case(DC4); _case(NAK); _case(SYN); _case(ETB);
+        _case(CAN); _case(EM);  _case(SUB); _case(ESC); _case(FS);  _case(GS);
+        _case(RS);  _case(US);  _case(DEL); _case(PAD); _case(HOP); _case(BPH);
+        _case(NBH); _case(IND); _case(NEL); _case(SSA); _case(ESA); _case(HTS);
+        _case(HTJ); _case(VTS); _case(PLD); _case(PLU); _case(RI);  _case(SS2);
+        _case(SS3); _case(DCS); _case(PU1); _case(PU2); _case(STS); _case(CCH);
+        _case(MW);  _case(SPA); _case(EPA); _case(SOS); _case(SGC); _case(SCI);
+        _case(CSI); _case(ST);  _case(OSC); _case(PM);  _case(APC);
+        }
 #undef _case
-    return "???";
+    }
+    s[p] = 0;
+    return s;
 }
 
 // Table 5-15: https://vt100.net/docs/vt102-ug/chapter5.html#T5-13

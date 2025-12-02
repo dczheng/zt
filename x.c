@@ -93,10 +93,6 @@ xdraw_specs(struct char_t c) {
     if (t > 0 && t < xctx.fw)
         w = zt.width-x;
 
-    if (zt.debug.x)
-        LOG("(%d, %d, %d, %d, %d) ", xctx.nspec, c.width, x, w,
-            xctx.specs[xctx.nspec-1].x);
-
     if (!ISSET(c.attr, ATTR_DEFAULT_FG)) {
         switch (c.fg.type) {
         case 8:
@@ -162,7 +158,7 @@ xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
             return;
     }
 
-    LOGERR("can't find font for %x\n", c.c);
+    LOGERR("can't find font for 0x%x\n", c.c);
     *f = xctx.fonts[0].font;
     *idx = XftCharIndex(xctx.dpy, *f, ' ');
 }
@@ -177,9 +173,6 @@ xdraw_line(int k, int y) {
     r.y = 0;
     r.width = zt.width;
     r.height = xctx.fh;
-
-    if (zt.debug.x)
-        LOG("[%3d] ", k);
 
     XftDrawSetClipRectangles(xctx.draw, 0, y, &r, 1);
     //XftDrawRect(xctx.draw, &xctx.bkg, 0, y, zt.width, xctx.fh);
@@ -204,9 +197,6 @@ xdraw_line(int k, int y) {
         xdraw_specs(c0);
     }
 
-    if (zt.debug.x)
-        LOG("\n");
-
     xdraw_specs(c0);
     XftDrawSetClip(xctx.draw, 0);
 }
@@ -223,7 +213,7 @@ xdraw_cursor(void) {
         last_y = zt.y;
     }
 
-    if (ISSET(zt.mode, MODE_TEXT_CURSOR))
+    if (ISSET(zt.mode, MODE_CURSOR))
         XftDrawRect(xctx.draw, &xctx.fg,
             zt.x*xctx.fw, (zt.y+1)*xctx.fh-3, xctx.fw, 3);
 }
@@ -233,11 +223,6 @@ xdraw(void) {
     int y, i, nline = 0;
 
     //XftDrawRect(xctx.draw, &xctx.bkg, 0, 0, zt.width, zt.height);
-    if (zt.debug.x) {
-        LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-        LOG("font size: %dx%d\n", xctx.fw, xctx.fh);
-    }
-
     for (i = 0, y = 0; i < zt.row; i++, y += xctx.fh) {
         if (!zt.dirty[i])
             continue;
@@ -292,69 +277,68 @@ xresize() {
     ASSERT(xctx.specs = realloc(xctx.specs, zt.col*sizeof(XftGlyphFontSpec)));
 }
 
+// https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 void
 _Mouse(XEvent *ev) {
-    int r, c, b, n;
-    static int or=-1, oc=-1, ob=-1;
-    char t;
-    static char buf[64];
-
-    r = ev->xbutton.y / xctx.fh + 1;
-    c = ev->xbutton.x / xctx.fw + 1;
-    b = ev->xbutton.button-Button1;
-    if (b >= 3)
-        b += 64-3;
+    static struct {
+        int x, y, b;
+    } m, mlast;
+    int n;
+    char buf[64];
 
     if (!ISSET(zt.mode, MODE_MOUSE))
         return;
 
-    switch (ev->xbutton.type) {
+    m.y = ev->xbutton.y / xctx.fh + 1;
+    m.x = ev->xbutton.x / xctx.fw + 1;
+    m.b = ev->xbutton.button - Button1 + 1;
+
+    switch (ev->type) {
     case ButtonPress:
         if (!ISSET(zt.mode, MODE_MOUSE_PRESS))
             return;
-        t = 'M';
-        or = r;
-        oc = c;
-        ob = b;
+        mlast = m;
         break;
 
     case ButtonRelease:
         if (!ISSET(zt.mode, MODE_MOUSE_RELEASE))
             return;
-        t = 'm';
         break;
 
     case MotionNotify:
-        if (!ISSET(zt.mode, MODE_MOUSE_MOTION_PRESS) &&
-            !ISSET(zt.mode, MODE_MOUSE_MOTION_ANY))
+        if (!ISSET(zt.mode, MODE_MOUSE_MOTION))
             return;
-        if (r == or && c == oc)
+        if (m.x == mlast.x && m.y == mlast.y)
             return;
-        t = 'M';
-        or = r;
-        oc = c;
-        b = ob+32;
+        mlast.x = mlast.x;
+        mlast.y = mlast.y;
+        m.b = mlast.b;
         break;
-
-    default:
-        LOGERR("Unsupported button type: %d\n",
-            ev->xbutton.type);
-        return;
+    default: DIE();
     }
 
-    if (ISSET(zt.mode, MODE_MOUSE_EXT)) {
-        n = snprintf(buf, sizeof(buf),
-            "\033[<%d;%d;%d%c", b, c, r, t);
-    } else {
-        n = snprintf(buf, sizeof(buf),
-            "\033[M%c%c%c", 32+b, 32+c, 32+r);
-    }
+    if (!ISSET(zt.mode, MODE_MOUSE_SGR) && ev->type == ButtonRelease)
+        m.b = 3;
+    else if (m.b >= 8)
+        m.b = m.b - 8 + 128;
+    else if (m.b >= 4)
+        m.b = m.b - 4 + 64;
+    else
+        m.b--;
+
+    m.b += ev->type == MotionNotify ? 32 : 0;
+    if (ISSET(zt.mode, MODE_MOUSE_SGR))
+        n = snprintf(buf, sizeof(buf), "\033[<%d;%d;%d%c", m.b, m.x, m.y,
+            ev->type == ButtonRelease ? 'm' : 'M');
+    else
+        n = snprintf(buf, sizeof(buf), "\033[M%c%c%c", 32+m.b, 32+m.x, 32+m.y);
+
     tty_write(buf, n);
 }
 
 void
 _Focus(XEvent *ev) {
-    if (!ISSET(zt.mode, MODE_SEND_FOCUS))
+    if (!ISSET(zt.mode, MODE_FOCUS))
         return;
     if (ev->type == FocusIn) {
         if (xctx.ic)
@@ -545,9 +529,6 @@ xfont_init(void) {
         snprintf(buf, sizeof(buf), "%s:pixelsize=%d",
             font_list[i/4].name, size);
         xfont_load(buf, f);
-
-        if (i % 4 != 0)
-            continue;
     }
 
     xctx.fh = xctx.fonts[0].font->height;

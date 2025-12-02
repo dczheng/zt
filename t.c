@@ -29,23 +29,6 @@ struct esc_t {
     uint8_t *seq, code, csi;
 } esc;
 
-char*
-to_string(uint8_t *buf, int n) {
-    int i, p = 0;
-    static char s[BUFSIZ*CTRL_NAME_SIZE_MAX+1];
-
-    for (i = 0; i < n; i++) {
-        if (isprint(buf[i]))
-            p += snprintf(s+p, sizeof(s)-p, "%c", buf[i]);
-        else if (ISCTRL(buf[i]))
-            p += snprintf(s+p, sizeof(s)-p, "%s", ctrl_name(buf[i]));
-        else
-            p += snprintf(s+p, sizeof(s)-p, "%02x", buf[i]);
-    }
-    s[p] = 0;
-    return s;
-}
-
 void
 tdump(void) {
     static int frame = 0;
@@ -298,6 +281,8 @@ tmode(void) {
     pri = esc.seq[1] == '?';
     s = (esc.csi == SM ? 1 : 0);
 
+    //LOG("%s\n", ctrl_str(esc.seq, esc.len));
+
 #define _M(v) s ? SET(zt.mode, v) : UNSET(zt.mode , v)
     for (i = 0; i < esc.npar; i++) {
         if (param(i, &p) || p == NULL)
@@ -307,27 +292,12 @@ tmode(void) {
             return EPROTO;
 
         switch (n) {
-        case DECTCEM:
-            _M(MODE_TEXT_CURSOR);
-            break;
-        case 1000:
-            _M(MODE_MOUSE|MODE_MOUSE_PRESS);
-            break;
-        case 1002:
-            _M(MODE_MOUSE|MODE_MOUSE_MOTION_PRESS);
-            break;
-        case 1003:
-            _M(MODE_MOUSE|MODE_MOUSE_MOTION_ANY);
-            break;
-        case 1004:
-            _M(MODE_SEND_FOCUS);
-            break;
-        case 1006:
-            _M(MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT);
-            break;
-        case 2004:
-            _M(MODE_BRACKETED_PASTE);
-            break;
+        case DECTCEM: _M(MODE_CURSOR); break;
+        case 1000: _M(MODE_MOUSE_PRESS|MODE_MOUSE_RELEASE); break;
+        case 1002: _M(MODE_MOUSE_MOTION); break;
+        case 1003: _M(MODE_MOUSE); break;
+        case 1004: _M(MODE_FOCUS); break;
+        case 1006: _M(MODE_MOUSE_SGR); break;
         case 1047:
             lalt(s);
             ldirty_all();
@@ -620,8 +590,8 @@ twrite(uint8_t *buf, int len) {
     ASSERT(len >= 0);
     if (!len) return 0;
 
-    if (zt.debug.t >= 2)
-        LOG("\n------\n%s\n------\n", to_string(buf, len));
+    if (zt.debug >= 2)
+        LOG("\n------\n%s\n------\n", ctrl_str(buf, len));
 
     for (; len > 0; p += n, len -= n, retry = 0) {
         if (!ISCTRL(p[0])) {
@@ -643,11 +613,11 @@ twrite(uint8_t *buf, int len) {
         if (p[0] != ESC)
             zt.lastc.c = 0;
 
-        if (zt.debug.t <= 0)
+        if (zt.debug <= 0)
             continue;
 
-        s = to_string(p, esc.len+1);
-        if (zt.debug.t == 1) {
+        s = ctrl_str(p, esc.len+1);
+        if (zt.debug == 1) {
             if (ret == EPROTO)
                 LOG("%s ?????\n", s);
             continue;
@@ -658,7 +628,7 @@ twrite(uint8_t *buf, int len) {
         else
             LOG("%s\n", s);
 
-        if (zt.debug.t >= 3)
+        if (zt.debug >= 3)
             tdump();
     }
 
@@ -669,7 +639,7 @@ twrite(uint8_t *buf, int len) {
             if (ISCTRL(p[0]))
                 break;
         }
-        LOGERR("drop: %s", to_string(p0, p-p0));
+        LOGERR("drop: %s", ctrl_str(p0, p-p0));
     }
 
     return p - buf;
@@ -677,7 +647,7 @@ twrite(uint8_t *buf, int len) {
 
 void
 tinit(void) {
-    zt.mode = MODE_TEXT_CURSOR;
+    zt.mode = MODE_CURSOR;
     ATTR_RESET();
     zt.row = 24;
     zt.col = 80;
