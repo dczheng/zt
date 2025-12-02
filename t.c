@@ -195,7 +195,7 @@ param_int(int idx, int *v, int v0) {
 static inline void
 _tsgr_c8(int fg, int v) {
     struct color_t *c = fg ? &zt.c.fg : &zt.c.bg;
-    zt.c.attr &= ~(fg ? ATTR_DEFAULT_FG : ATTR_DEFAULT_BG);
+    UNSET(zt.c.attr, fg ? ATTR_DEFAULT_FG : ATTR_DEFAULT_BG);
     c->type = 8;
     c->c8 = v;
 }
@@ -203,7 +203,7 @@ _tsgr_c8(int fg, int v) {
 static inline void
 _tsgr_c24(int fg, int r, int g, int b) {
     struct color_t *c = fg ? &zt.c.fg : &zt.c.bg;
-    zt.c.attr &= ~(fg ? ATTR_DEFAULT_FG : ATTR_DEFAULT_BG);
+    UNSET(zt.c.attr, fg ? ATTR_DEFAULT_FG : ATTR_DEFAULT_BG);
     LIMIT(r, 0, 255);
     LIMIT(g, 0, 255);
     LIMIT(b, 0, 255);
@@ -246,21 +246,21 @@ tsgr(void) {
         }
 
         switch (n) {
-        case  0: ATTR_RESET()                                   ; break;
-        case  1: zt.c.attr |= ATTR_BOLD                         ; break;
-        case  2: zt.c.attr |= ATTR_FAINT                        ; break;
-        case  3: zt.c.attr |= ATTR_ITALIC                       ; break;
-        case  4: zt.c.attr |= ATTR_UNDERLINE                    ; break;
-        case  7: zt.c.attr |= ATTR_COLOR_REVERSE                ; break;
-        case  9: zt.c.attr |= ATTR_CROSSED_OUT                  ; break;
-        case 10: zt.c.attr &= ~ATTR_BOLD|ATTR_FAINT|ATTR_ITALIC ; break;
-        case 22: zt.c.attr &= ~ATTR_BOLD|ATTR_FAINT             ; break;
-        case 23: zt.c.attr &= ~ATTR_ITALIC                      ; break;
-        case 24: zt.c.attr &= ~ATTR_UNDERLINE                   ; break;
-        case 27: zt.c.attr &= ~ATTR_COLOR_REVERSE               ; break;
-        case 29: zt.c.attr &= ~ATTR_CROSSED_OUT                 ; break;
-        case 39: zt.c.attr |= ATTR_DEFAULT_FG                   ; break;
-        case 49: zt.c.attr |= ATTR_DEFAULT_BG                   ; break;
+        case  0: ATTR_RESET(); break;
+        case  1: SET(zt.c.attr, ATTR_BOLD); break;
+        case  2: SET(zt.c.attr, ATTR_FAINT); break;
+        case  3: SET(zt.c.attr, ATTR_ITALIC); break;
+        case  4: SET(zt.c.attr, ATTR_UNDERLINE); break;
+        case  7: SET(zt.c.attr, ATTR_COLOR_REVERSE); break;
+        case  9: SET(zt.c.attr, ATTR_CROSSED_OUT); break;
+        case 10: UNSET(zt.c.attr, ATTR_BOLD|ATTR_FAINT|ATTR_ITALIC); break;
+        case 22: UNSET(zt.c.attr, ATTR_BOLD|ATTR_FAINT); break;
+        case 23: UNSET(zt.c.attr, ATTR_ITALIC); break;
+        case 24: UNSET(zt.c.attr, ATTR_UNDERLINE); break;
+        case 27: UNSET(zt.c.attr, ATTR_COLOR_REVERSE); break;
+        case 29: UNSET(zt.c.attr, ATTR_CROSSED_OUT); break;
+        case 39: SET(zt.c.attr, ATTR_DEFAULT_FG); break;
+        case 49: SET(zt.c.attr, ATTR_DEFAULT_BG); break;
         case 38:
         case 48:
             PARAM_INT(i++, &m, 0);
@@ -298,7 +298,7 @@ tmode(void) {
     pri = esc.seq[1] == '?';
     s = (esc.csi == SM ? 1 : 0);
 
-#define _M(v) s ? (zt.mode |= v) : (zt.mode &= ~v)
+#define _M(v) s ? SET(zt.mode, v) : UNSET(zt.mode , v)
     for (i = 0; i < esc.npar; i++) {
         if (param(i, &p) || p == NULL)
             continue;
@@ -437,33 +437,33 @@ tcsi(void) {
     case SGR    : return tsgr();
     case SM     : return tmode();
     case RM     : return tmode();
-    case CUF    : lmoveto(zt.y  , zt.x+n)     ; break;
-    case CUB    : lmoveto(zt.y  , zt.x-n)     ; break;
-    case CUU    : lmoveto(zt.y-n, zt.x)       ; break;
-    case CUD    : lmoveto(zt.y+n, zt.x)       ; break;
-    case CPL    : lmoveto(zt.y-n, 0)          ; break;
-    case CNL    : lmoveto(zt.y+n, 0)          ; break;
-    case CUP    : lmoveto(n-1   , m-1)        ; break;
-    case HVP    : lmoveto(n-1   , m-1)        ; break;
-    case CHA    : lmoveto(zt.y  , n-1)        ; break;
-    case HPA    : lmoveto(zt.y  , n-1)        ; break;
-    case VPA    : lmoveto(n-1   , zt.x)       ; break;
-    case HPR    : lmoveto(zt.y  , zt.x+n)     ; break;
-    case VPR    : lmoveto(zt.y+n, zt.y)       ; break;
-    case IL     : linsert(n)                  ; break;
-    case DL     : ldelete(n)                  ; break;
-    case SU     : lscroll_up(zt.top, n)       ; break;
-    case SD     : lscroll_down(zt.top, n)     ; break;
+    case CUF    : lmoveto(  zt.y, zt.x+n); break;
+    case CUB    : lmoveto(  zt.y, zt.x-n); break;
+    case CUU    : lmoveto(zt.y-n,   zt.x); break;
+    case CUD    : lmoveto(zt.y+n,   zt.x); break;
+    case CPL    : lmoveto(zt.y-n,      0); break;
+    case CNL    : lmoveto(zt.y+n,      0); break;
+    case CUP    : lmoveto(   n-1,    m-1); break;
+    case HVP    : lmoveto(   n-1,    m-1); break;
+    case CHA    : lmoveto(  zt.y,    n-1); break;
+    case HPA    : lmoveto(  zt.y,    n-1); break;
+    case VPA    : lmoveto(   n-1,   zt.x); break;
+    case HPR    : lmoveto(  zt.y, zt.x+n); break;
+    case VPR    : lmoveto(zt.y+n,   zt.y); break;
+    case IL     : linsert(n); break;
+    case DL     : ldelete(n); break;
+    case SU     : lscroll_up(zt.top, n); break;
+    case SD     : lscroll_down(zt.top, n); break;
     case ECH    : lerase(zt.y, zt.x, zt.x+n-1); break;
-    case DECSTBM: lsettb(n-1, m-1)            ; break;
-    case CHT    : ltab(n)                     ; break;
-    case CBT    : ltab(-n)                    ; break;
-    case ICH    : linsert_blank(n)            ; break;
-    case DCH    : ldelete_char(n)             ; break;
-    case REP    : lrepeat_last(n)             ; break;
-    case DECSC  : lcursor(1)                  ; break;
-    case DECRC  : lcursor(0)                  ; break;
-    case DSR    : tdsr()                      ; break;
+    case DECSTBM: lsettb(n-1, m-1); break;
+    case CHT    : ltab(n); break;
+    case CBT    : ltab(-n); break;
+    case ICH    : linsert_blank(n); break;
+    case DCH    : ldelete_char(n); break;
+    case REP    : lrepeat_last(n); break;
+    case DECSC  : lcursor(1); break;
+    case DECRC  : lcursor(0); break;
+    case DSR    : tdsr(); break;
     case DA:
         if (n == 0)
             tty_write(PRIMARY_DA, strlen(PRIMARY_DA));
@@ -472,8 +472,8 @@ tcsi(void) {
     case EL:
         switch (n) {
         case 0: lerase(zt.y, zt.x, zt.col-1); break;
-        case 1: lerase(zt.y, 0, zt.x)       ; break;
-        case 2: lerase(zt.y, 0, zt.col-1)   ; break;
+        case 1: lerase(zt.y, 0, zt.x); break;
+        case 2: lerase(zt.y, 0, zt.col-1); break;
         default: return EPROTO;
         }
         break;
@@ -481,9 +481,9 @@ tcsi(void) {
     case ED:
         switch (n) {
         case 0: lclear(zt.y, zt.x, zt.row-1, zt.col-1); break;
-        case 1: lclear(0, 0, zt.y , zt.x)             ; break;
-        case 2: lclear_all(); lmoveto(0,0)            ; break;
-        case 3: lclear_all(); lmoveto(0,0)            ; break;
+        case 1: lclear(0, 0, zt.y , zt.x); break;
+        case 2: lclear_all(); lmoveto(0,0); break;
+        case 3: lclear_all(); lmoveto(0,0); break;
         default: return EPROTO;
         }
         break;
@@ -491,7 +491,7 @@ tcsi(void) {
     case TBC:
         switch (n) {
         case 0: zt.tabs[zt.x] = 0; break;
-        case 3: ltab_clear()     ; break;
+        case 3: ltab_clear(); break;
         default: return EPROTO;
         }
         break;
@@ -520,8 +520,8 @@ tesc(uint8_t *buf, int len) {
         case NF_GZD4:
             if (len < 2) return EPROTO;
             switch (buf[1]) {
-            case 'B': zt.mode &= ~MODE_VT100_G0; break;
-            case '0': zt.mode |= MODE_VT100_G0; break;
+            case 'B': UNSET(zt.mode, MODE_VT100_G0); break;
+            case '0': SET(zt.mode, MODE_VT100_G0); break;
             default: return EPROTO;
             }
             break;
@@ -597,10 +597,10 @@ tctrl(uint8_t *buf, int len) {
     ASSERT(len > 0);
     switch (buf[0]) {
     case ESC: return tesc(buf+1, len-1);
-    case LF : lnew()             ; break;
-    case CR : lmoveto(zt.y, 0)   ; break;
-    case HT : ltab(1)            ; break;
-    case HTS: zt.tabs[zt.x] = 1  ; break;
+    case LF : lnew(); break;
+    case CR : lmoveto(zt.y, 0); break;
+    case HT : ltab(1); break;
+    case HTS: zt.tabs[zt.x] = 1; break;
     case BS:
     case CCH:
         lmoveto(zt.y, zt.x-1);

@@ -122,6 +122,10 @@ extern struct zt_t zt;
     _exit(1);\
 } while(0)
 
+#define SET(a, b) (a |= (b))
+#define UNSET(a, b) (a &= ~(b))
+#define ISSET(a, b) (a & (b))
+
 #define MODE_TEXT_CURSOR        (1<<0)
 #define MODE_SEND_FOCUS         (1<<1)
 #define MODE_BRACKETED_PASTE    (1<<2)

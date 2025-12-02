@@ -228,7 +228,7 @@ lwrite(uint8_t *buf, int len, int *wlen) {
     if (len <= 0) return 0;
     c = buf[0];
 
-    if (zt.mode & MODE_VT100_G0 && c >= VT100_G0_MIN && c <= VT100_G0_MAX) {
+    if (ISSET(zt.mode, MODE_VT100_G0) && c >= VT100_G0_MIN && c <= VT100_G0_MAX) {
         ret = utf8_decode((uint8_t*)vt100_g0[c-VT100_G0_MIN], 4, &c, wlen);
         *wlen = 1;
     } else {

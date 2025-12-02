@@ -51,7 +51,7 @@
 #define ISCTRL0(c) ((c) <= 0x1f)
 
 // other
-#define DEL  0x7f // Delete
+#define DEL 0x7f // ^? Delete
 
 // C1, Fe ESC
 #define PAD  0x80 // '@' Padding character

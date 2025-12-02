@@ -97,7 +97,7 @@ xdraw_specs(struct char_t c) {
         LOG("(%d, %d, %d, %d, %d) ", xctx.nspec, c.width, x, w,
             xctx.specs[xctx.nspec-1].x);
 
-    if ((!(c.attr & ATTR_DEFAULT_FG))) {
+    if (!ISSET(c.attr, ATTR_DEFAULT_FG)) {
         switch (c.fg.type) {
         case 8:
             fg = xctx.color8[c.fg.c8];
@@ -108,7 +108,7 @@ xdraw_specs(struct char_t c) {
         }
     }
 
-    if ((!(c.attr & ATTR_DEFAULT_BG))) {
+    if (!ISSET(c.attr, ATTR_DEFAULT_BG)) {
         switch (c.bg.type) {
         case 8:
             bg = xctx.color8[c.bg.c8];
@@ -119,13 +119,13 @@ xdraw_specs(struct char_t c) {
         }
     }
 
-    if (c.attr & ATTR_COLOR_REVERSE)
+    if (ISSET(c.attr, ATTR_COLOR_REVERSE))
         SWAP(fg, bg);
 
     XftDrawRect(xctx.draw, &bg, x, y, w, xctx.fh);
-    if (c.attr & ATTR_UNDERLINE)
+    if (ISSET(c.attr, ATTR_UNDERLINE))
         XftDrawRect(xctx.draw, &fg, x, y + xctx.fb + 1, w, 1);
-    if (c.attr & ATTR_CROSSED_OUT)
+    if (ISSET(c.attr, ATTR_CROSSED_OUT))
         XftDrawRect(xctx.draw, &fg, x, y + xctx.fh / 2, w, 1);
 
     XftDrawGlyphFontSpec(xctx.draw, &fg, xctx.specs, xctx.nspec);
@@ -143,14 +143,14 @@ xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
     weight = FC_WEIGHT_REGULAR;
     slant = FC_SLANT_ROMAN;
 
-    if (c.attr & ATTR_BOLD)
+    if (ISSET(c.attr, ATTR_BOLD))
         weight = FC_WEIGHT_BOLD;
 
     // TODO
-    if (c.attr & ATTR_FAINT)
+    if (ISSET(c.attr, ATTR_FAINT))
         weight = FC_WEIGHT_REGULAR;
 
-    if (c.attr & ATTR_ITALIC)
+    if (ISSET(c.attr, ATTR_ITALIC))
         slant = FC_SLANT_ITALIC;
 
     for (i = 0; i < xctx.nfont; i++) {
@@ -223,7 +223,7 @@ xdraw_cursor(void) {
         last_y = zt.y;
     }
 
-    if (zt.mode & MODE_TEXT_CURSOR)
+    if (ISSET(zt.mode, MODE_TEXT_CURSOR))
         XftDrawRect(xctx.draw, &xctx.fg,
             zt.x*xctx.fw, (zt.y+1)*xctx.fh-3, xctx.fw, 3);
 }
@@ -305,12 +305,12 @@ _Mouse(XEvent *ev) {
     if (b >= 3)
         b += 64-3;
 
-    if (!(zt.mode & MODE_MOUSE))
+    if (!ISSET(zt.mode, MODE_MOUSE))
         return;
 
     switch (ev->xbutton.type) {
     case ButtonPress:
-        if (!(zt.mode & MODE_MOUSE_PRESS))
+        if (!ISSET(zt.mode, MODE_MOUSE_PRESS))
             return;
         t = 'M';
         or = r;
@@ -319,14 +319,14 @@ _Mouse(XEvent *ev) {
         break;
 
     case ButtonRelease:
-        if (!(zt.mode & MODE_MOUSE_RELEASE))
+        if (!ISSET(zt.mode, MODE_MOUSE_RELEASE))
             return;
         t = 'm';
         break;
 
     case MotionNotify:
-        if (!(zt.mode & MODE_MOUSE_MOTION_PRESS) &&
-            !(zt.mode & MODE_MOUSE_MOTION_ANY))
+        if (!ISSET(zt.mode, MODE_MOUSE_MOTION_PRESS) &&
+            !ISSET(zt.mode, MODE_MOUSE_MOTION_ANY))
             return;
         if (r == or && c == oc)
             return;
@@ -342,7 +342,7 @@ _Mouse(XEvent *ev) {
         return;
     }
 
-    if (zt.mode & MODE_MOUSE_EXT) {
+    if (ISSET(zt.mode, MODE_MOUSE_EXT)) {
         n = snprintf(buf, sizeof(buf),
             "\033[<%d;%d;%d%c", b, c, r, t);
     } else {
@@ -354,7 +354,7 @@ _Mouse(XEvent *ev) {
 
 void
 _Focus(XEvent *ev) {
-    if (!(zt.mode & MODE_SEND_FOCUS))
+    if (!ISSET(zt.mode, MODE_SEND_FOCUS))
         return;
     if (ev->type == FocusIn) {
         if (xctx.ic)
