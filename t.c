@@ -32,7 +32,7 @@ struct esc_t {
 char*
 to_string(uint8_t *buf, int n) {
     int i, p = 0;
-    static char s[BUFSIZ*3+1];
+    static char s[BUFSIZ*CTRL_NAME_SIZE_MAX+1];
 
     for (i = 0; i < n; i++) {
         if (isprint(buf[i]))
@@ -541,7 +541,7 @@ tesc(uint8_t *buf, int len) {
     if (!ESC_IS_FE(esc.code))
         return EPROTO;
 
-    switch (ATOC1(esc.code)) {
+    switch (FETOC1(esc.code)) {
     case CSI:
         if ((n = range_search(buf+1, len-1, csi_ending, 0)) < 0)
             return EAGAIN;

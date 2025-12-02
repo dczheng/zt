@@ -12,76 +12,100 @@
   https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 */
 
+#define VT102 "\033[?6c"
+#define PRIMARY_DA VT102
+
 // C0
-#define NUL 0x00 // Null
-#define SOH 0x01 // Start of Heading
-#define STX 0x02 // Start of text
-#define ETX 0x03 // End of text
-#define EOT 0x04 // End of transmission
-#define ENQ 0x05 // Enquiry
-#define ACK 0x06 // Acknowledge
-#define BEL 0x07 // Bell
-#define BS  0x08 // Backspace
-#define HT  0x09 // Horizontal aabulation
-#define LF  0x0a // Line feed
-#define VT  0x0b // Vertical tabulation
-#define FF  0x0c // Form feed
-#define CR  0x0d // Carriage return
-#define SO  0x0e // Shift out
-#define SI  0x0f // Shift in
-#define DLE 0x10 // DataLink escape
-#define DC1 0x11 // DeviceControl 1
-#define DC2 0x12 // DeviceControl 2
-#define DC3 0x13 // DeviceControl 3
-#define DC4 0x14 // DeviceControl 4
-#define NAK 0x15 // Negative acknowledge
-#define SYN 0x16 // Synchronous idle
-#define ETB 0x17 // End of transmission block
-#define CAN 0x18 // Cancel
-#define EM  0x19 // End of medium
-#define SUB 0x1a // Substitute
-#define ESC 0x1b // Escape
-#define FS  0x1c // File separator
-#define GS  0x1d // Group separator
-#define RS  0x1e // Record separator
-#define US  0x1f // Unit separator
+#define NUL 0x00 // ^@ Null
+#define SOH 0x01 // ^A Start of Heading
+#define STX 0x02 // ^B Start of text
+#define ETX 0x03 // ^C End of text
+#define EOT 0x04 // ^D End of transmission
+#define ENQ 0x05 // ^E Enquiry
+#define ACK 0x06 // ^F Acknowledge
+#define BEL 0x07 // ^G Bell
+#define BS  0x08 // ^H Backspace
+#define HT  0x09 // ^I Horizontal tabulation
+#define LF  0x0a // ^J Line feed
+#define VT  0x0b // ^K Vertical tabulation
+#define FF  0x0c // ^L Form feed
+#define CR  0x0d // ^M Carriage return
+#define SO  0x0e // ^N Shift out
+#define SI  0x0f // ^O Shift in
+#define DLE 0x10 // ^P DataLink escape
+#define DC1 0x11 // ^Q DeviceControl 1
+#define DC2 0x12 // ^R DeviceControl 2
+#define DC3 0x13 // ^S DeviceControl 3
+#define DC4 0x14 // ^T DeviceControl 4
+#define NAK 0x15 // ^U Negative acknowledge
+#define SYN 0x16 // ^V Synchronous idle
+#define ETB 0x17 // ^W End of transmission block
+#define CAN 0x18 // ^X Cancel
+#define EM  0x19 // ^Y End of medium
+#define SUB 0x1a // ^Z Substitute
+#define ESC 0x1b // ^[ Escape
+#define FS  0x1c // ^\ File separator
+#define GS  0x1d // ^] Group separator
+#define RS  0x1e // ^^ Record separator
+#define US  0x1f // ^_ Unit separator
+#define ISCTRL0(c) ((c) <= 0x1f)
 
 // other
 #define DEL  0x7f // Delete
 
-// C1
-#define PAD  0x80 // Padding character
-#define HOP  0x81 // High octet preset
-#define BPH  0x82 // Break permitted here
-#define NBH  0x83 // No break here
-#define IND  0x84 // Index
-#define NEL  0x85 // Next line
-#define SSA  0x86 // Start of selected area
-#define ESA  0x87 // End of selected area
-#define HTS  0x88 // Horizontal tabulationSet
-#define HTJ  0x89 // Horizontal tabulation with justification
-#define VTS  0x8a // Vertical tabulationSet
-#define PLD  0x8b // Partial line down
-#define PLU  0x8c // Partial line up
-#define RI   0x8d // Reverse index
-#define SS2  0x8e // Single shift 2
-#define SS3  0x8f // Single shift 3
-#define DCS  0x90 // Device control string
-#define PU1  0x91 // Private use 1
-#define PU2  0x92 // Private use 2
-#define STS  0x93 // Transmit state
-#define CCH  0x94 // Cancel character
-#define MW   0x95 // Message waiting
-#define SPA  0x96 // Start of protected area
-#define EPA  0x97 // End of protected area
-#define SOS  0x98 // Start of string
-#define SGCI 0x99 // Single graphic character introducer
-#define SCI  0x9a // Single character introducer
-#define CSI  0x9b // Control sequence introducer
-#define ST   0x9c // String terminator
-#define OSC  0x9d // Operating system command
-#define PM   0x9e // Privacy message
-#define APC  0x9f // Application program command
+// C1, Fe ESC
+#define PAD  0x80 // '@' Padding character
+#define HOP  0x81 // 'A' High octet preset
+#define BPH  0x82 // 'B' Break permitted here
+#define NBH  0x83 // 'C' No break here
+#define IND  0x84 // 'D' Index
+#define NEL  0x85 // 'E' Next line
+#define SSA  0x86 // 'F' Start of selected area
+#define ESA  0x87 // 'G' End of selected area
+#define HTS  0x88 // 'H' Horizontal tabulationSet
+#define HTJ  0x89 // 'I' Horizontal tabulation with justification
+#define VTS  0x8a // 'J' Vertical tabulationSet
+#define PLD  0x8b // 'K' Partial line down
+#define PLU  0x8c // 'L' Partial line up
+#define RI   0x8d // 'M' Reverse index
+#define SS2  0x8e // 'N' Single shift 2
+#define SS3  0x8f // 'O' Single shift 3
+#define DCS  0x90 // 'P' Device control string
+#define PU1  0x91 // 'Q' Private use 1
+#define PU2  0x92 // 'R' Private use 2
+#define STS  0x93 // 'S' Transmit state
+#define CCH  0x94 // 'T' Cancel character
+#define MW   0x95 // 'U' Message waiting
+#define SPA  0x96 // 'V' Start of protected area
+#define EPA  0x97 // 'W' End of protected area
+#define SOS  0x98 // 'X' Start of string
+#define SGC  0x99 // 'Y' Single graphic character introducer
+#define SCI  0x9a // 'Z' Single character introducer
+#define CSI  0x9b // '[' Control sequence introducer
+#define ST   0x9c // '\' String terminator
+#define OSC  0x9d // ']' Operating system command
+#define PM   0x9e // '^' Privacy message
+#define APC  0x9f // '_' Application program command
+#define ISCTRL1(c) ((c) >= 0x80 && (c) <= 0x9f)
+
+#define ISCTRL(c)   (ISCTRL0(c) || ISCTRL1(c) || (c) == DEL)
+#define FETOC1(c)   ((c) - '@' + 0x80)
+#define C1TOFE(c)   ((c) - 0x80 + '@')
+
+// nF ESC
+#define NF_GZD4 '(' // Charset G0
+#define NF_G1D4 ')' // Charset G1
+#define NF_G2D4 '*' // Charset G2
+#define NF_G3D4 '+' // Charset G3
+
+// Fp ESC
+#define FP_DECSC  '7' // DEC save cursor
+#define FP_DECRC  '8' // DEC restore cursor
+
+#define ESC_IS_NF(c) ((c) >= 0x20 && (c) <= 0x2f)
+#define ESC_IS_FP(c) ((c) >= 0x30 && (c) <= 0x3f)
+#define ESC_IS_FE(c) ((c) >= 0x40 && (c) <= 0x5f)
+#define ESC_IS_FS(c) ((c) >= 0x60 && (c) <= 0x7e)
 
 // CSI
 #define ICH     '@' // Insert Blank char
@@ -206,36 +230,10 @@
 #define DECBBSM    116 //  Bold and Blink Style Mode
 #define DECECM     117 //  Erase Color Mode
 
-// nf esc
-#define NF_GZD4 '(' // Charset G0
-#define NF_G1D4 ')' // Charset G1
-#define NF_G2D4 '*' // Charset G2
-#define NF_G3D4 '+' // Charset G3
-
-// fp esc
-#define FP_DECPAM '='
-#define FP_DECPNM '>'
-#define FP_DECSC  '7'
-#define FP_DECRC  '8'
-
-#define ESC_IS_NF(c) ((c) >= 0x20 && (c) <= 0x2f)
-#define ESC_IS_FP(c) ((c) >= 0x30 && (c) <= 0x3f)
-#define ESC_IS_FE(c) ((c) >= 0x40 && (c) <= 0x5f)
-#define ESC_IS_FS(c) ((c) >= 0x60 && (c) <= 0x7e)
-
-#define ISCTRLC0(c) ((c) <= 0x1f)
-#define ISCTRLC1(c) ((c) >= 0x80 && (c) <= 0x9f)
-#define ISCTRL(c)   (ISCTRLC0(c) || ISCTRLC1(c) || (c) == 0x7f)
-#define ATOC1(c)    ((c) - 0x40 + 0x80)
-#define C1TOA(c)    ((c) - 0x80 + 0x40)
-
-#define VT102 "\033[?6c"
-#define PRIMARY_DA VT102
-
 static uint8_t csi_ending[] __unused = { 0x40, 0x7e };
 static uint8_t nf_ending[] __unused = { 0x30, 0x7e };
-static uint8_t dcs_ending[] __unused = { C1TOA(ST), ESC };
-static uint8_t osc_ending[] __unused = { BEL, ST, C1TOA(ST), ESC };
+static uint8_t dcs_ending[] __unused = { C1TOFE(ST), ESC };
+static uint8_t osc_ending[] __unused = { BEL, ST, C1TOFE(ST), ESC };
 
 /*
  SGR
@@ -292,6 +290,7 @@ static uint8_t osc_ending[] __unused = { BEL, ST, C1TOA(ST), ESC };
 100-107 Bright background color
 */
 
+#define CTRL_NAME_SIZE_MAX 3
 static inline char*
 ctrl_name(uint8_t c) {
 #define _case(a) case a: return #a;
@@ -354,7 +353,7 @@ ctrl_name(uint8_t c) {
     _case(SPA);
     _case(EPA);
     _case(SOS);
-    _case(SGCI);
+    _case(SGC);
     _case(SCI);
     _case(CSI);
     _case(ST);
@@ -363,7 +362,7 @@ ctrl_name(uint8_t c) {
     _case(APC);
     }
 #undef _case
-    return "XXX";
+    return "???";
 }
 
 #endif
