@@ -122,61 +122,89 @@
 #define DECRC   'u' // Restore cursor
 #define HPA     '`' // Horizontal position absolute
 
-// mode
-#define DECCKM         1 // Cursor keys
-#define DECANM         2 // Keyboard action mode or for vt52
-#define DECCOLM        3 // 80 column mode
-#define DECSCLM        4 // Jump (fast) scroll
-#define DECSCNM        5 // Normal video mode
-#define DECOM          6 // Normal cursor mode
-#define DECAWM         7 // No auto-wrap mode
-#define DECARM         8 // No auto-repeat mode
-#define DECPFF        18 // Do not print form feed
-#define DECPEX        19 // Limit print to scrolling region
-#define DECTCEM       25 // Hide cursor
-#define DECRLM        34 // Cursor direction right to left
-#define DECHEBM       35 // Hebrew keyboard mapping
-#define DECHEM        36 // Hebrew encoding mode
-#define DECNRCM       42 // National replacement charset
-#define DECGEPM       43 // Graphic expanded print mode
-#define DECGPCM       44 // Graphic print color mode
-#define DECGPCS       45 // Graphic print color syntax
-#define DECGRPM       47 // Graphic print rotated print mode
-#define DECNAKB       57 // Greek keyboard mapping
-#define DECHCCM       60 // Horizontal cursor coupling
-#define DECVCCM       61 // Vertical cursor coupling
-#define DECPCCM       64 // Page cursor coupling
-#define DECNKM        66 // Numeric keypad mode
-#define DECBKM        67 // Backarrow key sends delete
-#define DECKBUM       68 // Keyboard usage
-#define DECLRMM       69 // Left and right margin mode
-#define DECXRLM       73 // Transmit rate limiting
-#define DECSDM        80 // Sixel diaplay mode
-#define DECKPM        81 // Key position
-#define DECNCSM       95 // No clearing screen on column change
-#define DECRLCM       96 // Cursor right to left
-#define DECCRTSM      97 // CRT save
-#define DECARSM       98 // Auto resize
-#define DECMCM        99 // Modem control
-#define DECAAM       100 // Auto answer back
-#define DECCANSM     101 // Conceal answer back message
-#define DECNULM      102 // Ignoring null
-#define DECHDPXM     103 // Half duplex
-#define DECESKM      104 // Secondary keyboard language
-#define DECOSCNM     106 // Overscan
-#define MODE_SBC      12 // Start blinking cursor
-#define MODE_FFE    1004 // FocusIn/FocusOut events
-#define MODE_MPR    1000 // Mouse on button press and release
-#define MODE_MP     1002 // Motion on button press
-#define MODE_AMM    1003 // All mouse motions
-#define MODE_MUTF8  1005 // UTF8 mouse
-#define MODE_SMM    1006 // SGR mouse mode
-#define MODE_SC     1048 // Save cursor
-#define MODE_ALT    1047 // Alternate screen buffer
-#define MODE_SC_ALT 1049 // Save cursor and alternate screen buffer
-#define MODE_UM     1015 // urxvt mouse
-#define MODE_BP     2004 // Bracketed paste
-#define MODE_SO     2026 // Synchronized output
+// DEC private modes
+// https://vt100.net/emu/dec_private_modes.html
+#define DECCKM       1 // Cursor Keys Mode
+#define DECANM       2 // ANSI/VT52 Mode
+#define DECCOLM      3 // Column
+#define DECSCLM      4 // Scrolling
+#define DECSCNM      5 // Screen Mode (light or dark screen)
+#define DECOM        6 // Origin Mode
+#define DECAWM       7 // Auto Wrap Mode
+#define DECARM       8 // Auto Repeat Mode
+#define DECINLM      9 // Interlace Mode
+#define DECEDM      10 // Editing Mode
+#define DECLTM      11 // Line Transmit Mode
+#define DECKANAM    12 // Katakana Shift Mode
+#define DECSCFDM    13 // Space Compression/Field Delimiter Mode
+#define DECTEM      14 // Transmit Execution Mode
+#define DECEKEM     16 // Edit Key Execution Mode
+#define DECPFF      18 // Print Form Feed
+#define DECPEX      19 // Printer Extent
+#define OV1         20 // Overstrike
+#define BA1         21 // Local BASIC
+#define BA2         22 // Host BASIC
+#define PK1         23 // Programmable Keypad
+#define AH1         24 // Auto Hardcopy
+#define DECTCEM     25 // Text Cursor Enable Mode
+#define DECPSP      27 // Proportional Spacing
+#define DECPSM      29 // Pitch Select Mode
+#define DECRLM      34 // Cursor Right to Left Mode
+#define DECHEBM     35 // Hebrew (Keyboard) Mode
+#define DECHEM      36 // Hebrew Encoding Mode
+#define DECTEK      38 // Tektronix 4010/4014 Mode
+#define DECCRNLM    40 // Carriage Return/New Line Mode
+#define DECUPM      41 // Unidirectional Print Mode
+#define DECNRCM     42 // National Replacement Character Set Mode
+#define DECGEPM     43 // Graphics Expanded Print Mode
+#define DECGPCM     44 // Graphics Print Color Mode
+#define DECGPCS     45 // Graphics Print Color Syntax
+#define DECGPBM     46 // Graphics Print Background Mode
+#define DECGRPM     47 // Graphics Rotated Print Mode
+#define DECTHAIM    49 // Thai Input Mode
+#define DECTHAICM   50 // Thai Cursor Mode
+#define DECBWRM     51 // Black/White Reversal Mode
+#define DECOPM      52 // Origin Placement Mode
+#define DEC131TM    53 // VT131 Transmit Mode
+#define DECBPM      55 // Bold Page Mode
+#define DECNAKB     57 // Greek/N-A Keyboard Mapping Mode
+#define DECIPEM     58 // Enter IBM Proprinter Emulation Mode
+#define DECKKDM     59 // Kanji/Katakana Display Mode
+#define DECHCCM     60 // Horizontal Cursor Coupling
+#define DECVCCM     61 // Vertical Cursor Coupling Mode
+#define DECPCCM     64 // Page Cursor Coupling Mode
+#define DECBCMM     65 // Business Color Matching Mode
+#define DECNKM      66 // Numeric Keypad Mode
+#define DECBKM      67 // Backarrow Key Mode
+#define DECKBUM     68 // Keyboard Usage Mode
+#define DECVSSM     69 // Vertical Split Screen Mode
+#define DECLRMM     69 // Left Right Margin Mode
+#define DECFPM      70 // Force Plot Mode
+#define DECXRLM     73 // Transmission Rate Limiting
+#define DECSDM      80 // Sixel Display Mode
+#define DECKPM      81 // Key Position Mode
+#define DECTHAISCM  90 // Thai Space Compensating Mode
+#define DECNCSM     95 // No Clearing Screen on Column Change Mode
+#define DECRLCM     96 // Right to Left Copy Mode
+#define DECCRTSM    97 // CRT Save Mode
+#define DECARSM     98 // Auto Resize Mode
+#define DECMCM      99 // Modem Control Mode
+#define DECAAM     100 // Auto Answerback Mode
+#define DECCANSM   101 // Conceal Answerback Message Mode
+#define DECNULM    102 // Ignore Null Mode
+#define DECHDPXM   103 // Half Duplex Mode
+#define DECESKM    104 // Secondary Keyboard Language Mode
+#define DECOSCNM   106 // Overscan Mode
+#define DECNUMLK   108 // NumLock Mode
+#define DECCAPSLK  109 // Caps Lock Mode
+#define DECKLHIM   110 //  Keyboard LEDs Host Indicator Mode
+#define DECFWM     111 //  Framed Windows Mode
+#define DECRPL     112 //  Review Previous Lines Mode
+#define DECHWUM    113 //  Host Wake-Up Mode
+#define DECATCUM   114 //  Alternate Text Color Underline Mode
+#define DECATCBM   115 //  Alternate Text Color Blink Mode
+#define DECBBSM    116 //  Bold and Blink Style Mode
+#define DECECM     117 //  Erase Color Mode
 
 // nf esc
 #define NF_GZD4 '(' // Charset G0
@@ -202,6 +230,7 @@
 #define C1TOA(c)    ((c) - 0x80 + 0x40)
 
 #define VT102 "\033[?6c"
+#define PRIMARY_DA VT102
 
 static uint8_t csi_ending[] __unused = { 0x40, 0x7e };
 static uint8_t nf_ending[] __unused = { 0x30, 0x7e };

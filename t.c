@@ -307,38 +307,39 @@ tmode(void) {
             return EPROTO;
 
         switch (n) {
-        case MODE_FFE:
-            _M(MODE_SEND_FOCUS);
-            break;
         case DECTCEM:
             _M(MODE_TEXT_CURSOR);
             break;
-        case MODE_BP:
-            _M(MODE_BRACKETED_PASTE);
-            break;
-        case MODE_MP:
+        case 1000:
             _M(MODE_MOUSE|MODE_MOUSE_PRESS);
             break;
-        case MODE_MPR:
-            _M(MODE_MOUSE|MODE_MOUSE_PRESS|MODE_MOUSE_MOTION_PRESS);
+        case 1002:
+            _M(MODE_MOUSE|MODE_MOUSE_MOTION_PRESS);
             break;
-        case MODE_AMM:
+        case 1003:
             _M(MODE_MOUSE|MODE_MOUSE_MOTION_ANY);
             break;
-        case MODE_SMM:
+        case 1004:
+            _M(MODE_SEND_FOCUS);
+            break;
+        case 1006:
             _M(MODE_MOUSE|MODE_MOUSE_RELEASE|MODE_MOUSE_EXT);
             break;
-        case MODE_SC:
-            lcursor(s);
+        case 2004:
+            _M(MODE_BRACKETED_PASTE);
             break;
-        case MODE_ALT:
+        case 1047:
             lalt(s);
             ldirty_all();
             break;
-        case MODE_SC_ALT:
+        case 1048:
+            lcursor(s);
+            break;
+        case 1049:
             lcursor(s);
             lalt(s);
-            if (s) lclear_all();
+            if (s)
+                lclear_all();
             ldirty_all();
             break;
         default: return EPROTO;
@@ -401,18 +402,15 @@ tcsi(void) {
     case REP:
         PARAM_INT(0, &n, 1);
         break;
-
     case ED:
     case EL:
     case TBC:
         PARAM_INT(0, &n, 0);
         break;
-
     case DECSTBM:
         PARAM_INT(0, &n, 1);
         PARAM_INT(1, &m, zt.row);
         break;
-
     case CUP:
     case HVP:
         if (esc.npar == 1) {
@@ -468,7 +466,7 @@ tcsi(void) {
     case DSR    : tdsr()                      ; break;
     case DA:
         if (n == 0)
-            tty_write(VT102, strlen(VT102));
+            tty_write(PRIMARY_DA, strlen(PRIMARY_DA));
         break;
 
     case EL:
