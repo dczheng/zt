@@ -48,6 +48,9 @@ static struct {
 struct color_t {
     uint8_t type;
     union {
+        struct {
+            uint8_t r, g, b;
+        };
         uint8_t rgb[3];
         uint8_t c8;
     };

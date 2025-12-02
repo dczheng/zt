@@ -184,34 +184,6 @@ param_int(int idx, int *v, int v0) {
     if (param_int(idx, v, v0)) \
         return EPROTO;
 
-#define _FG8(v) do { \
-    zt.c.fg.type = 8; \
-    zt.c.fg.c8 = v; \
-    zt.c.attr &= ~ATTR_DEFAULT_FG; \
-} while(0)
-
-#define _BG8(v) do { \
-    zt.c.bg.type = 8; \
-    zt.c.bg.c8 = v; \
-    zt.c.attr &= ~ATTR_DEFAULT_BG; \
-} while(0)
-
-#define _FG24(r, g, b) do { \
-    zt.c.fg.type = 24; \
-    zt.c.fg.rgb[0] = r; \
-    zt.c.fg.rgb[1] = g; \
-    zt.c.fg.rgb[2] = b; \
-    zt.c.attr &= ~ATTR_DEFAULT_FG; \
-} while(0)
-
-#define _BG24(r, g, b) do { \
-    zt.c.bg.type = 24; \
-    zt.c.bg.rgb[0] = r; \
-    zt.c.bg.rgb[1] = g; \
-    zt.c.bg.rgb[2] = b; \
-    zt.c.attr &= ~ATTR_DEFAULT_BG; \
-} while(0)
-
 #define ATTR_RESET() do { \
     ZERO(zt.c.fg); \
     ZERO(zt.c.bg); \
@@ -219,6 +191,27 @@ param_int(int idx, int *v, int v0) {
     zt.c.width = 1;\
     zt.c.c = ' ';\
 } while(0)
+
+static inline void
+_tsgr_c8(int fg, int v) {
+    struct color_t *c = fg ? &zt.c.fg : &zt.c.bg;
+    zt.c.attr &= ~(fg ? ATTR_DEFAULT_FG : ATTR_DEFAULT_BG);
+    c->type = 8;
+    c->c8 = v;
+}
+
+static inline void
+_tsgr_c24(int fg, int r, int g, int b) {
+    struct color_t *c = fg ? &zt.c.fg : &zt.c.bg;
+    zt.c.attr &= ~(fg ? ATTR_DEFAULT_FG : ATTR_DEFAULT_BG);
+    LIMIT(r, 0, 255);
+    LIMIT(g, 0, 255);
+    LIMIT(b, 0, 255);
+    c->type = 24;
+    c->r = r;
+    c->g = g;
+    c->b = b;
+}
 
 int
 tsgr(void) {
@@ -233,22 +226,22 @@ tsgr(void) {
         PARAM_INT(i++, &n, 0);
 
         if (n >= 30 && n <= 37) {
-            _FG8(n-30);
+            _tsgr_c8(1, n-30);
             continue;
         }
 
         if (n >= 40 && n <= 47) {
-            _BG8(n-40);
+            _tsgr_c8(0, n-40);
             continue;
         }
 
         if (n >= 90 && n <= 97) {
-            _FG8(n-90+8);
+            _tsgr_c8(1, n-90+8);
             continue;
         }
 
         if (n >= 100 && n <= 107) {
-            _BG8(n-100+8);
+            _tsgr_c8(0, n-100+8);
             continue;
         }
 
@@ -271,34 +264,20 @@ tsgr(void) {
         case 38:
         case 48:
             PARAM_INT(i++, &m, 0);
-            if (m != 5 && m != 2)
-                return EPROTO;
-
-            if (m == 5) {
+            switch (m) {
+            case 5:
                 PARAM_INT(i++, &v, 0);
                 if (v < 0 || v > 255)
                     return EPROTO;
-                if (n == 38)
-                    _FG8(v);
-                else
-                    _BG8(v);
-            } else {
+                _tsgr_c8(n == 38, v);
+                break;
+            case 2:
                 PARAM_INT(i++, &r, 0);
-                if (r < 0 || r > 255)
-                    return EPROTO;
-
                 PARAM_INT(i++, &g, 0);
-                if (g < 0 || g > 255)
-                    return EPROTO;
-
                 PARAM_INT(i++, &b, 0);
-                if (b < 0 || b > 255)
-                    return EPROTO;
-
-                if (n == 38)
-                    _FG24(r, g, b);
-                else
-                    _BG24(r, g, b);
+                _tsgr_c24(n == 38, r, g, b);
+                break;
+            default: return EPROTO;
             }
             break;
         default: return EPROTO;
