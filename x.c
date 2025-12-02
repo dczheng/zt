@@ -12,30 +12,26 @@ void lresize(void);
 void tty_write(char*, int);
 int color_equal(struct color_t, struct color_t);
 
-Display *display;
-Window root, window;
-GC gc;
-Cursor cursor;
-Colormap colormap;
-Visual *visual;
-Atom wm_protocols, wm_delete;
-XftColor background, foreground, color8[256];
-XftDraw *drawable;
-Pixmap pixmap;
-XftGlyphFontSpec *specs;
-int screen, depth, nspec, xfd,
-    font_width, font_height, font_base, nfont;
-
 struct {
+    Display *dpy;
+    Window root, window;
+    GC gc;
+    Cursor cursor;
+    Colormap colormap;
+    Visual *visual;
+    Pixmap pixmap;
+    XftDraw *draw;
+    XftColor fg, bkg, color8[256];
+    XftGlyphFontSpec *specs;
     XIM im;
     XIC ic;
-} xim = {0};
-
-struct font_t {
-    XftFont *font;
-    int weight, slant;
-    FcChar8 *family;
-} *fonts;
+    int fd, screen, depth, nspec, fw, fh, fb, nfont;
+    struct font_t {
+        XftFont *font;
+        int weight, slant;
+        FcChar8 *family;
+    } *fonts;
+} xctx = {0};
 
 int
 color_equal(struct color_t a, struct color_t b) {
@@ -50,9 +46,9 @@ color_equal(struct color_t a, struct color_t b) {
 
 static inline void
 xflush(void) {
-    XCopyArea(display, pixmap, window, gc,
+    XCopyArea(xctx.dpy, xctx.pixmap, xctx.window, xctx.gc,
         0, 0, zt.width, zt.height, 0, 0);
-    XFlush(display);
+    XFlush(xctx.dpy);
 }
 
 static inline int
@@ -66,7 +62,7 @@ xcolor_alloc(XftColor *c,
     rc.green = g << 8;
     rc.blue = b << 8;
     rc.alpha = 0xffff;
-    if (!XftColorAllocValue(display, visual, colormap, &rc, c)) {
+    if (!XftColorAllocValue(xctx.dpy, xctx.visual, xctx.colormap, &rc, c)) {
         LOGERR("failed to allocate color for (%u %u %u)\n", r, b, g);
         return 1;
     }
@@ -75,7 +71,7 @@ xcolor_alloc(XftColor *c,
 
 static inline void
 xcolor_free(XftColor *c) {
-    XftColorFree(display, visual, colormap, c);
+    XftColorFree(xctx.dpy, xctx.visual, xctx.colormap, c);
 }
 
 void
@@ -83,28 +79,28 @@ xdraw_specs(struct char_t c) {
     XftColor bg, fg;
     int x, y, w, rf, rb, t;
 
-    if (!nspec)
+    if (!xctx.nspec)
         return;
 
-    fg = foreground;
-    bg = background;
-    y = specs[0].y - font_base;
-    x = specs[0].x;
-    w = nspec * c.width * font_width;
+    fg = xctx.fg;
+    bg = xctx.bkg;
+    y = xctx.specs[0].y - xctx.fb;
+    x = xctx.specs[0].x;
+    w = xctx.nspec * c.width * xctx.fw;
     rf = rb = 1;
 
     t = zt.width - x - w;
-    if (t > 0 && t < font_width)
+    if (t > 0 && t < xctx.fw)
         w = zt.width-x;
 
     if (zt.debug.x)
-        LOG("(%d, %d, %d, %d, %d) ", nspec, c.width, x, w,
-            specs[nspec-1].x);
+        LOG("(%d, %d, %d, %d, %d) ", xctx.nspec, c.width, x, w,
+            xctx.specs[xctx.nspec-1].x);
 
     if ((!(c.attr & ATTR_DEFAULT_FG))) {
         switch (c.fg.type) {
         case 8:
-            fg = color8[c.fg.c8];
+            fg = xctx.color8[c.fg.c8];
             break;
         case 24:
             rf = xcolor_alloc(&fg, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2]);
@@ -115,7 +111,7 @@ xdraw_specs(struct char_t c) {
     if ((!(c.attr & ATTR_DEFAULT_BG))) {
         switch (c.bg.type) {
         case 8:
-            bg = color8[c.bg.c8];
+            bg = xctx.color8[c.bg.c8];
             break;
         case 24:
             rb = xcolor_alloc(&bg, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2]);
@@ -126,14 +122,14 @@ xdraw_specs(struct char_t c) {
     if (c.attr & ATTR_COLOR_REVERSE)
         SWAP(fg, bg);
 
-    XftDrawRect(drawable, &bg, x, y, w, font_height);
+    XftDrawRect(xctx.draw, &bg, x, y, w, xctx.fh);
     if (c.attr & ATTR_UNDERLINE)
-        XftDrawRect(drawable, &fg, x, y + font_base + 1, w, 1);
+        XftDrawRect(xctx.draw, &fg, x, y + xctx.fb + 1, w, 1);
     if (c.attr & ATTR_CROSSED_OUT)
-        XftDrawRect(drawable, &fg, x, y + font_height / 2, w, 1);
+        XftDrawRect(xctx.draw, &fg, x, y + xctx.fh / 2, w, 1);
 
-    XftDrawGlyphFontSpec(drawable, &fg, specs, nspec);
-    nspec = 0;
+    XftDrawGlyphFontSpec(xctx.draw, &fg, xctx.specs, xctx.nspec);
+    xctx.nspec = 0;
     if (!rf)
         xcolor_free(&fg);
     if (!rb)
@@ -157,18 +153,18 @@ xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
     if (c.attr & ATTR_ITALIC)
         slant = FC_SLANT_ITALIC;
 
-    for (i = 0; i < nfont; i++) {
-        if (fonts[i].weight != weight ||
-            fonts[i].slant != slant)
+    for (i = 0; i < xctx.nfont; i++) {
+        if (xctx.fonts[i].weight != weight ||
+            xctx.fonts[i].slant != slant)
             continue;
-        *f = fonts[i].font;
-        if ((*idx = XftCharIndex(display, *f, c.c)))
+        *f = xctx.fonts[i].font;
+        if ((*idx = XftCharIndex(xctx.dpy, *f, c.c)))
             return;
     }
 
     LOGERR("can't find font for %x\n", c.c);
-    *f = fonts[0].font;
-    *idx = XftCharIndex(display, *f, ' ');
+    *f = xctx.fonts[0].font;
+    *idx = XftCharIndex(xctx.dpy, *f, ' ');
 }
 
 void
@@ -180,29 +176,29 @@ xdraw_line(int k, int y) {
     r.x = 0;
     r.y = 0;
     r.width = zt.width;
-    r.height = font_height;
+    r.height = xctx.fh;
 
     if (zt.debug.x)
         LOG("[%3d] ", k);
 
-    XftDrawSetClipRectangles(drawable, 0, y, &r, 1);
-    //XftDrawRect(drawable, &background, 0, y, zt.width, font_height);
-    for (i = 0, x = 0, nspec = 0; i < zt.col;) {
+    XftDrawSetClipRectangles(xctx.draw, 0, y, &r, 1);
+    //XftDrawRect(xctx.draw, &xctx.bkg, 0, y, zt.width, xctx.fh);
+    for (i = 0, x = 0, xctx.nspec = 0; i < zt.col;) {
         c = zt.line[k][i];
-        if (nspec == 0)
+        if (xctx.nspec == 0)
             c0 = c;
 
         if (color_equal(c0.fg, c.fg) &&
             color_equal(c0.bg, c.bg) &&
             c0.attr == c.attr &&
             c0.width == c.width) {
-            xfont_lookup(c, &specs[nspec].font,
-                &specs[nspec].glyph);
-            specs[nspec].x = x;
-            specs[nspec].y = y + font_base;
-            nspec++;
+            xfont_lookup(c, &xctx.specs[xctx.nspec].font,
+                &xctx.specs[xctx.nspec].glyph);
+            xctx.specs[xctx.nspec].x = x;
+            xctx.specs[xctx.nspec].y = y + xctx.fb;
+            xctx.nspec++;
             i += c0.width;
-            x += c0.width * font_width;
+            x += c0.width * xctx.fw;
             continue;
         }
         xdraw_specs(c0);
@@ -212,7 +208,7 @@ xdraw_line(int k, int y) {
         LOG("\n");
 
     xdraw_specs(c0);
-    XftDrawSetClip(drawable, 0);
+    XftDrawSetClip(xctx.draw, 0);
 }
 
 void
@@ -221,28 +217,28 @@ xdraw_cursor(void) {
 
     if (last_y != -1) {
         if (last_y < zt.row)
-            xdraw_line(last_y, last_y*font_height);
+            xdraw_line(last_y, last_y*xctx.fh);
         last_y = zt.y;
     } else {
         last_y = zt.y;
     }
 
     if (zt.mode & MODE_TEXT_CURSOR)
-        XftDrawRect(drawable, &foreground,
-            zt.x*font_width, (zt.y+1)*font_height-3, font_width, 3);
+        XftDrawRect(xctx.draw, &xctx.fg,
+            zt.x*xctx.fw, (zt.y+1)*xctx.fh-3, xctx.fw, 3);
 }
 
 void
 xdraw(void) {
     int y, i, nline = 0;
 
-    //XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
+    //XftDrawRect(xctx.draw, &xctx.bkg, 0, 0, zt.width, zt.height);
     if (zt.debug.x) {
         LOG("size: %dx%d, %dx%d\n", zt.width, zt.height, zt.row, zt.col);
-        LOG("font size: %dx%d\n", font_width, font_height);
+        LOG("font size: %dx%d\n", xctx.fw, xctx.fh);
     }
 
-    for (i = 0, y = 0; i < zt.row; i++, y += font_height) {
+    for (i = 0, y = 0; i < zt.row; i++, y += xctx.fh) {
         if (!zt.dirty[i])
             continue;
         nline++;
@@ -283,17 +279,17 @@ xpointer(int *x, int *y) {
     int di;
     unsigned int dui;
     Window dw;
-    XQueryPointer(display, root, &dw, &dw, x, y, &di, &di, &dui);
+    XQueryPointer(xctx.dpy, xctx.root, &dw, &dw, x, y, &di, &di, &dui);
 }
 
 void
 xresize() {
-    XFreePixmap(display, pixmap);
-    pixmap = XCreatePixmap(display, window, zt.width, zt.height, depth);
-    XftDrawChange(drawable, pixmap);
-    XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
-    specs = realloc(specs, zt.col * sizeof(XftGlyphFontSpec));
-    ASSERT(specs != NULL);
+    XFreePixmap(xctx.dpy, xctx.pixmap);
+    xctx.pixmap = XCreatePixmap(xctx.dpy, xctx.window,
+        zt.width, zt.height, xctx.depth);
+    XftDrawChange(xctx.draw, xctx.pixmap);
+    XftDrawRect(xctx.draw, &xctx.bkg, 0, 0, zt.width, zt.height);
+    ASSERT(xctx.specs = realloc(xctx.specs, zt.col*sizeof(XftGlyphFontSpec)));
 }
 
 void
@@ -303,8 +299,8 @@ _Mouse(XEvent *ev) {
     char t;
     static char buf[64];
 
-    r = ev->xbutton.y / font_height + 1;
-    c = ev->xbutton.x / font_width + 1;
+    r = ev->xbutton.y / xctx.fh + 1;
+    c = ev->xbutton.x / xctx.fw + 1;
     b = ev->xbutton.button-Button1;
     if (b >= 3)
         b += 64-3;
@@ -361,12 +357,12 @@ _Focus(XEvent *ev) {
     if (!(zt.mode & MODE_SEND_FOCUS))
         return;
     if (ev->type == FocusIn) {
-        if (xim.ic)
-            XSetICFocus(xim.ic);
+        if (xctx.ic)
+            XSetICFocus(xctx.ic);
         tty_write("\033[I", 3);
     } else {
-        if (xim.ic)
-            XUnsetICFocus(xim.ic);
+        if (xctx.ic)
+            XUnsetICFocus(xctx.ic);
         tty_write("\033[O", 3);
     }
 }
@@ -384,8 +380,8 @@ _KeyPress(XEvent *ev) {
     XKeyEvent *e = &ev->xkey;
     Status status;
 
-    if (xim.ic) {
-        n = XmbLookupString(xim.ic, e, buf, sizeof(buf), &ksym, &status);
+    if (xctx.ic) {
+        n = XmbLookupString(xctx.ic, e, buf, sizeof(buf), &ksym, &status);
         if (status == XBufferOverflow) {
             LOGERR("xim buffer overflow\n");
             return;
@@ -409,8 +405,8 @@ _ConfigureNotify(XEvent *ev) {
     if (w == zt.width && h == zt.height)
         return;
 
-    r = h / font_height;
-    c = w / font_width;
+    r = h / xctx.fh;
+    c = w / xctx.fw;
     r = MAX(r, 8);
     c = MAX(c, 8);
 
@@ -438,8 +434,8 @@ int
 xevent(void) {
     XEvent e;
 
-    for (;XPending(display);) {
-        XNextEvent(display, &e);
+    for (;XPending(xctx.dpy);) {
+        XNextEvent(xctx.dpy, &e);
         if (XFilterEvent(&e, None))
             continue;
         switch(e.type) {
@@ -468,8 +464,8 @@ xevent(void) {
 #undef H2
 
 int
-xerror(Display *display, XErrorEvent *e) {
-    XSync(display, False);
+xerror(Display *dpy, XErrorEvent *e) {
+    XSync(dpy, False);
     LOGERR("xerror: %d\n", e->error_code);
     return 0;
 }
@@ -478,24 +474,24 @@ void
 xfree(void) {
     int i;
 
-    if (xim.ic) XDestroyIC(xim.ic);
-    if (xim.im) XCloseIM(xim.im);
-    XFreePixmap(display, pixmap);
-    XFreeCursor(display, cursor);
-    XftDrawDestroy(drawable);
+    if (xctx.ic) XDestroyIC(xctx.ic);
+    if (xctx.im) XCloseIM(xctx.im);
+    XFreePixmap(xctx.dpy, xctx.pixmap);
+    XFreeCursor(xctx.dpy, xctx.cursor);
+    XftDrawDestroy(xctx.draw);
 
-    for (i = 0; i < nfont; i++) {
-        free(fonts[i].family);
-        XftFontClose(display, fonts[i].font);
+    for (i = 0; i < xctx.nfont; i++) {
+        free(xctx.fonts[i].family);
+        XftFontClose(xctx.dpy, xctx.fonts[i].font);
     }
-    free(fonts);
+    free(xctx.fonts);
 
-    xcolor_free(&background);
-    xcolor_free(&foreground);
+    xcolor_free(&xctx.bkg);
+    xcolor_free(&xctx.fg);
     for (i = 0; i < 256; i++)
-        xcolor_free(&color8[i]);
-    free(specs);
-    close(xfd);
+        xcolor_free(&xctx.color8[i]);
+    free(xctx.specs);
+    close(xctx.fd);
 }
 
 void
@@ -506,7 +502,7 @@ xfont_load(char *str, struct font_t *f) {
     ASSERT(p = FcNameParse((FcChar8*)str));
     FcConfigSubstitute(NULL, p, FcMatchPattern);
     FcDefaultSubstitute(p);
-    XftDefaultSubstitute(display, screen, p);
+    XftDefaultSubstitute(xctx.dpy, xctx.screen, p);
 
     FcPatternDel(p, FC_WEIGHT);
     FcPatternAddInteger(p, FC_WEIGHT, f->weight);
@@ -515,7 +511,7 @@ xfont_load(char *str, struct font_t *f) {
     FcPatternAddInteger(p, FC_SLANT, f->slant);
 
     m = FcFontMatch(NULL, p, &r);
-    ASSERT(f->font = XftFontOpenPattern(display, m));
+    ASSERT(f->font = XftFontOpenPattern(xctx.dpy, m));
     f->family = FcPatternFormat(m, (FcChar8*)"%{family}");
 
     FcPatternDestroy(m);
@@ -536,10 +532,10 @@ xfont_init(void) {
     printable[j] = '\0';
 
     ASSERT(FcInit());
-    nfont = LEN(font_list) * 4;
-    ASSERT(fonts = malloc(nfont * sizeof(fonts[0])));
-    for (i = 0; i < nfont; i++) {
-        f = &fonts[i];
+    xctx.nfont = LEN(font_list) * 4;
+    ASSERT(xctx.fonts = malloc(xctx.nfont * sizeof(xctx.fonts[0])));
+    for (i = 0; i < xctx.nfont; i++) {
+        f = &xctx.fonts[i];
         f->weight = ((i%4) / 2 == 0 ? FC_WEIGHT_REGULAR : FC_WEIGHT_BOLD);
         f->slant = ((i%4) % 2 == 0 ? FC_SLANT_ROMAN : FC_SLANT_ITALIC);
 
@@ -554,14 +550,14 @@ xfont_init(void) {
             continue;
     }
 
-    font_height = fonts[0].font->height;
-    font_base = fonts[0].font->height-fonts[0].font->descent;
-    XftTextExtentsUtf8(display, fonts[0].font,
+    xctx.fh = xctx.fonts[0].font->height;
+    xctx.fb = xctx.fonts[0].font->height-xctx.fonts[0].font->descent;
+    XftTextExtentsUtf8(xctx.dpy, xctx.fonts[0].font,
         (const FcChar8*)printable, strlen(printable), &exts);
-    font_width = (exts.xOff + strlen(printable)-1) / strlen(printable);
+    xctx.fw = (exts.xOff + strlen(printable)-1) / strlen(printable);
 
-    zt.width = zt.col * font_width;
-    zt.height = zt.row * font_height;
+    zt.width = zt.col * xctx.fw;
+    zt.height = zt.row * xctx.fh;
 }
 
 void
@@ -569,7 +565,7 @@ xcolor_init(void) {
     int i;
     uint8_t r, g, b;
 
-    ASSERT(specs = malloc(sizeof(XftGlyphFontSpec) * zt.col));
+    ASSERT(xctx.specs = malloc(sizeof(XftGlyphFontSpec)*zt.col));
     for (i = 0; i < 256; i++) {
         if (i <= 15) {
             r = standard_colors[i].r;
@@ -585,7 +581,7 @@ xcolor_init(void) {
             // 24-step grayscale
             r = g = b = (i-232) * 11;
         }
-        ASSERT(!xcolor_alloc(&color8[i], r, g, b));
+        ASSERT(!xcolor_alloc(&xctx.color8[i], r, g, b));
     }
 }
 
@@ -594,16 +590,16 @@ void
 _xim_init(Display *dpy __unused, XPointer client __unused,
     XPointer call __unused) {
     if (!xim_init())
-        XUnregisterIMInstantiateCallback(display, NULL, NULL, NULL,
+        XUnregisterIMInstantiateCallback(xctx.dpy, NULL, NULL, NULL,
             _xim_init, NULL);
 }
 
 void
 xim_destroy(XIM im __unused, XPointer client __unused,
     XPointer call __unused) {
-    xim.im = NULL;
-    xim.ic = NULL;
-    XRegisterIMInstantiateCallback(display, NULL, NULL, NULL,
+    xctx.im = NULL;
+    xctx.ic = NULL;
+    XRegisterIMInstantiateCallback(xctx.dpy, NULL, NULL, NULL,
             _xim_init, NULL);
 }
 
@@ -611,15 +607,15 @@ int
 xim_init(void) {
     XIMCallback cb = {.client_data = NULL, .callback = xim_destroy};
 
-    if (!(xim.im = XOpenIM(display, NULL, NULL, NULL))) {
+    if (!(xctx.im = XOpenIM(xctx.dpy, NULL, NULL, NULL))) {
         LOGERR("can't init xim\n");
         return 1;
     }
-    ASSERT(!XSetIMValues(xim.im, XNDestroyCallback, &cb, NULL));
-    ASSERT(xim.ic = XCreateIC(xim.im,
+    ASSERT(!XSetIMValues(xctx.im, XNDestroyCallback, &cb, NULL));
+    ASSERT(xctx.ic = XCreateIC(xctx.im,
         XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
-        XNClientWindow, window, NULL));
-    XSetICFocus(xim.ic);
+        XNClientWindow, xctx.window, NULL));
+    XSetICFocus(xctx.ic);
     return 0;
 }
 
@@ -632,31 +628,31 @@ xinit(void) {
     setlocale(LC_CTYPE, "");
     XSetLocaleModifiers("");
 
-    display = XOpenDisplay(NULL);
-    ASSERT(display);
+    xctx.dpy = XOpenDisplay(NULL);
+    ASSERT(xctx.dpy);
 
     XSetErrorHandler(xerror);
-    xfd = XConnectionNumber(display);
+    xctx.fd = XConnectionNumber(xctx.dpy);
 
-    screen = DefaultScreen(display);
-    root = RootWindow(display, screen);
-    visual = XDefaultVisual(display, screen);
-    colormap = XDefaultColormap(display, screen);
-    depth = XDefaultDepth(display, screen);
-    cursor = XCreateFontCursor(display, XC_xterm);
+    xctx.screen = DefaultScreen(xctx.dpy);
+    xctx.root = RootWindow(xctx.dpy, xctx.screen);
+    xctx.visual = XDefaultVisual(xctx.dpy, xctx.screen);
+    xctx.colormap = XDefaultColormap(xctx.dpy, xctx.screen);
+    xctx.depth = XDefaultDepth(xctx.dpy, xctx.screen);
+    xctx.cursor = XCreateFontCursor(xctx.dpy, XC_xterm);
 
-    ASSERT(XftColorAllocName(display, visual, colormap,
-        FOREGROUND, &foreground));
-    ASSERT(XftColorAllocName(display, visual, colormap,
-        BACKGROUND, &background));
+    ASSERT(XftColorAllocName(xctx.dpy, xctx.visual, xctx.colormap,
+        FOREGROUND, &xctx.fg));
+    ASSERT(XftColorAllocName(xctx.dpy, xctx.visual, xctx.colormap,
+        BACKGROUND, &xctx.bkg));
 
     xfont_init();
     xcolor_init();
 
-    wa.cursor = cursor;
-    wa.background_pixel = background.pixel;
+    wa.cursor = xctx.cursor;
+    wa.background_pixel = xctx.bkg.pixel;
     wa.bit_gravity = NorthWestGravity;
-    wa.colormap = colormap;
+    wa.colormap = xctx.colormap;
     wa.border_pixel = 0;
     wa.event_mask = StructureNotifyMask
                   | ExposureMask
@@ -667,8 +663,8 @@ xinit(void) {
                   | FocusChangeMask
                   ;
 
-    window = XCreateWindow(display, root, 0, 0, zt.width,
-             zt.height, 0, depth, InputOutput, visual,
+    xctx.window = XCreateWindow(xctx.dpy, xctx.root, 0, 0, zt.width,
+             zt.height, 0, xctx.depth, InputOutput, xctx.visual,
              CWBackPixel | CWBorderPixel
            | CWBitGravity | CWEventMask
            | CWColormap | CWCursor
@@ -676,24 +672,26 @@ xinit(void) {
 
     ZERO(gcvalues);
     gcvalues.graphics_exposures = False;
-    gc = XCreateGC(display, root, GCGraphicsExposures, &gcvalues);
-    XSetBackground(display, gc, background.pixel);
+    xctx.gc = XCreateGC(xctx.dpy, xctx.root, GCGraphicsExposures, &gcvalues);
+    XSetBackground(xctx.dpy, xctx.gc, xctx.bkg.pixel);
 
-    pixmap = XCreatePixmap(display, window, zt.width, zt.height, depth);
-    drawable = XftDrawCreate(display, pixmap, visual, colormap);
-    XftDrawRect(drawable, &background, 0, 0, zt.width, zt.height);
+    xctx.pixmap = XCreatePixmap(xctx.dpy, xctx.window,
+        zt.width, zt.height, xctx.depth);
+    xctx.draw = XftDrawCreate(xctx.dpy, xctx.pixmap,
+        xctx.visual, xctx.colormap);
+    XftDrawRect(xctx.draw, &xctx.bkg, 0, 0, zt.width, zt.height);
 
     if (xim_init())
-        XRegisterIMInstantiateCallback(display, NULL, NULL, NULL,
+        XRegisterIMInstantiateCallback(xctx.dpy, NULL, NULL, NULL,
             _xim_init, NULL);
 
-    XMapWindow(display, window);
-    XSync(display, False);
+    XMapWindow(xctx.dpy, xctx.window);
+    XSync(xctx.dpy, False);
 
     for (;;) {
-        XNextEvent(display, &e);
+        XNextEvent(xctx.dpy, &e);
         if (e.type == MapNotify)
             break;
     }
-    return xfd;
+    return xctx.fd;
 }
