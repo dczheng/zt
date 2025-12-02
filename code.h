@@ -123,7 +123,6 @@
 #define HPA     '`' // Horizontal position absolute
 
 // mode
-
 #define DECCKM         1 // Cursor keys
 #define DECANM         2 // Keyboard action mode or for vt52
 #define DECCOLM        3 // 80 column mode
@@ -210,86 +209,58 @@ static uint8_t dcs_ending[] __unused = { C1TOA(ST), ESC };
 static uint8_t osc_ending[] __unused = { BEL, ST, C1TOA(ST), ESC };
 
 /*
-SGR
-   0 Reset
-   1 Bold
-   2 Faint
-   3 Italic
-   4 Underline
-   5 Slow blink
-   6 Rapid blink
-   7 Reverse videoor invert
-   8 Conceal
-   9 Crossed out
-  10 Primary font
+ SGR
+      0 Reset
+      1 Bold
+      2 Faint
+      3 Italic
+      4 Underline
+      5 Slow blink
+      6 Rapid blink
+      7 Reverse video or invert
+      8 Conceal
+      9 Crossed out
+     10 Primary font
   11-19 Alt font
-  20 Fraktur
-  21 Double underlined
-  22 Normal intensity
-  23 Neither italic nor black letter
-  24 Not underlined
-  25 Not blinking
-  26 Proportional spacing
-  27 Not reversed
-  28 Reveal
-  29 Not crossed out
-  30 Foreground black
-  31 Foreground red
-  32 Foreground green
-  33 Foreground yellow
-  34 Foreground blue
-  35 Foreground magenta
-  36 Foreground cyan
-  37 Foreground white
-  38 Foreground RGB
-  39 Foreground reset
-  40 Background black
-  41 Background red
-  42 Background green
-  43 Background yellow
-  44 Background blue
-  45 Background magenta
-  46 Background cyan
-  47 Background white
-  48 Background RGB
-  49 Background reset
-  50 Disable proportional spacing
-  51 Framed
-  52 Encircled
-  53 Overlined
-  54 Neither framed nor encircled
-  55 Not overlined
+     20 Fraktur
+     21 Double underlined
+     22 Normal intensity
+     23 Neither italic nor black letter
+     24 Not underlined
+     25 Not blinking
+     26 Proportional spacing
+     27 Not reversed
+     28 Reveal
+     29 Not crossed out
+  30-37 Foreground color
+     38 Foreground RGB
+     39 Foreground reset
+  40-47 Background color
+     48 Background RGB
+     49 Background reset
+     50 Disable proportional spacing
+     51 Framed
+     52 Encircled
+     53 Overlined
+     54 Neither framed nor encircled
+     55 Not overlined
   56-57 Unknown
-  58 Underline color
-  59 Underline color reset
-  60 Ideogram underline
-  61 Ideogram double underline
-  62 Ideogram overline
-  63 Ideogram double over line
-  64 Ideogram stress marking
-  65 No ideogram attributes
+     58 Underline color
+     59 Underline color reset
+     60 Ideogram underline
+     61 Ideogram double underline
+     62 Ideogram overline
+     63 Ideogram double over line
+     64 Ideogram stress marking
+     65 No ideogram attributes
   66-72 Unknown
-  73 Superscript
-  74 Subscript
-  75 Neither superscript nor subscript
+     73 Superscript
+     74 Subscript
+     75 Neither superscript nor subscript
   76-89 Unknown
-  90 Foreground bright black
-  91 Foreground bright red
-  92 Foreground bright green
-  93 Foreground bright yellow
-  94 Foreground bright blue
-  95 Foreground bright magenta
-  96 Foreground bright cyan
-  97 Foreground bright white
+  90-97 Bright foreground color
   98-99 Unknown
- 100 Background bright black
- 101 Background bright red
- 102 Background bright green
- 103 Background bright yellow
- 104 Background bright blue
- 105 Background bright magenta
- 106 Background bright cyan
- 107 Background bright white
+100-107 Bright background color
 */
 
 static inline char*
