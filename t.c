@@ -303,6 +303,7 @@ tmode(void) {
         case DECSCLM:
         case DECAWM:
         case DECKANAM:
+        case 1015: // urxvt Mouse
         case 1005: // UTF8 mouse
         case 2004: // Bracketed paste
             return EACCES;
