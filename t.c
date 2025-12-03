@@ -267,10 +267,6 @@ tsgr(void) {
     }
     return 0;
 }
-#undef _FG8
-#undef _BG8
-#undef _FG24
-#undef _BG24
 
 int
 tmode(void) {
@@ -494,8 +490,8 @@ tesc(uint8_t *buf, int len) {
         case NF_GZD4:
             if (len < 2) return EPROTO;
             switch (buf[1]) {
-            case 'B': UNSET(zt.mode, MODE_VT100_G0); break;
-            case '0': SET(zt.mode, MODE_VT100_G0); break;
+            case 'B': UNSET(zt.mode, MODE_GZD4); break;
+            case '0': SET(zt.mode, MODE_GZD4); break;
             default: return EPROTO;
             }
             break;
@@ -583,6 +579,8 @@ tctrl(uint8_t *buf, int len) {
         if (zt.no_ignore)
             return EPROTO;
         break;
+    case SI: UNSET(zt.mode, MODE_GZD4); break;
+    case SO: SET(zt.mode, MODE_GZD4); break;
     default: return EPROTO;
     }
     return 0;

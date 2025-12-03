@@ -129,7 +129,7 @@ extern struct zt_t zt;
 #define MODE_MOUSE_RELEASE      (1<<3)
 #define MODE_MOUSE_MOTION       (1<<4)
 #define MODE_MOUSE_SGR          (1<<5)
-#define MODE_VT100_G0           (1<<6)
+#define MODE_GZD4               (1<<6)
 #define MODE_MOUSE              (MODE_MOUSE_PRESS | \
                                  MODE_MOUSE_RELEASE | \
                                  MODE_MOUSE_MOTION | \

@@ -325,13 +325,13 @@ ctrl_str(void *buf, int n) {
     return s;
 }
 
-// Table 5-15: https://vt100.net/docs/vt102-ug/chapter5.html#T5-13
+// Table 5-13: https://vt100.net/docs/vt102-ug/chapter5.html#T5-13
 // https://en.wikipedia.org/wiki/DEC_Special_Graphics
 // https://en.wikipedia.org/wiki/ISO/IEC_2022
 // 0x5f - 0x7e
-#define VT100_G0_MIN 0x5f
-#define VT100_G0_MAX 0x7e
-static char *vt100_g0[] __unused = {
+#define GZD4_MIN 0x5f
+#define GZD4_MAX 0x7e
+static char *gzd4[] __unused = {
                                        " ", // 0x5f
     "◆", "▒", "␉", "␌", "␍", "␊", "°", "±", // 0x60 - 0x67
     "␤", "␋", "┘", "┐", "┌", "└", "┼", "⎺", // 0x68 - 0x6f
