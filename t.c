@@ -343,27 +343,10 @@ tcsi(void) {
     int n = 0, m = 0;
 
     switch (esc.csi) {
-    case CUF:
-    case CUB:
-    case CUU:
-    case CUD:
-    case CPL:
-    case CNL:
-    case IL:
-    case DL:
-    case DCH:
-    case CHA:
-    case HPA:
-    case VPA:
-    case VPR:
-    case HPR:
-    case SU:
-    case SD:
-    case ECH:
-    case CHT:
-    case CBT:
-    case ICH:
-    case REP:
+    case CUF: case CUB: case CUU: case CUD: case CPL: case CNL:
+    case IL: case DL: case DCH: case CHA: case HPA: case VPA:
+    case VPR: case HPR: case SU: case SD: case ECH: case CHT:
+    case CBT: case ICH: case REP:
         PARAM_INT(0, &n, 1);
         break;
     case ED:
@@ -398,36 +381,36 @@ tcsi(void) {
     }
 
     switch (esc.csi) {
-    case SGR    : return tsgr();
-    case SM     : return tmode();
-    case RM     : return tmode();
-    case CUF    : lmoveto(zt.y, zt.x+n); break;
-    case CUB    : lmoveto(zt.y, zt.x-n); break;
-    case CUU    : lmoveto(zt.y-n, zt.x); break;
-    case CUD    : lmoveto(zt.y+n, zt.x); break;
-    case CPL    : lmoveto(zt.y-n, 0); break;
-    case CNL    : lmoveto(zt.y+n, 0); break;
-    case CUP    : lmoveto(n-1, m-1); break;
-    case HVP    : lmoveto(n-1,m-1); break;
-    case CHA    : lmoveto(zt.y, n-1); break;
-    case HPA    : lmoveto(zt.y, n-1); break;
-    case VPA    : lmoveto(n-1, zt.x); break;
-    case HPR    : lmoveto(zt.y, zt.x+n); break;
-    case VPR    : lmoveto(zt.y+n, zt.y); break;
-    case IL     : linsert(n); break;
-    case DL     : ldelete(n); break;
-    case SU     : lscroll_up(zt.top, n); break;
-    case SD     : lscroll_down(zt.top, n); break;
-    case ECH    : lerase(zt.y, zt.x, zt.x+n-1); break;
+    case SGR: return tsgr();
+    case SM: return tmode();
+    case RM: return tmode();
+    case CUF: lmoveto(zt.y, zt.x+n); break;
+    case CUB: lmoveto(zt.y, zt.x-n); break;
+    case CUU: lmoveto(zt.y-n, zt.x); break;
+    case CUD: lmoveto(zt.y+n, zt.x); break;
+    case CPL: lmoveto(zt.y-n, 0); break;
+    case CNL: lmoveto(zt.y+n, 0); break;
+    case CUP: lmoveto(n-1, m-1); break;
+    case HVP: lmoveto(n-1,m-1); break;
+    case CHA: lmoveto(zt.y, n-1); break;
+    case HPA: lmoveto(zt.y, n-1); break;
+    case VPA: lmoveto(n-1, zt.x); break;
+    case HPR: lmoveto(zt.y, zt.x+n); break;
+    case VPR: lmoveto(zt.y+n, zt.y); break;
+    case IL: linsert(n); break;
+    case DL: ldelete(n); break;
+    case SU: lscroll_up(zt.top, n); break;
+    case SD: lscroll_down(zt.top, n); break;
+    case ECH: lerase(zt.y, zt.x, zt.x+n-1); break;
     case DECSTBM: lsettb(n-1, m-1); break;
-    case CHT    : ltab(n); break;
-    case CBT    : ltab(-n); break;
-    case ICH    : linsert_blank(n); break;
-    case DCH    : ldelete_char(n); break;
-    case REP    : lrepeat_last(n); break;
-    case DECSC  : lcursor(1); break;
-    case DECRC  : lcursor(0); break;
-    case DSR    : tdsr(); break;
+    case CHT: ltab(n); break;
+    case CBT: ltab(-n); break;
+    case ICH: linsert_blank(n); break;
+    case DCH: ldelete_char(n); break;
+    case REP: lrepeat_last(n); break;
+    case DECSC: lcursor(1); break;
+    case DECRC: lcursor(0); break;
+    case DSR: tdsr(); break;
     case DA:
         if (n == 0)
             tty_write(PRIMARY_DA, strlen(PRIMARY_DA));
@@ -558,9 +541,9 @@ tctrl(uint8_t *buf, int len) {
     ASSERT(len > 0);
     switch (buf[0]) {
     case ESC: return tesc(buf+1, len-1);
-    case LF : lnew(); break;
-    case CR : lmoveto(zt.y, 0); break;
-    case HT : ltab(1); break;
+    case LF: lnew(); break;
+    case CR: lmoveto(zt.y, 0); break;
+    case HT: ltab(1); break;
     case HTS: zt.tabs[zt.x] = 1; break;
     case BS:
     case CCH:

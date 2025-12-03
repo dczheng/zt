@@ -150,10 +150,10 @@ main(int argc, char **argv) {
     struct timespec tv;
     fd_set fds;
     struct option opts[] = {
-        {"font-size",       required_argument, NULL, 1},
-        {"term",            required_argument, NULL, 2},
-        {"debug",           required_argument, NULL, 3},
-        {"no-ignore",       no_argument,       NULL, 4},
+        {"font-size", required_argument, NULL, 1},
+        {"term", required_argument, NULL, 2},
+        {"debug", required_argument, NULL, 3},
+        {"no-ignore", no_argument, NULL, 4},
         {0, 0, 0, 0}
     };
 
