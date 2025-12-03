@@ -110,8 +110,10 @@
 #define NF_G3D4 '+' // Charset G3
 
 // Fp ESC
-#define FP_DECSC '7' // DEC save cursor
-#define FP_DECRC '8' // DEC restore cursor
+#define FP_DECSC   '7' // DEC save cursor
+#define FP_DECRC   '8' // DEC restore cursor
+#define FP_DECKPAM '=' // Application keypad
+#define FP_DECKPNM '>' // Normal keypad
 
 // CSI
 #define ICH     '@' // Insert Blank char

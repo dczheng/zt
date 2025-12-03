@@ -505,6 +505,8 @@ tesc(uint8_t *buf, int len) {
         case NF_G1D4:
         case NF_G2D4:
         case NF_G3D4:
+        case FP_DECKPAM:
+        case FP_DECKPNM:
             if (zt.no_ignore)
                 return EPROTO;
             break;
