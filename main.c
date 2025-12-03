@@ -153,6 +153,7 @@ main(int argc, char **argv) {
         {"font-size",       required_argument, NULL, 1},
         {"term",            required_argument, NULL, 2},
         {"debug",           required_argument, NULL, 3},
+        {"no-ignore",       no_argument,       NULL, 4},
         {0, 0, 0, 0}
     };
 
@@ -170,6 +171,9 @@ main(int argc, char **argv) {
         case 3:
             if (stoi(&zt.debug, optarg))
                 zt.debug = 0;
+            break;
+        case 4:
+            zt.no_ignore = 1;
             break;
         }
     }

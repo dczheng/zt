@@ -19,8 +19,7 @@ void lrepeat_last(int);
 void linsert_blank(int);
 void ldelete_char(int);
 void lcursor(int);
-void lalt(int);
-void ldirty_all(void);
+void lalt(int, int);
 void tty_write(char*, int);
 int lwrite(uint8_t*, int, int*);
 
@@ -298,19 +297,20 @@ tmode(void) {
         case 1003: _M(MODE_MOUSE); break;
         case 1004: _M(MODE_FOCUS); break;
         case 1006: _M(MODE_MOUSE_SGR); break;
+        case DECGRPM:
         case 1047:
-            lalt(s);
-            ldirty_all();
+            lalt(s, 0);
             break;
-        case 1048:
-            lcursor(s);
-            break;
-        case 1049:
-            lcursor(s);
-            lalt(s);
-            if (s)
-                lclear_all();
-            ldirty_all();
+        case 1048: lcursor(s); break;
+        case 1049: lcursor(s); lalt(s, s); break;
+        case DECCKM:
+        case DECSCLM:
+        case DECAWM:
+        case DECKANAM:
+        case 1005: // UTF8 mouse
+        case 2004: // Bracketed paste
+            if (zt.no_ignore)
+                return EPROTO;
             break;
         default: return EPROTO;
         }
@@ -465,6 +465,10 @@ tcsi(void) {
         default: return EPROTO;
         }
         break;
+    case WINMAN:
+        if (zt.no_ignore)
+            return EPROTO;
+        break;
     default: return EPROTO;
     }
     return 0;
@@ -574,6 +578,10 @@ tctrl(uint8_t *buf, int len) {
     case BS:
     case CCH:
         lmoveto(zt.y, zt.x-1);
+        break;
+    case BEL:
+        if (zt.no_ignore)
+            return EPROTO;
         break;
     default: return EPROTO;
     }

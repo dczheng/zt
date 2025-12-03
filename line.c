@@ -286,8 +286,10 @@ lcursor(int save) {
 }
 
 void
-lalt(int alt) {
+lalt(int alt, int clear) {
     zt.line = (alt ? zt.alt.line : zt.normal.line);
+    if (clear) lclear_all();
+    ldirty_all();
 }
 
 void
