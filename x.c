@@ -25,11 +25,11 @@ struct {
     XftGlyphFontSpec *specs;
     XIM im;
     XIC ic;
-    int fd, screen, depth, nspec, fw, fh, fb, nfont;
-    struct font_t {
+    int fd, screen, depth, nspec, fw, fh, fb,
+        nfont, fontcap;
+    struct {
         XftFont *font;
         int weight, slant;
-        FcChar8 *family;
     } *fonts;
 } xctx = {0};
 
@@ -466,13 +466,52 @@ xfree(void) {
 }
 
 void
-xfont_init(void) {
-    int i, j, size;
-    struct font_t *f;
+xfont_open(char *name, int size, int weight, int slant) {
     FcPattern *p, *m;
+    char buf[128], *info = NULL;
+    XftFont *f;
     FcResult r;
+
+    size *= zt.fontsize;
+    size = MAX(size, 5);
+    snprintf(buf, sizeof(buf), "%s:pixelsize=%d", name, size);
+
+    ASSERT(p = FcNameParse((FcChar8*)buf));
+    FcPatternDel(p, FC_WEIGHT);
+    FcPatternAddInteger(p, FC_WEIGHT, weight);
+    FcPatternDel(p, FC_SLANT);
+    FcPatternAddInteger(p, FC_SLANT, slant);
+
+    ASSERT(m = FcFontMatch(NULL, p, &r));
+    ASSERT(f = XftFontOpenPattern(xctx.dpy, m));
+
+    if (xctx.nfont >= xctx.fontcap) {
+        xctx.fontcap += 4;
+        ASSERT(xctx.fonts = realloc(xctx.fonts,
+            xctx.fontcap * sizeof(xctx.fonts[0])));
+    }
+    xctx.fonts[xctx.nfont].font = f;
+    xctx.fonts[xctx.nfont].weight = weight;
+    xctx.fonts[xctx.nfont].slant = slant;
+    xctx.nfont++;
+
+    info = (char*)FcPatternFormat(m,
+        (FcChar8*)"%{family} %{style} %{pixelsize}");
+
+    if (zt.debug < 0)
+        LOG("[%02d] %s\n", xctx.nfont, info);
+
+    FcPatternDestroy(m);
+    FcPatternDestroy(p);
+    free(info);
+}
+
+void
+xfont_init(void) {
+    int i, j;
+    XftFont *f;
     XGlyphInfo exts;
-    char printable[257], buf[128];
+    char printable[257];
 
     for (i = 0, j = 0; i < (int)sizeof(printable); i++)
         if (isprint(i))
@@ -480,40 +519,21 @@ xfont_init(void) {
     printable[j] = '\0';
 
     ASSERT(FcInit());
-    xctx.nfont = LEN(font_list) * 4;
-    ASSERT(xctx.fonts = malloc(xctx.nfont * sizeof(xctx.fonts[0])));
-    for (i = 0; i < xctx.nfont; i++) {
-        f = &xctx.fonts[i];
-        f->weight = ((i%4) / 2 == 0 ? FC_WEIGHT_REGULAR : FC_WEIGHT_BOLD);
-        f->slant = ((i%4) % 2 == 0 ? FC_SLANT_ROMAN : FC_SLANT_ITALIC);
-
-        size = font_list[i/4].size * zt.fontsize;
-        size = MAX(size, 1);
-
-        snprintf(buf, sizeof(buf), "%s:pixelsize=%d",
-            font_list[i/4].name, size);
-
-        ASSERT(p = FcNameParse((FcChar8*)buf));
-        FcConfigSubstitute(NULL, p, FcMatchPattern);
-        FcDefaultSubstitute(p);
-        XftDefaultSubstitute(xctx.dpy, xctx.screen, p);
-
-        FcPatternDel(p, FC_WEIGHT);
-        FcPatternAddInteger(p, FC_WEIGHT, f->weight);
-
-        FcPatternDel(p, FC_SLANT);
-        FcPatternAddInteger(p, FC_SLANT, f->slant);
-
-        ASSERT(m = FcFontMatch(NULL, p, &r));
-        ASSERT(f->font = XftFontOpenPattern(xctx.dpy, m));
-
-        FcPatternDestroy(m);
-        FcPatternDestroy(p);
+    for (i = 0; i < LEN(font_list); i++) {
+        xfont_open(font_list[i].name, font_list[i].size,
+            FC_WEIGHT_REGULAR, FC_SLANT_ROMAN);
+        xfont_open(font_list[i].name, font_list[i].size,
+            FC_WEIGHT_REGULAR, FC_SLANT_ITALIC);
+        xfont_open(font_list[i].name, font_list[i].size,
+            FC_WEIGHT_BOLD, FC_SLANT_ROMAN);
+        xfont_open(font_list[i].name, font_list[i].size,
+            FC_WEIGHT_BOLD, FC_SLANT_ITALIC);
     }
 
-    xctx.fh = xctx.fonts[0].font->height;
-    xctx.fb = xctx.fonts[0].font->height-xctx.fonts[0].font->descent;
-    XftTextExtentsUtf8(xctx.dpy, xctx.fonts[0].font,
+    f = xctx.fonts[0].font;
+    xctx.fh = f->height;
+    xctx.fb = f->height-f->descent;
+    XftTextExtentsUtf8(xctx.dpy, f,
         (const FcChar8*)printable, strlen(printable), &exts);
     xctx.fw = (exts.xOff + strlen(printable)-1) / strlen(printable);
 
