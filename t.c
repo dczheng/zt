@@ -305,9 +305,7 @@ tmode(void) {
         case DECKANAM:
         case 1005: // UTF8 mouse
         case 2004: // Bracketed paste
-            if (zt.no_ignore)
-                return EPROTO;
-            break;
+            return EACCES;
         default: return EPROTO;
         }
     }
@@ -462,9 +460,7 @@ tcsi(void) {
         }
         break;
     case WINMAN:
-        if (zt.no_ignore)
-            return EPROTO;
-        break;
+        return EACCES;
     default: return EPROTO;
     }
     return 0;
@@ -507,9 +503,7 @@ tesc(uint8_t *buf, int len) {
         case NF_G3D4:
         case FP_DECKPAM:
         case FP_DECKPNM:
-            if (zt.no_ignore)
-                return EPROTO;
-            break;
+            return EACCES;
         default: return EPROTO;
         }
         return 0;
@@ -572,12 +566,10 @@ tctrl(uint8_t *buf, int len) {
     case CCH:
         lmoveto(zt.y, zt.x-1);
         break;
-    case BEL:
-        if (zt.no_ignore)
-            return EPROTO;
-        break;
     case SI: UNSET(zt.mode, MODE_GZD4); break;
     case SO: SET(zt.mode, MODE_GZD4); break;
+    case BEL:
+        return EACCES;
     default: return EPROTO;
     }
     return 0;
@@ -620,17 +612,21 @@ twrite(uint8_t *buf, int len) {
             continue;
 
         s = ctrl_str(p, esc.len+1);
-        if (zt.debug == 1) {
-            if (ret == EPROTO)
+        switch (ret) {
+        case 0:
+            if (zt.debug >= 2)
+                LOG("%s\n", s);
+            break;
+        case EPROTO:
+            if (zt.debug == 1)
                 LOG("%s ?????\n", s);
-            continue;
+            break;
+        case EACCES:
+            if (zt.debug == 1 && zt.no_ignore)
+                LOG("%s ignore\n", s);
+            break;
+        default: DIE();
         }
-
-        if (ret == EPROTO)
-            LOG("%s ?????\n", s);
-        else
-            LOG("%s\n", s);
-
         if (zt.debug >= 3)
             tdump();
     }
