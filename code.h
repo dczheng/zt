@@ -15,7 +15,6 @@
 #define VT102 "\033[?6c"
 #define PRIMARY_DA VT102
 
-// C0
 #define NUL 0x00 // ^@ Null
 #define SOH 0x01 // ^A Start of Heading
 #define STX 0x02 // ^B Start of text
@@ -48,49 +47,61 @@
 #define GS  0x1d // ^] Group separator
 #define RS  0x1e // ^^ Record separator
 #define US  0x1f // ^_ Unit separator
-#define ISCTRL0(c) ((c) <= 0x1f)
 
-// other
 #define DEL 0x7f // ^? Delete
 
-// C1, Fe ESC
-#define PAD  0x80 // '@' Padding character
-#define HOP  0x81 // 'A' High octet preset
-#define BPH  0x82 // 'B' Break permitted here
-#define NBH  0x83 // 'C' No break here
-#define IND  0x84 // 'D' Index
-#define NEL  0x85 // 'E' Next line
-#define SSA  0x86 // 'F' Start of selected area
-#define ESA  0x87 // 'G' End of selected area
-#define HTS  0x88 // 'H' Horizontal tabulationSet
-#define HTJ  0x89 // 'I' Horizontal tabulation with justification
-#define VTS  0x8a // 'J' Vertical tabulationSet
-#define PLD  0x8b // 'K' Partial line down
-#define PLU  0x8c // 'L' Partial line up
-#define RI   0x8d // 'M' Reverse index
-#define SS2  0x8e // 'N' Single shift 2
-#define SS3  0x8f // 'O' Single shift 3
-#define DCS  0x90 // 'P' Device control string
-#define PU1  0x91 // 'Q' Private use 1
-#define PU2  0x92 // 'R' Private use 2
-#define STS  0x93 // 'S' Transmit state
-#define CCH  0x94 // 'T' Cancel character
-#define MW   0x95 // 'U' Message waiting
-#define SPA  0x96 // 'V' Start of protected area
-#define EPA  0x97 // 'W' End of protected area
-#define SOS  0x98 // 'X' Start of string
-#define SGC  0x99 // 'Y' Single graphic character introducer
-#define SCI  0x9a // 'Z' Single character introducer
-#define CSI  0x9b // '[' Control sequence introducer
-#define ST   0x9c // '\' String terminator
-#define OSC  0x9d // ']' Operating system command
-#define PM   0x9e // '^' Privacy message
-#define APC  0x9f // '_' Application program command
-#define ISCTRL1(c) ((c) >= 0x80 && (c) <= 0x9f)
+#define PAD 0x80 // '@' Padding character
+#define HOP 0x81 // 'A' High octet preset
+#define BPH 0x82 // 'B' Break permitted here
+#define NBH 0x83 // 'C' No break here
+#define IND 0x84 // 'D' Index
+#define NEL 0x85 // 'E' Next line
+#define SSA 0x86 // 'F' Start of selected area
+#define ESA 0x87 // 'G' End of selected area
+#define HTS 0x88 // 'H' Horizontal tabulationSet
+#define HTJ 0x89 // 'I' Horizontal tabulation with justification
+#define VTS 0x8a // 'J' Vertical tabulationSet
+#define PLD 0x8b // 'K' Partial line down
+#define PLU 0x8c // 'L' Partial line up
+#define RI  0x8d // 'M' Reverse index
+#define SS2 0x8e // 'N' Single shift 2
+#define SS3 0x8f // 'O' Single shift 3
+#define DCS 0x90 // 'P' Device control string
+#define PU1 0x91 // 'Q' Private use 1
+#define PU2 0x92 // 'R' Private use 2
+#define STS 0x93 // 'S' Transmit state
+#define CCH 0x94 // 'T' Cancel character
+#define MW  0x95 // 'U' Message waiting
+#define SPA 0x96 // 'V' Start of protected area
+#define EPA 0x97 // 'W' End of protected area
+#define SOS 0x98 // 'X' Start of string
+#define SGC 0x99 // 'Y' Single graphic character introducer
+#define SCI 0x9a // 'Z' Single character introducer
+#define CSI 0x9b // '[' Control sequence introducer
+#define ST  0x9c // '\' String terminator
+#define OSC 0x9d // ']' Operating system command
+#define PM  0x9e // '^' Privacy message
+#define APC 0x9f // '_' Application program command
 
-#define ISCTRL(c)   (ISCTRL0(c) || ISCTRL1(c) || (c) == DEL)
-#define FETOC1(c)   ((c) - '@' + 0x80)
-#define C1TOFE(c)   ((c) - 0x80 + '@')
+//     C0: 0x00-0x1f
+// nF ESC: 0x20-0x2f  !"#$%&'()*+,-./
+// Fp ESC: 0x30-0x3f 0123456789:;<=>?
+// Fe ESC: 0x40-0x5f @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_
+// Fs ESC: 0x60-0x7e `abcdefghijklmnopqrstuvwxyz{|}~
+//    DEL: 0x7f
+//     C1: 0x80-0x9e
+
+#define ISCTRL0(c) ((c) <= 0x1f)
+#define ISCTRL1(c) ((c) >= 0x80 && (c) <= 0x9f)
+#define ISCTRL(c)  (ISCTRL0(c) || ISCTRL1(c) || (c) == DEL)
+#define FETOC1(c)  ((c) - '@' + 0x80)
+#define C1TOFE(c)  ((c) - 0x80 + '@')
+
+#define ISESC(c)   ((c) >= 0x20 && (c) <= 0x7e)
+#define ISNFESC(c) ((c) >= 0x20 && (c) <= 0x2f)
+#define ISFPESC(c) ((c) >= 0x30 && (c) <= 0x3f)
+#define ISFEESC(c) ((c) >= 0x40 && (c) <= 0x5f)
+#define ISFSESC(c) ((c) >= 0x60 && (c) <= 0x7e)
 
 // nF ESC
 #define NF_GZD4 '(' // Charset G0
@@ -99,13 +110,8 @@
 #define NF_G3D4 '+' // Charset G3
 
 // Fp ESC
-#define FP_DECSC  '7' // DEC save cursor
-#define FP_DECRC  '8' // DEC restore cursor
-
-#define ESC_IS_NF(c) ((c) >= 0x20 && (c) <= 0x2f)
-#define ESC_IS_FP(c) ((c) >= 0x30 && (c) <= 0x3f)
-#define ESC_IS_FE(c) ((c) >= 0x40 && (c) <= 0x5f)
-#define ESC_IS_FS(c) ((c) >= 0x60 && (c) <= 0x7e)
+#define FP_DECSC '7' // DEC save cursor
+#define FP_DECRC '8' // DEC restore cursor
 
 // CSI
 #define ICH     '@' // Insert Blank char

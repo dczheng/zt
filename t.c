@@ -482,10 +482,15 @@ tesc(uint8_t *buf, int len) {
     esc.code = buf[0];
     esc.len = 1;
 
-    if (ESC_IS_NF(esc.code)) {
-        if ((n = range_search(buf+1, len-1, nf_ending, 0)) < 0)
-            return EAGAIN;
-        esc.len += n+1;
+    if (!ISESC(esc.code))
+        return EPROTO;
+
+    if (!ISFEESC(esc.code)) {
+        if (ISNFESC(esc.code)) {
+            if ((n = range_search(buf+1, len-1, nf_ending, 0)) < 0)
+                return EAGAIN;
+            esc.len += n+1;
+        }
         switch (esc.code) {
         case NF_GZD4:
             if (len < 2) return EPROTO;
@@ -495,28 +500,18 @@ tesc(uint8_t *buf, int len) {
             default: return EPROTO;
             }
             break;
+        case FP_DECSC: lcursor(1); break;
+        case FP_DECRC: lcursor(0); break;
         case NF_G1D4:
         case NF_G2D4:
         case NF_G3D4:
+            if (zt.no_ignore)
+                return EPROTO;
+            break;
         default: return EPROTO;
         }
         return 0;
     }
-
-    if (ESC_IS_FP(esc.code)) {
-        switch (esc.code) {
-        case FP_DECSC: lcursor(1); break;
-        case FP_DECRC: lcursor(0); break;
-        default: return EPROTO;
-        }
-        return 0;
-    }
-
-    if (ESC_IS_FS(esc.code))
-        return EPROTO;
-
-    if (!ESC_IS_FE(esc.code))
-        return EPROTO;
 
     switch (FETOC1(esc.code)) {
     case CSI:
