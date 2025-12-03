@@ -52,12 +52,8 @@ xflush(void) {
 }
 
 static inline int
-xcolor_alloc(XftColor *c,
-        uint8_t r,
-        uint8_t g,
-        uint8_t b) {
+xcolor_alloc(XftColor *c, uint8_t r, uint8_t g, uint8_t b) {
     XRenderColor rc;
-
     rc.red = r << 8;
     rc.green = g << 8;
     rc.blue = b << 8;
@@ -76,7 +72,7 @@ xcolor_free(XftColor *c) {
 
 void
 xdraw_specs(struct char_t c) {
-    XftColor bg, fg;
+    XftColor bg, fg, a;
     int x, y, w, rf, rb, t;
 
     if (!xctx.nspec)
@@ -99,7 +95,8 @@ xdraw_specs(struct char_t c) {
             fg = xctx.color8[c.fg.c8];
             break;
         case 24:
-            rf = xcolor_alloc(&fg, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2]);
+            if (!(rf = xcolor_alloc(&a, c.fg.rgb[0], c.fg.rgb[1], c.fg.rgb[2])))
+                fg = a;
             break;
         }
     }
@@ -110,7 +107,8 @@ xdraw_specs(struct char_t c) {
             bg = xctx.color8[c.bg.c8];
             break;
         case 24:
-            rb = xcolor_alloc(&bg, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2]);
+            if (!(rb = xcolor_alloc(&a, c.bg.rgb[0], c.bg.rgb[1], c.bg.rgb[2])))
+                bg = a;
             break;
         }
     }
@@ -126,10 +124,8 @@ xdraw_specs(struct char_t c) {
 
     XftDrawGlyphFontSpec(xctx.draw, &fg, xctx.specs, xctx.nspec);
     xctx.nspec = 0;
-    if (!rf)
-        xcolor_free(&fg);
-    if (!rb)
-        xcolor_free(&bg);
+    if (!rf) xcolor_free(&fg);
+    if (!rb) xcolor_free(&bg);
 }
 
 void
@@ -158,7 +154,8 @@ xfont_lookup(struct char_t c, XftFont **f, FT_UInt *idx) {
             return;
     }
 
-    LOGERR("can't find font for 0x%x\n", c.c);
+    if (zt.debug < 0)
+        LOGERR("can't find font for 0x%x\n", c.c);
     *f = xctx.fonts[0].font;
     *idx = XftCharIndex(xctx.dpy, *f, ' ');
 }
@@ -257,14 +254,6 @@ xkeymap(KeySym k, unsigned int state, char *buf, int *len) {
         *len = snprintf(buf, 4, "\033[D");
         break;
     }
-}
-
-void
-xpointer(int *x, int *y) {
-    int di;
-    unsigned int dui;
-    Window dw;
-    XQueryPointer(xctx.dpy, xctx.root, &dw, &dw, x, y, &di, &di, &dui);
 }
 
 void
@@ -464,10 +453,8 @@ xfree(void) {
     XFreeCursor(xctx.dpy, xctx.cursor);
     XftDrawDestroy(xctx.draw);
 
-    for (i = 0; i < xctx.nfont; i++) {
-        free(xctx.fonts[i].family);
+    for (i = 0; i < xctx.nfont; i++)
         XftFontClose(xctx.dpy, xctx.fonts[i].font);
-    }
     free(xctx.fonts);
 
     xcolor_free(&xctx.bkg);
@@ -479,40 +466,17 @@ xfree(void) {
 }
 
 void
-xfont_load(char *str, struct font_t *f) {
-    FcPattern *p, *m;
-    FcResult r;
-
-    ASSERT(p = FcNameParse((FcChar8*)str));
-    FcConfigSubstitute(NULL, p, FcMatchPattern);
-    FcDefaultSubstitute(p);
-    XftDefaultSubstitute(xctx.dpy, xctx.screen, p);
-
-    FcPatternDel(p, FC_WEIGHT);
-    FcPatternAddInteger(p, FC_WEIGHT, f->weight);
-
-    FcPatternDel(p, FC_SLANT);
-    FcPatternAddInteger(p, FC_SLANT, f->slant);
-
-    m = FcFontMatch(NULL, p, &r);
-    ASSERT(f->font = XftFontOpenPattern(xctx.dpy, m));
-    f->family = FcPatternFormat(m, (FcChar8*)"%{family}");
-
-    FcPatternDestroy(m);
-    FcPatternDestroy(p);
-}
-
-void
 xfont_init(void) {
     int i, j, size;
     struct font_t *f;
+    FcPattern *p, *m;
+    FcResult r;
     XGlyphInfo exts;
     char printable[257], buf[128];
 
-    for (i = 0, j = 0; i < (int)sizeof(printable); i++) {
+    for (i = 0, j = 0; i < (int)sizeof(printable); i++)
         if (isprint(i))
             printable[j++] = i;
-    }
     printable[j] = '\0';
 
     ASSERT(FcInit());
@@ -528,7 +492,23 @@ xfont_init(void) {
 
         snprintf(buf, sizeof(buf), "%s:pixelsize=%d",
             font_list[i/4].name, size);
-        xfont_load(buf, f);
+
+        ASSERT(p = FcNameParse((FcChar8*)buf));
+        FcConfigSubstitute(NULL, p, FcMatchPattern);
+        FcDefaultSubstitute(p);
+        XftDefaultSubstitute(xctx.dpy, xctx.screen, p);
+
+        FcPatternDel(p, FC_WEIGHT);
+        FcPatternAddInteger(p, FC_WEIGHT, f->weight);
+
+        FcPatternDel(p, FC_SLANT);
+        FcPatternAddInteger(p, FC_SLANT, f->slant);
+
+        ASSERT(m = FcFontMatch(NULL, p, &r));
+        ASSERT(f->font = XftFontOpenPattern(xctx.dpy, m));
+
+        FcPatternDestroy(m);
+        FcPatternDestroy(p);
     }
 
     xctx.fh = xctx.fonts[0].font->height;
