@@ -1,6 +1,6 @@
-SRC      = $(wildcard *.c)
-INC      = $(wildcard *.h)
-CC       = gcc #-E
+SRC = $(wildcard *.c term/*.c)
+INC = $(wildcard *.h term/*.h)
+CC  = gcc #-E
 
 DEPS     = x11 freetype2 xft fontconfig
 

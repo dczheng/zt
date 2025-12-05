@@ -1,8 +1,6 @@
 #ifndef __CODE_H__
 #define __CODE_H__
 
-#include "zt.h"
-
 /*
   References
   https://en.wikipedia.org/wiki/ANSI_escape_code
@@ -12,11 +10,13 @@
   https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 */
 
+#define __unused __attribute__((unused))
+
 #define VT102 "\033[?6c"
 #define PRIMARY_DA VT102
 
 #define NUL 0x00 // ^@ Null
-#define SOH 0x01 // ^A Start of Heading
+#define SOH 0x01 // ^A Start of heading
 #define STX 0x02 // ^B Start of text
 #define ETX 0x03 // ^C End of text
 #define EOT 0x04 // ^D End of transmission
@@ -31,11 +31,11 @@
 #define CR  0x0d // ^M Carriage return
 #define SO  0x0e // ^N Shift out
 #define SI  0x0f // ^O Shift in
-#define DLE 0x10 // ^P DataLink escape
-#define DC1 0x11 // ^Q DeviceControl 1
-#define DC2 0x12 // ^R DeviceControl 2
-#define DC3 0x13 // ^S DeviceControl 3
-#define DC4 0x14 // ^T DeviceControl 4
+#define DLE 0x10 // ^P Data link escape
+#define DC1 0x11 // ^Q Device control 1
+#define DC2 0x12 // ^R Device control 2
+#define DC3 0x13 // ^S Device control 3
+#define DC4 0x14 // ^T Device control 4
 #define NAK 0x15 // ^U Negative acknowledge
 #define SYN 0x16 // ^V Synchronous idle
 #define ETB 0x17 // ^W End of transmission block
@@ -58,9 +58,9 @@
 #define NEL 0x85 // 'E' Next line
 #define SSA 0x86 // 'F' Start of selected area
 #define ESA 0x87 // 'G' End of selected area
-#define HTS 0x88 // 'H' Horizontal tabulationSet
+#define HTS 0x88 // 'H' Horizontal tabulation
 #define HTJ 0x89 // 'I' Horizontal tabulation with justification
-#define VTS 0x8a // 'J' Vertical tabulationSet
+#define VTS 0x8a // 'J' Vertical tabulation
 #define PLD 0x8b // 'K' Partial line down
 #define PLU 0x8c // 'L' Partial line up
 #define RI  0x8d // 'M' Reverse index
@@ -116,7 +116,7 @@
 #define FP_DECKPNM '>' // Normal keypad
 
 // CSI
-#define ICH     '@' // Insert Blank char
+#define ICH     '@' // Insert blank char
 #define CUU     'A' // Cursor up
 #define CUD     'B' // Cursor down
 #define CUF     'C' // Cursor forward
@@ -156,92 +156,92 @@
 
 // DEC private modes
 // https://vt100.net/emu/dec_private_modes.html
-#define DECCKM       1 // Cursor Keys Mode
-#define DECANM       2 // ANSI/VT52 Mode
+#define DECCKM       1 // Cursor keys
+#define DECANM       2 // ANSI/VT52
 #define DECCOLM      3 // Column
 #define DECSCLM      4 // Scrolling
-#define DECSCNM      5 // Screen Mode (light or dark screen)
-#define DECOM        6 // Origin Mode
-#define DECAWM       7 // Auto Wrap Mode
-#define DECARM       8 // Auto Repeat Mode
-#define DECINLM      9 // Interlace Mode
-#define DECEDM      10 // Editing Mode
-#define DECLTM      11 // Line Transmit Mode
-#define DECKANAM    12 // Katakana Shift Mode
-#define DECSCFDM    13 // Space Compression/Field Delimiter Mode
-#define DECTEM      14 // Transmit Execution Mode
-#define DECEKEM     16 // Edit Key Execution Mode
-#define DECPFF      18 // Print Form Feed
-#define DECPEX      19 // Printer Extent
+#define DECSCNM      5 // Screen (light or dark screen)
+#define DECOM        6 // Origin
+#define DECAWM       7 // Auto wrap
+#define DECARM       8 // Auto repeat
+#define DECINLM      9 // Interlace
+#define DECEDM      10 // Editing
+#define DECLTM      11 // Line transmit
+#define DECKANAM    12 // Katakana shift
+#define DECSCFDM    13 // Space compression/field delimiter
+#define DECTEM      14 // Transmit execution
+#define DECEKEM     16 // Edit key execution
+#define DECPFF      18 // Print form feed
+#define DECPEX      19 // Printer extent
 #define OV1         20 // Overstrike
 #define BA1         21 // Local BASIC
 #define BA2         22 // Host BASIC
-#define PK1         23 // Programmable Keypad
-#define AH1         24 // Auto Hardcopy
-#define DECTCEM     25 // Text Cursor Enable Mode
-#define DECPSP      27 // Proportional Spacing
-#define DECPSM      29 // Pitch Select Mode
-#define DECRLM      34 // Cursor Right to Left Mode
-#define DECHEBM     35 // Hebrew (Keyboard) Mode
-#define DECHEM      36 // Hebrew Encoding Mode
-#define DECTEK      38 // Tektronix 4010/4014 Mode
-#define DECCRNLM    40 // Carriage Return/New Line Mode
-#define DECUPM      41 // Unidirectional Print Mode
-#define DECNRCM     42 // National Replacement Character Set Mode
-#define DECGEPM     43 // Graphics Expanded Print Mode
-#define DECGPCM     44 // Graphics Print Color Mode
-#define DECGPCS     45 // Graphics Print Color Syntax
-#define DECGPBM     46 // Graphics Print Background Mode
-#define DECGRPM     47 // Graphics Rotated Print Mode
-#define DECTHAIM    49 // Thai Input Mode
-#define DECTHAICM   50 // Thai Cursor Mode
-#define DECBWRM     51 // Black/White Reversal Mode
-#define DECOPM      52 // Origin Placement Mode
-#define DEC131TM    53 // VT131 Transmit Mode
-#define DECBPM      55 // Bold Page Mode
-#define DECNAKB     57 // Greek/N-A Keyboard Mapping Mode
-#define DECIPEM     58 // Enter IBM Proprinter Emulation Mode
-#define DECKKDM     59 // Kanji/Katakana Display Mode
-#define DECHCCM     60 // Horizontal Cursor Coupling
-#define DECVCCM     61 // Vertical Cursor Coupling Mode
-#define DECPCCM     64 // Page Cursor Coupling Mode
-#define DECBCMM     65 // Business Color Matching Mode
-#define DECNKM      66 // Numeric Keypad Mode
-#define DECBKM      67 // Backarrow Key Mode
-#define DECKBUM     68 // Keyboard Usage Mode
-#define DECVSSM     69 // Vertical Split Screen Mode
-#define DECLRMM     69 // Left Right Margin Mode
-#define DECFPM      70 // Force Plot Mode
-#define DECXRLM     73 // Transmission Rate Limiting
-#define DECSDM      80 // Sixel Display Mode
-#define DECKPM      81 // Key Position Mode
-#define DECTHAISCM  90 // Thai Space Compensating Mode
-#define DECNCSM     95 // No Clearing Screen on Column Change Mode
-#define DECRLCM     96 // Right to Left Copy Mode
-#define DECCRTSM    97 // CRT Save Mode
-#define DECARSM     98 // Auto Resize Mode
-#define DECMCM      99 // Modem Control Mode
-#define DECAAM     100 // Auto Answerback Mode
-#define DECCANSM   101 // Conceal Answerback Message Mode
-#define DECNULM    102 // Ignore Null Mode
-#define DECHDPXM   103 // Half Duplex Mode
-#define DECESKM    104 // Secondary Keyboard Language Mode
-#define DECOSCNM   106 // Overscan Mode
-#define DECNUMLK   108 // NumLock Mode
-#define DECCAPSLK  109 // Caps Lock Mode
-#define DECKLHIM   110 //  Keyboard LEDs Host Indicator Mode
-#define DECFWM     111 //  Framed Windows Mode
-#define DECRPL     112 //  Review Previous Lines Mode
-#define DECHWUM    113 //  Host Wake-Up Mode
-#define DECATCUM   114 //  Alternate Text Color Underline Mode
-#define DECATCBM   115 //  Alternate Text Color Blink Mode
-#define DECBBSM    116 //  Bold and Blink Style Mode
-#define DECECM     117 //  Erase Color Mode
+#define PK1         23 // Programmable keypad
+#define AH1         24 // Auto hardcopy
+#define DECTCEM     25 // Text cursor enable
+#define DECPSP      27 // Proportional spacing
+#define DECPSM      29 // Pitch select
+#define DECRLM      34 // Cursor right to left
+#define DECHEBM     35 // Hebrew (keyboard)
+#define DECHEM      36 // Hebrew encoding
+#define DECTEK      38 // Tektronix 4010/4014
+#define DECCRNLM    40 // Carriage return/new line
+#define DECUPM      41 // Unidirectional print
+#define DECNRCM     42 // National peplacement character set
+#define DECGEPM     43 // Graphics expanded print
+#define DECGPCM     44 // Graphics print color
+#define DECGPCS     45 // Graphics print color syntax
+#define DECGPBM     46 // Graphics print background
+#define DECGRPM     47 // Graphics rotated print
+#define DECTHAIM    49 // Thai input
+#define DECTHAICM   50 // Thai cursor
+#define DECBWRM     51 // Black/White eeversal
+#define DECOPM      52 // Origin placement
+#define DEC131TM    53 // VT131 transmit
+#define DECBPM      55 // Bold page
+#define DECNAKB     57 // Greek/N-A keyboard mapping
+#define DECIPEM     58 // Enter IBM proprinter emulation
+#define DECKKDM     59 // Kanji/Katakana display
+#define DECHCCM     60 // Horizontal cursor cupling
+#define DECVCCM     61 // Vertical cursor cupling
+#define DECPCCM     64 // Page cursor cupling
+#define DECBCMM     65 // Business color matching
+#define DECNKM      66 // Numeric keypad
+#define DECBKM      67 // Backarrow key
+#define DECKBUM     68 // Keyboard usage
+#define DECVSSM     69 // Vertical split screen
+#define DECLRMM     69 // Left right margin
+#define DECFPM      70 // Force plot
+#define DECXRLM     73 // Transmission rate limiting
+#define DECSDM      80 // Sixel display
+#define DECKPM      81 // Key position
+#define DECTHAISCM  90 // Thai space compensating
+#define DECNCSM     95 // No clearing screen on column change
+#define DECRLCM     96 // Right to left copy
+#define DECCRTSM    97 // CRT save
+#define DECARSM     98 // Auto resize
+#define DECMCM      99 // Modem control
+#define DECAAM     100 // Auto answerback
+#define DECCANSM   101 // Conceal answerback message
+#define DECNULM    102 // Ignore null
+#define DECHDPXM   103 // Half duplex
+#define DECESKM    104 // Secondary keyboard language
+#define DECOSCNM   106 // Overscan
+#define DECNUMLK   108 // Num lock
+#define DECCAPSLK  109 // Caps lock
+#define DECKLHIM   110 // Keyboard LEDs host indicator
+#define DECFWM     111 // Framed windows
+#define DECRPL     112 // Review previous lines
+#define DECHWUM    113 // Host wake-up
+#define DECATCUM   114 // Alternate text color underline
+#define DECATCBM   115 // Alternate text color blink
+#define DECBBSM    116 // Bold and blink style
+#define DECECM     117 // Erase color
 
-static uint8_t csi_ending[] __unused = { 0x40, 0x7e };
-static uint8_t nf_ending[] __unused = { 0x30, 0x7e };
-static uint8_t dcs_ending[] __unused = { C1TOFE(ST), ESC };
-static uint8_t osc_ending[] __unused = { BEL, ST, C1TOFE(ST), ESC };
+static uint8_t csi_end[] __unused = { 0x40, 0x7e };
+static uint8_t nf_end[] __unused = { 0x30, 0x7e };
+static uint8_t dcs_end[] __unused = { C1TOFE(ST), ESC };
+static uint8_t osc_end[] __unused = { BEL, ST, C1TOFE(ST), ESC };
 
 /*
  SGR
@@ -299,22 +299,21 @@ static uint8_t osc_ending[] __unused = { BEL, ST, C1TOFE(ST), ESC };
 */
 
 static inline char*
-ctrl_str(void *buf, int n) {
+ctrl_str(char *buf, int bufsize, void *data, int data_size) {
     int i, p = 0;
-    static char s[BUFSIZ*3+1];
-    uint8_t *b = buf;
+    uint8_t *d = data;
 
-    for (i = 0; i < n; i++) {
-        if (isprint(b[i])) {
-            p += snprintf(s+p, sizeof(s)-p, "%c", b[i]);
+    for (i = 0; i < data_size; i++) {
+        if (isprint(d[i])) {
+            p += snprintf(buf+p, bufsize-p, "%c", d[i]);
             continue;
         }
-        if (!ISCTRL(b[i])) {
-            p += snprintf(s+p, sizeof(s)-p, "%02x", b[i]);
+        if (!ISCTRL(d[i])) {
+            p += snprintf(buf+p, bufsize-p, "%02x", d[i]);
             continue;
         }
-#define _case(a) case a: p += snprintf(s+p, sizeof(s)-p, "%s", #a); break;
-        switch(b[i]){
+#define _case(a) case a: p += snprintf(buf+p, bufsize-p, "%s", #a); break;
+        switch(d[i]){
         _case(NUL); _case(SOH); _case(STX); _case(ETX); _case(EOT); _case(ENQ);
         _case(ACK); _case(BEL); _case(BS);  _case(HT);  _case(LF);  _case(VT);
         _case(FF);  _case(CR);  _case(SO);  _case(SI);  _case(DLE); _case(DC1);
@@ -329,8 +328,8 @@ ctrl_str(void *buf, int n) {
         }
 #undef _case
     }
-    s[p] = 0;
-    return s;
+    buf[p] = 0;
+    return buf;
 }
 
 // Table 5-13: https://vt100.net/docs/vt102-ug/chapter5.html#T5-13
