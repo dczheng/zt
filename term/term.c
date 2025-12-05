@@ -958,7 +958,7 @@ _term_read(struct term_t *t) {
             if (ISCTRL(p[0]))
                 break;
         }
-        LOGERR("drop: %s", ctrl_str(s, sizeof(s), p0, p-p0));
+        LOGERR("drop: %s\n", ctrl_str(s, sizeof(s), p0, p-p0));
     }
 
     return p - t->data;
@@ -970,12 +970,12 @@ term_read(struct term_t *t) {
     fd_set fds;
     struct timespec tv = to_timespec(SECOND);
 
-    ASSERT(t->size >= 0 && t->size < BUFSIZ);
+    ASSERT(t->size >= 0 && t->size <= sizeof(t->data));
 
     FD_ZERO(&fds);
     FD_SET(t->tty, &fds);
     ASSERT(pselect(t->tty+1, &fds, NULL, NULL, &tv, NULL) > 0);
-    if ((ret = read(t->tty, t->data+t->size, sizeof(t->data)-1)) < 0) {
+    if ((ret = read(t->tty, t->data+t->size, sizeof(t->data)-t->size)) < 0) {
         if (errno != EIO)
             LOGERR("failed to read tty: %s\n", strerror(errno));
         return errno;
