@@ -11,6 +11,7 @@
 
 #define FOREGROUND "white"
 #define BACKGROUND "gray20"
+#define LATENCY (10 * MILLISECOND)
 
 static struct {
     char *name;
@@ -669,6 +670,7 @@ int
 main(int argc, char **argv) {
     int ret, i;
     struct timespec tv;
+    long tlast = 0;
     fd_set fds;
     struct option opts[] = {
         {"font-size", required_argument, NULL, 1},
@@ -696,6 +698,7 @@ main(int argc, char **argv) {
     xinit();
 
     tv = to_timespec(500 * MILLISECOND);
+
     for (;;) {
         FD_ZERO(&fds);
         FD_SET(zt.xfd, &fds);
@@ -704,14 +707,20 @@ main(int argc, char **argv) {
             &tv, NULL)) >= 0);
         if (!ret) continue;
 
+        if (FD_ISSET(zt.xfd, &fds) && xevent())
+            break;
+
         if (FD_ISSET(term.tty, &fds)) {
+            if (get_time() - tlast < LATENCY)
+                continue;
+            tlast = get_time();
+
             if (term_read(&term))
                 break;
+
             xdraw();
         }
 
-        if (FD_ISSET(zt.xfd, &fds) && xevent())
-            break;
     }
 
     xfree();
